@@ -1,0 +1,18 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+tox = "*"
+mypy = "*"
+
+[packages]
+sanic = "*"
+aiokafka = "*"
+avro-python3 = "*"
+pyyaml = "*"
+uvloop = "*"
+
+[requires]
+python_version = "3.7"

@@ -1,0 +1,27 @@
+# config file
+aioevent/config.py
+
+# Mac OS X annoying files
+.DS_Store
+
+# PyCharm files
+.idea/
+
+# VSCode files
+.vscode/
+
+# mypy
+.mypy_cache/
+
+# tox
+.tox/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.class
+*.egg-info/
+
+# Rsa key
+
+resources/rsa_key/*

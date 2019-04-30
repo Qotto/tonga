@@ -1,0 +1,42 @@
+namespace: aioevent.coffeemaker.event
+name: CoffeeStarted
+doc: This event is dispatched when a coffee has been started
+type: record
+fields:
+  - name: schema_version
+    doc: Version of the schema used for encoding this message (X.Y.Z)
+    type: string
+  - name: record_id
+    doc: UUID for this record
+    type: string
+  - name: partition_key
+    doc: A string determining to which partition your record will be assigned
+    type:
+      - "null"
+      - string
+  - name: timestamp
+    doc: UNIX timestamp in milliseconds, when this record was generated
+    type:
+      type: long
+      logicalType: timestamp-millis
+  - name: datetime
+    doc: ISO 8601 date with timezone, when this record was generated
+    type: string
+  - name: correlation_id
+    doc: This identifier propagates across the system and links associated records together
+    type: string
+  - name: context
+    doc: Additional context data
+    type:
+      type: map
+      values:
+        - "null"
+        - "int"
+        - "long"
+        - "float"
+        - "double"
+        - "string"
+  # specific fields
+  - name: uuid
+    doc: identify
+    type: string
