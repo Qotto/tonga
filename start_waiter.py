@@ -3,29 +3,82 @@
 # Copyright (c) Qotto, 2019
 
 import os
+import logging
+import argparse
+from logging.config import dictConfig
 
 from aioevent import AioEvent
 
-from tests.coffee_bar.waiter.states.waiter import WaiterState
+from tests.coffee_bar.waiter.repository.waiter.shelf import ShelfWaiterRepository
 from tests.coffee_bar.waiter.interfaces.rest.health import health_bp
 from tests.coffee_bar.waiter.interfaces.rest.waiter import waiter_bp
 from tests.coffee_bar.waiter.models import CoffeeOrdered, CoffeeFinished, CoffeeServed
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Waiter Parser')
+    parser.add_argument('instance', metavar='--instance', type=int, help='Service current instance')
+    parser.add_argument('nb_replica', metavar='--replica', type=int, help='Replica number')
+    parser.add_argument('sanic_port', metavar='--sanic_port', type=int, help='Sanic port')
+
+    args = parser.parse_args()
+
+    cur_instance = args.instance
+    nb_replica = args.nb_replica
+    sanic_port = args.sanic_port
+
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-    print('Hello my name is albert ! ')
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': True,
+        'formatters': {
+            'verbose': {
+                'format': '[%(asctime)s] %(levelname)s: %(name)s/%(module)s/%(funcName)s:%(lineno)d (%(thread)d) %(message)s'
+            },
+        },
+        'handlers': {
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'verbose',
+            },
+        },
+        'loggers': {
+            'aioevent': {
+                'level': 'DEBUG',
+                'handlers': ['console'],
+                'propagate': False,
+            },
+        }
+    }
 
-    # Init Aio Event
-    aio_event = AioEvent(sanic_host='0.0.0.0', sanic_port=8000, sanic_handler_name='waiter',
+    dictConfig(LOGGING)
+
+    logger = logging.getLogger(__name__)
+
+    print('Hello my name is Albert ! ')
+
+    try:
+        cur_instance = int(cur_instance)
+    except ValueError:
+        print('Bad instance !')
+        exit(-1)
+
+    print(f'Waiter current instance : {cur_instance}')
+
+    # Initializes Aio Event
+    aio_event = AioEvent(sanic_host='0.0.0.0', sanic_port=sanic_port, sanic_handler_name=f'waiter_{cur_instance}',
                          avro_schemas_folder=os.path.join(BASE_DIR, 'tests/coffee_bar/avro_schemas'),
-                         http_handler=True, sanic_access_log=True, sanic_debug=True)
+                         http_handler=True, sanic_access_log=True, sanic_debug=True, instance=cur_instance)
 
-    # Attach waiter state
-    aio_event.attach('waiter_state', WaiterState())
+    # Attaches waiter repository (db)
+    aio_event.attach('waiter_local_repository', ShelfWaiterRepository(
+        os.path.join(BASE_DIR, f'local_state_waiter_{cur_instance}.repository')))
+    aio_event.attach('waiter_global_repository', ShelfWaiterRepository(
+        os.path.join(BASE_DIR, f'global_state_waiter_{cur_instance}.repository')))
 
-    # Create Event
+    # Registers events
     aio_event.serializer.register_event_class(CoffeeOrdered,
                                               'aioevent.waiter.event.CoffeeOrdered')
     aio_event.serializer.register_event_class(CoffeeFinished,
@@ -33,25 +86,20 @@ if __name__ == '__main__':
     aio_event.serializer.register_event_class(CoffeeServed,
                                               'aioevent.waiter.event.CoffeeServed')
 
-    # Create Consumer for state building
-    aio_event.append_consumer('waiter_consumer_state', start_before_server=True, mod='earliest', listen_event=False,
-                              bootstrap_servers='localhost:9092', client_id='waiter_1',
-                              topics=['waiter-events', 'bartender-events'], auto_offset_reset='earliest',
-                              max_retries=10, retry_interval=1000, retry_backoff_coeff=2,
-                              isolation_level='read_uncommitted')
-    # Build waiter state
-    aio_event.get('waiter_state').init_state()
-
-    # Create consumer
+    # Creates consumer
     aio_event.append_consumer('waiter_consumer', mod='committed', bootstrap_servers='localhost:9092',
-                              client_id='waiter_1', topics=['bartender-events'],
-                              group_id='waiter', auto_offset_reset='latest', max_retries=10, retry_interval=1000,
-                              retry_backoff_coeff=2, isolation_level='read_uncommitted')
+                              client_id=f'waiter_{cur_instance}', topics=['waiter-events', 'bartender-events'],
+                              group_id=f'waiter_{cur_instance}', auto_offset_reset='latest', max_retries=10,
+                              retry_interval=1000, retry_backoff_coeff=2,
+                              assignors_data={'instance': cur_instance, 'nb_replica': nb_replica,
+                                              'assignor_policy': 'all'},
+                              state_builder=True, isolation_level='read_committed')
 
-    # Create producer
-    aio_event.append_producer('waiter_producer', bootstrap_servers='localhost:9092', client_id='waiter_1', acks=1)
+    # Creates producer
+    aio_event.append_producer('waiter_producer', bootstrap_servers='localhost:9092', client_id=f'waiter_{cur_instance}',
+                              acks=1)
 
-    # Register waiter blueprint
+    # Registers waiter blueprint
     aio_event.http_handler.register_blueprint(health_bp)
     aio_event.http_handler.register_blueprint(waiter_bp)
 
