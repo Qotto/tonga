@@ -4,9 +4,11 @@
 
 from aiokafka import TopicPartition
 from aioevent import BaseEvent, AioEvent
-from aioevent.model.exceptions import KafkaProducerError
+from aioevent.model.exceptions import KafkaConsumerError
 
 from typing import Dict, Any
+
+from tests.coffee_bar.waiter.repository.base import NotFound
 
 __all__ = [
     'CoffeeServed'
@@ -27,11 +29,22 @@ class CoffeeServed(BaseEvent):
         self.amount = amount
 
     async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int):
-        print(self.__dict__)
         try:
-            app.get('waiter_state').add_coffee_served_state(self.uuid)
-        except KafkaProducerError('Fail to send event', 500) as err:
-            raise err
+            coffee = app.get('waiter_local_repository').get_coffee_by_uuid(self.uuid)
+            coffee.set_context(self.context)
+            coffee.set_state('served')
+            app.get('waiter_local_repository').upd_coffee(coffee)
+        except NotFound:
+            raise KafkaConsumerError(f'Fail to find coffee uuid : {self.uuid}', 404)
+
+    async def state_builder(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int):
+        try:
+            coffee = app.get('waiter_global_repository').get_coffee_by_uuid(self.uuid)
+            coffee.set_context(self.context)
+            coffee.set_state('served')
+            app.get('waiter_global_repository').upd_coffee(coffee)
+        except NotFound:
+            raise KafkaConsumerError(f'Fail to find coffee uuid : {self.uuid}', 404)
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):

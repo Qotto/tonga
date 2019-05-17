@@ -15,21 +15,16 @@ __all__ = [
 
 class CoffeeFinished(BaseEvent):
     uuid: str
-    cup_type: str
-    coffee_type: str
     coffee_for: str
     coffee_time: float
 
-    def __init__(self, uuid: str, cup_type: str, coffee_type: str, coffee_for: str, coffee_time: float,
-                 **kwargs) -> None:
+    def __init__(self, uuid: str, coffee_for: str, coffee_time: float, **kwargs) -> None:
         super().__init__(**kwargs)
         self.uuid = uuid
-        self.cup_type = cup_type
-        self.coffee_type = coffee_type
         self.coffee_for = coffee_for
         self.coffee_time = coffee_time
 
-    async def handle(self, app: BaseApp, corr_id: str, group_id: str, topic: TopicPartition, offset: int):
+    async def handle(self, app: BaseApp, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
         print(self.__dict__)
 
     @classmethod

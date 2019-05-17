@@ -4,11 +4,10 @@
 
 from aiokafka import TopicPartition
 from aioevent import BaseEvent, AioEvent
-from aioevent.model.exceptions import KafkaProducerError
 
 from typing import Dict, Any
 
-from ...models.coffee import Coffee
+from tests.coffee_bar.waiter.models.coffee import Coffee
 
 __all__ = [
     'CoffeeOrdered'
@@ -30,11 +29,14 @@ class CoffeeOrdered(BaseEvent):
         self.coffee_for = coffee_for
         self.amount = amount
 
-    async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int):
-        print(self.__dict__)
-        new_order = Coffee(uuid=self.uuid, cup_type=self.cup_type,
-                           coffee_for=self.coffee_for, coffee_type=self.coffee_type, amount=self.amount)
-        app.get('waiter_state').add_ordered_coffee(new_order)
+    async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
+        coffee = Coffee(self.coffee_type, self.cup_type, self.coffee_for, self.amount, uuid=self.uuid)
+        app.get('waiter_local_repository').add_coffee(coffee)
+
+    async def state_builder(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition,
+                            offset: int) -> None:
+        coffee = Coffee(self.coffee_type, self.cup_type, self.coffee_for, self.amount, uuid=self.uuid)
+        app.get('waiter_global_repository').add_coffee(coffee)
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):

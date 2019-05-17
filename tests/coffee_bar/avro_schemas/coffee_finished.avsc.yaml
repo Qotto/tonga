@@ -42,7 +42,7 @@ fields:
     type: string
   - name: coffee_time
     doc: Time to make coffee
-    type: int
+    type: float
   - name: coffee_for
     doc: Coffee for
     type: string

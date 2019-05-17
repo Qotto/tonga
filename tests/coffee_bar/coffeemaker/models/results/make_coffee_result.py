@@ -19,7 +19,7 @@ class MakeCoffeeResult(BaseEvent):
         super().__init__(**kwargs)
         self.uuid = uuid
 
-    async def on_result(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int):
+    async def on_result(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
         pass
 
     @classmethod

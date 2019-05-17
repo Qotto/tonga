@@ -9,11 +9,11 @@ from typing import Dict, Any
 
 
 __all__ = [
-    'BillCreated'
+    'BillPaid'
 ]
 
 
-class BillCreated(BaseEvent):
+class BillPaid(BaseEvent):
     uuid: str
     coffee_uuid: str
     amount: float
@@ -25,7 +25,7 @@ class BillCreated(BaseEvent):
         self.amount = amount
 
     async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
-        print(self.__dict__)
+        pass
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):
@@ -33,4 +33,4 @@ class BillCreated(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.cashregister.event.BillCreated'
+        return 'aioevent.cashregister.event.BillPaid'

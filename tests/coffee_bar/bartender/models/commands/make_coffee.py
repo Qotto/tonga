@@ -24,7 +24,7 @@ class MakeCoffee(BaseCommand):
         self.cup_type = cup_type
         self.coffee_type = coffee_type
 
-    async def execute(self, app: BaseApp, corr_id: str, group_id: str, topic: TopicPartition, offset: int):
+    async def execute(self, app: BaseApp, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
         pass
 
     @classmethod

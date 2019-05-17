@@ -14,17 +14,13 @@ __all__ = [
 
 class CoffeeStarted(BaseEvent):
     uuid: str
-    cup_type: str
-    coffee_type: str
-    coffee_for: str
 
-    def __init__(self, uuid: str, coffee_for: str, **kwargs) -> None:
+    def __init__(self, uuid: str, **kwargs) -> None:
         super().__init__(**kwargs)
         self.uuid = uuid
-        self.coffee_for = coffee_for
 
-    async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int):
-        print(self.__dict__)
+    async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
+        pass
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):
@@ -32,4 +28,4 @@ class CoffeeStarted(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.coffeemaker.events.CoffeeStarted'
+        return 'aioevent.coffeemaker.event.CoffeeStarted'
