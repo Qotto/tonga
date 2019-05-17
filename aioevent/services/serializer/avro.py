@@ -63,7 +63,7 @@ class AvroSerializer(BaseSerializer):
                     raise Exception(f"Avro schema {schema_name} was defined more than once!")
                 self._schemas[schema_name] = avro_schema
 
-    def register_event_class(self, event_class: Type[BaseModel], event_name: str) -> None:
+    def register_class(self, event_class: Type[BaseModel], event_name: str) -> None:
         event_name_regex = re.compile(event_name)
 
         matched: bool = False

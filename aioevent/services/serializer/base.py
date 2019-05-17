@@ -21,5 +21,5 @@ class BaseSerializer:
     def decode(self, encoded_event: Any) -> BaseModel:
         raise NotImplementedError
 
-    def register_event_class(self, event_class: Type[BaseModel], event_name: str) -> None:
+    def register_class(self, event_class: Type[BaseModel], event_name: str) -> None:
         raise NotImplementedError
