@@ -3,7 +3,8 @@
 # Copyright (c) Qotto, 2019
 
 from .exceptions import AvroDecodeError, AvroEncodeError, CommandEventMissingProcessGuarantee, BadSerializer, \
-    KafkaProducerError, KafkaConsumerError
+    KafkaProducerError, KafkaConsumerError, StorePartitionAlreadyAssigned, StorePartitionNotAssigned, \
+    StoreKeyNotFound, KtableUnknownType, StoreMetadataCantNotUpdated
 
 __all__ = [
     'AvroEncodeError',
@@ -12,4 +13,9 @@ __all__ = [
     'BadSerializer',
     'KafkaConsumerError',
     'KafkaProducerError',
+    'StorePartitionAlreadyAssigned',
+    'StorePartitionNotAssigned',
+    'StoreKeyNotFound',
+    'KtableUnknownType',
+    'StoreMetadataCantNotUpdated',
 ]
