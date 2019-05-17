@@ -8,7 +8,7 @@ from datetime import timezone
 
 from typing import Dict, Any
 
-from ..utils.gen_correlation_id import gen_correlation_id
+from aioevent.utils.gen_correlation_id import gen_correlation_id
 
 __all__ = [
     'BaseModel',
