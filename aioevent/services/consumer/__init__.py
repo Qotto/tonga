@@ -3,7 +3,7 @@
 # Copyright (c) Qotto, 2019
 
 from .base import BaseConsumer
-from .kafka import KafkaConsumer
+from .consumer import KafkaConsumer
 
 __all__ = [
     'BaseConsumer',
