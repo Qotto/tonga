@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 tox = "*"
 mypy = "*"
+aiohttp = "*"
 
 [packages]
 sanic = "*"
