@@ -1,0 +1,11 @@
+{{ if .Values.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: waiter-configmap
+data:
+  waiter.cnf: |
+    {{- range $key, $val := .Values.waiter.config }}
+    {{ $key }}: {{ $val | quote }}
+    {{- end}}
+{{ end }}

@@ -1,0 +1,80 @@
+{{ if .Values.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: waiter
+spec:
+  selector:
+    matchLabels:
+      app: waiter
+  serviceName: waiter
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+{{ toYaml .Values.strategy  | indent 4 }}
+  template:
+    metadata:
+      labels:
+        app: waiter
+    spec:
+      initContainers:
+      - name: init-waiter
+        image: waiter:1.0
+        command:
+          - bash
+          - "-c"
+          - /
+            # Set -e Exit immediately if a command exits with a non-zero status,
+            # -x Print commands and their arguments as they are executed.
+            set -ex
+            # Generates waiter instance from pod ordinal index.
+            [[ `hostname` =~ -([0-9]+)$ ]] || exit 1
+            # Gets Re Match.
+            ordinal=${BASH_REMATCH[1]}
+            # Adds instance number in file.
+            echo $ordinal > /mnt/conf.d/waiter-instance.cnf
+          volumeMounts:
+            - name: conf
+              mountPath: /mnt/conf.d
+            - name: config-map
+              mountPath: /mnt/config-map
+      containers:
+      - name: waiter
+        image: waiter:1.0
+        env:
+          - name: PODS_REPLICAS
+            value: {{ .Values.replicaCount }}
+        ports:
+        - name: waiter
+          containerPort: 8000
+        volumeMounts:
+          - name: waiter_data
+            mountPath: /var/waiter
+            subPath: waiter
+          - name: conf
+            mountPath: /etc/waiter/conf.d
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 3
+          periodSeconds: 3
+      volumes:
+        - name: conf
+          emptyDir: {}
+        - name: config-map
+          configMap:
+            name: waiter
+  volumeClaimTemplates:
+    - metadata:
+        name: waiter_data
+        annotations:
+          volume.alpha.kubernetes.io/storage-class: default
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: "default"
+        resources:
+          requests:
+            storage: 1Gi
+{{ end }}
