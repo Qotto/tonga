@@ -3,7 +3,7 @@
 # Copyright (c) Qotto, 2019
 
 from .base import BaseProducer
-from .kafka import KafkaProducer
+from .producer import KafkaProducer
 
 __all__ = [
     'BaseProducer',

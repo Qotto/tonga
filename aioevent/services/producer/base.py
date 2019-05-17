@@ -34,6 +34,3 @@ class BaseProducer:
 
     async def partitions_by_topic(self, topic: str) -> List[str]:
         raise NotImplementedError
-
-    async def get_transactional_producer(self, transactional_uuid: str):
-        raise NotImplementedError
