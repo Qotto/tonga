@@ -7,7 +7,7 @@ from aioevent import BaseEvent, AioEvent
 
 from typing import Dict, Any
 
-from tests.coffee_bar.waiter.models.coffee import Coffee
+from examples.coffee_bar.waiter.models.coffee import Coffee
 
 __all__ = [
     'CoffeeOrdered'

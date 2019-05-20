@@ -8,7 +8,7 @@ from aioevent.model.exceptions import KafkaConsumerError
 
 from typing import Dict, Any
 
-from tests.coffee_bar.waiter.repository.base import NotFound
+from examples.coffee_bar.waiter.repository.base import NotFound
 
 __all__ = [
     'CoffeeServed'

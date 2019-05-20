@@ -7,8 +7,8 @@ from sanic import Blueprint, response
 from sanic.request import Request
 from sanic.response import HTTPResponse
 
-from tests.coffee_bar.waiter.models.events import CoffeeOrdered, CoffeeServed
-from tests.coffee_bar.waiter.models.coffee import Coffee
+from examples.coffee_bar.waiter.models.events import CoffeeOrdered, CoffeeServed
+from examples.coffee_bar.waiter.models.coffee import Coffee
 
 waiter_bp = Blueprint('waiter')
 
