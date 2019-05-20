@@ -70,6 +70,13 @@ class BaseStores(object):
     def __init__(self, name: str):
         self._name = name
 
+    def set_store_position(self, assigned_partitions: List[TopicPartition],
+                           last_offsets: Dict[TopicPartition, int]) -> None:
+        raise NotImplementedError
+
+    def is_initialized(self) -> bool:
+        raise NotImplementedError
+
     def get(self, key: str) -> bytes:
         raise NotImplementedError
 
@@ -87,3 +94,7 @@ class BaseStores(object):
 
     def _update_metadata(self) -> None:
         raise NotImplementedError
+
+    def flush(self) -> None:
+        raise NotImplementedError
+
