@@ -9,6 +9,8 @@ from kafka.admin import KafkaAdminClient
 
 from typing import List
 
+from aioevent.services.store_builder.base import BaseStoreBuilder
+
 from aioevent.services.stores.local.base import BaseLocalStore
 from aioevent.services.stores.globall.base import BaseGlobalStore
 
@@ -22,7 +24,7 @@ __all__ = [
 ]
 
 
-class StoreBuilder:
+class StoreBuilder(BaseStoreBuilder):
     """
     StoreBuilder Class
 
