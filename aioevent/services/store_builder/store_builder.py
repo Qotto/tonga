@@ -11,13 +11,15 @@ from typing import List
 
 from aioevent.services.store_builder.base import BaseStoreBuilder
 
+from aioevent.services.serializer.base import BaseSerializer
+
 from aioevent.services.stores.local.base import BaseLocalStore
 from aioevent.services.stores.globall.base import BaseGlobalStore
 
 from aioevent.services.consumer.consumer import AioeventConsumer
 from aioevent.services.producer.producer import AioeventProducer
 
-from aioevent.model.exceptions import StoreKeyNotFound
+from aioevent.model.exceptions import StoreKeyNotFound, KafkaConsumerError
 
 __all__ = [
     'StoreBuilder'
@@ -69,9 +71,9 @@ class StoreBuilder(BaseStoreBuilder):
     _stores_partitions: List[TopicPartition]
 
     def __init__(self, store_builder_name: str, current_instance: int, nb_replica: int, topic_store: str,
-                 local_store: BaseLocalStore, global_store: BaseGlobalStore, cluster_metadata: ClusterMetadata,
-                 cluster_admin: KafkaAdminClient, loop: AbstractEventLoop, rebuild: bool = False,
-                 event_sourcing: bool = False) -> None:
+                 serializer: BaseSerializer, local_store: BaseLocalStore, global_store: BaseGlobalStore,
+                 bootstrap_server: str, cluster_metadata: ClusterMetadata, cluster_admin: KafkaAdminClient,
+                 loop: AbstractEventLoop, rebuild: bool = False, event_sourcing: bool = False) -> None:
         """
         StoreBuilder constructor
 
@@ -80,6 +82,7 @@ class StoreBuilder(BaseStoreBuilder):
             current_instance: Current service instance
             nb_replica: Number of service instance
             topic_store: Name topic where store event was send
+            serializer: Serializer, this param was sends by aioevent
             local_store: Local store instance Memory / Shelve / RockDB / ...
             global_store: Global store instance Memory / Shelve / RockDB / ...
             cluster_metadata: ClusterMetadata from kafka-python go to for more details
@@ -95,6 +98,9 @@ class StoreBuilder(BaseStoreBuilder):
         self._nb_replica = nb_replica
         self._rebuild = rebuild
         self._event_sourcing = event_sourcing
+        self._bootstrap_server = bootstrap_server
+
+        self._serializer = serializer
 
         self._topic_store = topic_store
 
@@ -106,13 +112,67 @@ class StoreBuilder(BaseStoreBuilder):
 
         self._loop = loop
 
-        self._store_consumer = ...  # type: ignore
+        auto_offset_reset = 'earliest'
+
+
+        self._store_consumer = AioeventConsumer(name=f'{self.name}_consumer', serializer=self._serializer,
+                                                bootstrap_servers=self._bootstrap_server,
+                                                client_id=f'{self.name}_consumer', topics=[self._topic_store],
+                                                loop=self._loop, app=None,
+                                                assignors_data={'instance': self._current_instance,
+                                                                'nb_replica': self._nb_replica,
+                                                                'assignor_policy': 'all'})
         self._store_producer = ...  # type: ignore
 
         self._stores_partitions = list()
 
-    def initialize_store_builder(self) -> None:
-        ...
+    async def initialize_store_builder(self) -> None:
+        # Initialize local store
+        try:
+            local_store_metadata = self._local_store.get_metadata()
+        except StoreKeyNotFound:
+            # If metadata doesn't exist in DB
+            assigned_partitions = list()
+            last_offsets = dict()
+            for i in range(0, self._nb_replica):
+                assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
+            for j in range(0, self._nb_replica):
+                last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
+
+            self._local_store.set_store_position(assigned_partitions, last_offsets)
+        else:
+            # If metadata is exist in DB
+            for tp, offset in local_store_metadata.last_offsets.items():
+                try:
+                    await self._store_consumer.seek_custom(tp.topic, tp.partition, offset)
+                except KafkaConsumerError:
+                    exit(-1) # TODO remove exit and replace by an exception
+            self._local_store.set_store_position(local_store_metadata.assigned_partitions,
+                                                 local_store_metadata.last_offsets)
+
+        # Initialize global store
+        try:
+            global_store_metadata = self._global_store.get_metadata()
+        except StoreKeyNotFound:
+            # If metadata doesn't exist in DB
+            assigned_partitions = list()
+            last_offsets = dict()
+            for i in range(0, self._nb_replica):
+                assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
+            for j in range(0, self._nb_replica):
+                last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
+
+            self._global_store.set_store_position(assigned_partitions, last_offsets)
+        else:
+            # If metadata is exist in DB
+            for tp, offset in global_store_metadata.last_offsets.items():
+                try:
+                    await self._store_consumer.seek_custom(tp.topic, tp.partition, offset)
+                except KafkaConsumerError:
+                    exit(-1) # TODO remove exit and replace by an exception
+            self._global_store.set_store_position(global_store_metadata.assigned_partitions,
+                                                 global_store_metadata.last_offsets)
+
 
     def get_local_store(self) -> BaseLocalStore:
         return self._local_store
