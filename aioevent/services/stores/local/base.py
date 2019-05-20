@@ -4,7 +4,7 @@
 
 from aiokafka import TopicPartition
 
-from typing import Dict
+from typing import Dict, List
 
 from aioevent.services.stores.base import BaseStores, BaseStoreMetaData
 
@@ -17,6 +17,13 @@ class BaseLocalStore(BaseStores):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def set_store_position(self, assigned_partitions: List[TopicPartition],
+                           last_offsets: Dict[TopicPartition, int]) -> None:
+        raise NotImplementedError
+
+    def is_initialized(self) -> bool:
+        raise NotImplementedError
 
     def get(self, key: str) -> bytes:
         raise NotImplementedError
@@ -41,3 +48,7 @@ class BaseLocalStore(BaseStores):
 
     def _update_metadata(self) -> None:
         raise NotImplementedError
+
+    def flush(self) -> None:
+        raise NotImplementedError
+

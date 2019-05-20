@@ -14,14 +14,33 @@ from aioevent.model.exceptions import StoreKeyNotFound, StoreMetadataCantNotUpda
 
 class LocalStoreMemory(BaseLocalStore):
     _db: Dict[str, bytes]
-    store_metadata: BaseStoreMetaData
+    _store_metadata: BaseStoreMetaData
+    _current_instance: int
+    _nb_replica: int
 
-    def __init__(self, assigned_partitions: List[TopicPartition], last_offsets: Dict[TopicPartition, int],
-                 current_instance: int, nb_replica: int, **kwargs):
+    _assigned_partitions: List[TopicPartition]
+    _last_offsets: Dict[TopicPartition, int]
+
+    _initialized: bool
+
+    def __init__(self, current_instance: int, nb_replica: int, **kwargs):
         super().__init__(**kwargs)
         self._db = dict()
-        self.store_metadata = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
+        self._current_instance = current_instance
+        self._nb_replica = nb_replica
+        self._initialized = False
+
+    def set_store_position(self, assigned_partitions: List[TopicPartition], last_offsets: Dict[TopicPartition, int]):
+        self._assigned_partitions = assigned_partitions
+        self._last_offsets = last_offsets
+
+        self._store_metadata = BaseStoreMetaData(self._assigned_partitions, self._last_offsets, self._current_instance,
+                                                 self._nb_replica)
         self._update_metadata()
+        self._initialized = True
+
+    def is_initialized(self) -> bool:
+        return self._initialized
 
     def get(self, key: str) -> Any:
         if not isinstance(key, str):
@@ -48,14 +67,20 @@ class LocalStoreMemory(BaseLocalStore):
         return self._db
 
     def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
-        self.store_metadata.update_last_offsets(tp, offset)
+        self._store_metadata.update_last_offsets(tp, offset)
         self._update_metadata()
 
     def get_metadata(self) -> BaseStoreMetaData:
+        if 'metadata' not in self._db:
+            raise StoreKeyNotFound(f'Metadata was not found in LocalStoreMemory', 500)
         return BaseStoreMetaData.from_dict(ast.literal_eval(self._db['metadata'].decode('utf-8')))
 
     def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         self._db['metadata'] = bytes(str(metadata.to_dict()), 'utf-8')
 
     def _update_metadata(self) -> None:
-        self._db['metadata'] = bytes(str(self.store_metadata.to_dict()), 'utf-8')
+        self._db['metadata'] = bytes(str(self._store_metadata.to_dict()), 'utf-8')
+
+    def flush(self) -> None:
+        del self._db
+        self._db = {'metadata': bytes(str(self._store_metadata.to_dict()), 'utf-8')}
