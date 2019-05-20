@@ -8,6 +8,7 @@ tox = "*"
 mypy = "*"
 aiohttp = "*"
 pytest = "*"
+coverage = "*"
 
 [packages]
 sanic = "*"
