@@ -6,8 +6,8 @@ from aiokafka import TopicPartition
 
 from typing import Dict, Any
 
-from aioevent.app.aioevent import AioEvent
-from aioevent.model.storage_builder.base import BaseStore
+from aioevent.services.store_builder.store_builder import StoreBuilder
+from aioevent.model.storage_builder.base import BaseStorageBuilder
 from aioevent.model.exceptions import KtableUnknownType
 
 __all__ = [
@@ -15,12 +15,12 @@ __all__ = [
 ]
 
 
-class StorageBuilder(BaseStore):
+class StorageBuilder(BaseStorageBuilder):
     key: str
     type: str
-    value: Dict[str, Any]
+    value: bytes
 
-    def __init__(self, key: bytes, ttype: str, value: Dict[str, Any], **kwargs) -> None:
+    def __init__(self, key: bytes, ttype: str, value: bytes, **kwargs) -> None:
         super().__init__(**kwargs)
         self.key = key.decode('utf-8')
         self.type = ttype
@@ -34,20 +34,22 @@ class StorageBuilder(BaseStore):
     def event_name(cls) -> str:
         return 'aioevent.storage.builder'
 
-    async def local_state_handler(self, app: AioEvent, group_id: str, tp: TopicPartition, offset: int):
+    async def local_state_handler(self, store_builder: StoreBuilder, group_id: str, tp: TopicPartition, offset: int):
+        # TODO check if is metadata
         if self.type == 'set':
-            app.local_stores[self.store_name].set(self.key, self.__dict__)
+            store_builder.get_local_store().set(self.key, self.value)
         elif self.type == 'del':
-            app.local_stores[self.store_name].delete(self.key)
+            store_builder.get_local_store().delete(self.key)
         else:
             raise KtableUnknownType(f'Local state type: {self.type} is unknown', 500)
-        app.local_stores[self.store_name].update_tp_offset(tp, offset)
+        store_builder.get_local_store().update_metadata_tp_offset(tp, offset)
 
-    async def global_state_handler(self, app: AioEvent, group_id: str, tp: TopicPartition, offset: int):
+    async def global_state_handler(self, store_builder: StoreBuilder, group_id: str, tp: TopicPartition, offset: int):
+        # TODO check if is metadata
         if self.type == 'set':
-            app.global_stores[self.store_name].global_set(self.key, self.__dict__)
+            store_builder.get_global_store().global_set(self.key, self.value)
         elif self.type == 'del':
-            app.global_stores[self.store_name].global_delete(self.key)
+            store_builder.get_global_store().global_delete(self.key)
         else:
             raise KtableUnknownType(f'Global state type: {self.type} is unknown', 500)
-        app.global_stores[self.store_name].update_tp_offset(tp, offset)
+        store_builder.get_local_store().update_metadata_tp_offset(tp, offset)
