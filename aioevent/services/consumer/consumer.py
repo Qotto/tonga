@@ -17,7 +17,7 @@ from aiokafka.errors import (
 
 from typing import List, Dict, Any, Union
 
-from aioevent.app.aioevent import AioEvent
+from aioevent.app.base import BaseApp
 
 from aioevent.model.exceptions import BadSerializer, KafkaConsumerError
 from aioevent.model.event.event import BaseEvent
@@ -27,7 +27,7 @@ from aioevent.model.storage_builder.base import BaseStorageBuilder
 
 from aioevent.services.consumer.base import BaseConsumer
 from aioevent.services.serializer.base import BaseSerializer
-from aioevent.services.store_builder.store_builder import StoreBuilder
+from aioevent.services.store_builder.base import BaseStoreBuilder
 from aioevent.services.coordinator.assignors.statefulset_assignors import StatefulsetPartitionAssignor
 
 
@@ -63,7 +63,7 @@ class KafkaConsumer(BaseConsumer):
                                 which have been aborted. Non-transactional messages will be returned unconditionally in
                                 either mode.
         _assignors_data (Dict[str, Any]): Dict with assignors information, more details in StatefulsetPartitionAssignor
-        _store_builder (bool): If this flag is step consumer run build_stores() otherwise listen_event was started
+        _store_builder (BaseStoreBuilder): If this flag is step consumer run build_stores() otherwise listen_event was started
         _running (bool): Is running flag
         _kafka_consumer (AIOKafkaConsumer): AioKafkaConsumer for more information go to
         __current_offsets (Dict[TopicPartition, int]): Contains current TopicPartition and offsets
@@ -82,10 +82,10 @@ class KafkaConsumer(BaseConsumer):
     _max_retries: int
     _retry_interval: int
     _retry_backoff_coeff: int
-    _app: AioEvent
+    _app: BaseApp
     _isolation_level: str
     _assignors_data: Dict[str, Any]
-    _store_builder: StoreBuilder
+    _store_builder: BaseStoreBuilder
     _running: bool
     _kafka_consumer = AIOKafkaConsumer
 
@@ -96,10 +96,10 @@ class KafkaConsumer(BaseConsumer):
     _loop = AbstractEventLoop
     logger: Logger
 
-    def __init__(self, name: str, app: AioEvent, serializer: BaseSerializer, bootstrap_servers: Union[str, List[str]],
+    def __init__(self, name: str, app: BaseApp, serializer: BaseSerializer, bootstrap_servers: Union[str, List[str]],
                  client_id: str, topics: List[str], loop: AbstractEventLoop, group_id: str = None,
                  auto_offset_reset: str = 'earliest', max_retries: int = 10, retry_interval: int = 1000,
-                 retry_backoff_coeff: int = 2, assignors_data=None, store_builder: StoreBuilder = None,
+                 retry_backoff_coeff: int = 2, assignors_data=None, store_builder: BaseStoreBuilder = None,
                  isolation_level: str = 'read_uncommitted') -> None:
         """
         KafkaConsumer constructor
@@ -664,7 +664,7 @@ class KafkaConsumer(BaseConsumer):
 
         self.logger.debug(f'Last committed offset = {self.__last_committed_offsets}')
 
-    def get_app(self) -> AioEvent:
+    def get_app(self) -> BaseApp:
         """
         Get main app
 
