@@ -21,7 +21,7 @@ from .base import BaseApp
 from aioevent.services.serializer import BaseSerializer, AvroSerializer
 from aioevent.services.consumer import BaseConsumer, KafkaConsumer
 from aioevent.services.producer import BaseProducer, KafkaProducer
-from aioevent.services.store_builder import StoreBuilder
+from aioevent.services.store_builder.store_builder import StoreBuilder
 from aioevent.services.stores.local.base import BaseLocalStore
 from aioevent.services.stores.globall.base import BaseGlobalStore
 
