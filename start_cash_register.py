@@ -9,11 +9,11 @@ from logging.config import dictConfig
 
 from aioevent import AioEvent
 
-from tests.coffee_bar.cash_register.interfaces.rest.health import health_bp
-from tests.coffee_bar.cash_register.interfaces.rest.cash_register import cash_register_bp
+from examples.coffee_bar.cash_register.interfaces.rest.health import health_bp
+from examples.coffee_bar.cash_register.interfaces.rest.cash_register import cash_register_bp
 
-from tests.coffee_bar.cash_register.repository.cash_register.shelf import ShelfCashRegisterRepository
-from tests.coffee_bar.cash_register.models import BillCreated, BillPaid, CoffeeServed, CoffeeOrdered
+from examples.coffee_bar.cash_register.repository.cash_register.shelf import ShelfCashRegisterRepository
+from examples.coffee_bar.cash_register.models import BillCreated, BillPaid, CoffeeServed, CoffeeOrdered
 
 
 if __name__ == '__main__':

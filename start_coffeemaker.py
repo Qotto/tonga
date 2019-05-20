@@ -8,7 +8,7 @@ from logging.config import dictConfig
 
 from aioevent import AioEvent
 
-from tests.coffee_bar.coffeemaker.models import MakeCoffee, MakeCoffeeResult, CoffeeStarted
+from examples.coffee_bar.coffeemaker.models import MakeCoffee, MakeCoffeeResult, CoffeeStarted
 
 
 if __name__ == '__main__':

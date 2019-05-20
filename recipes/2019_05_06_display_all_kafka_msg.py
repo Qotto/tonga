@@ -8,9 +8,9 @@ from logging.config import dictConfig
 
 from aioevent import AioEvent
 
-from tests.coffee_bar.bartender.models.events import CoffeeFinished
-from tests.coffee_bar.bartender.models.commands import MakeCoffee
-from tests.coffee_bar.coffeemaker.models.events import CoffeeStarted
+from examples.coffee_bar.bartender.models.events import CoffeeFinished
+from examples.coffee_bar.bartender.models.commands import MakeCoffee
+from examples.coffee_bar.coffeemaker.models.events import CoffeeStarted
 
 if __name__ == '__main__':
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))

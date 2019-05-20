@@ -9,7 +9,7 @@ from logging.config import dictConfig
 
 from aioevent import AioEvent
 
-from tests.coffee_bar.bartender.models import MakeCoffee, MakeCoffeeResult, CoffeeFinished, BillCreated, BillPaid
+from examples.coffee_bar.bartender.models import MakeCoffee, MakeCoffeeResult, CoffeeFinished, BillCreated, BillPaid
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Waiter Parser')

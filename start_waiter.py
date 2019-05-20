@@ -9,10 +9,10 @@ from logging.config import dictConfig
 
 from aioevent import AioEvent
 
-from tests.coffee_bar.waiter.repository.waiter.shelf import ShelfWaiterRepository
-from tests.coffee_bar.waiter.interfaces.rest.health import health_bp
-from tests.coffee_bar.waiter.interfaces.rest.waiter import waiter_bp
-from tests.coffee_bar.waiter.models import CoffeeOrdered, CoffeeFinished, CoffeeServed
+from examples.coffee_bar.waiter.repository.waiter.shelf import ShelfWaiterRepository
+from examples.coffee_bar.waiter.interfaces.rest.health import health_bp
+from examples.coffee_bar.waiter.interfaces.rest.waiter import waiter_bp
+from examples.coffee_bar.waiter.models import CoffeeOrdered, CoffeeFinished, CoffeeServed
 
 
 if __name__ == '__main__':
