@@ -13,8 +13,8 @@ from aioevent.model.exceptions import StoreKeyNotFound, StoreMetadataCantNotUpda
 
 
 class GlobalStoreMemory(BaseGlobalStore):
-    _db = Dict[str, bytes]
-    store_metadata = BaseStoreMetaData
+    _db: Dict[str, bytes]
+    store_metadata: BaseStoreMetaData
 
     def __init__(self, assigned_partitions: List[TopicPartition], last_offsets: Dict[TopicPartition, int],
                  current_instance: int, nb_replica: int, **kwargs):

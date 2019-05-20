@@ -106,8 +106,8 @@ class StoreBuilder(BaseStoreBuilder):
 
         self._loop = loop
 
-        self._store_consumer = ...
-        self._store_producer = ...
+        self._store_consumer = ...  # type: ignore
+        self._store_producer = ...  # type: ignore
 
         self._stores_partitions = list()
 

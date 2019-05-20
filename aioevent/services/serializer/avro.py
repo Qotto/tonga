@@ -7,7 +7,7 @@ import os
 import logging
 import yaml
 import json
-from yaml import FullLoader
+from yaml import FullLoader  # type: ignore
 from logging import Logger
 from avro.datafile import DataFileWriter, DataFileReader
 from avro.io import DatumWriter, DatumReader
@@ -103,7 +103,7 @@ class AvroSerializer(BaseSerializer):
         # finds a matching event name
         event_class = None
         for e_name, e_class in self._events.items():
-            if e_name.match(schema_name):
+            if e_name.match(schema_name):  # type: ignore
                 event_class = e_class
                 break
 

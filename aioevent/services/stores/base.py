@@ -16,8 +16,8 @@ __all__ = [
 
 class BaseStoreMetaData(object):
     assigned_partitions: List[TopicPartition]
-    current_instance = int
-    nb_replica = int
+    current_instance: int
+    nb_replica: int
     last_offsets: Dict[TopicPartition, int]
 
     def __init__(self, assigned_partitions: List[TopicPartition], last_offsets: Dict[TopicPartition, int],
@@ -70,10 +70,10 @@ class BaseStores(object):
     def __init__(self, name: str):
         self._name = name
 
-    def get(self, key: bytes) -> Any:
+    def get(self, key: str) -> bytes:
         raise NotImplementedError
 
-    def get_all(self) -> Dict[bytes, Any]:
+    def get_all(self) -> Dict[str, bytes]:
         raise NotImplementedError
 
     def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:

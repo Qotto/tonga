@@ -7,11 +7,12 @@ import json
 import collections
 
 from kafka import TopicPartition
+from kafka.protocol.types import Array, Bytes, Int16, Int32, Schema, String
 from kafka.cluster import ClusterMetadata
 from kafka.coordinator.assignors.abstract import AbstractPartitionAssignor
 from kafka.coordinator.protocol import ConsumerProtocolMemberMetadata, ConsumerProtocolMemberAssignment
 
-from typing import Dict
+from typing import Dict, DefaultDict, Any, Set
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,8 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         logger.debug(f'Cluster = {cluster}\nMembers = {members}')
 
         # Get all topic
-        all_topics = set()
+
+        all_topics: Set = set()
         for key, metadata in members.items():
             all_topics.update(metadata.subscription)
 
@@ -45,7 +47,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         all_topic_partitions.sort()
 
         # Create default dict with lambda
-        assignment = collections.defaultdict(lambda: collections.defaultdict(list))
+        assignment: DefaultDict[str, Any] = collections.defaultdict(lambda: collections.defaultdict(list))
         for member_id in members:
             for tp in all_topic_partitions:
                 user_data = json.loads(members[member_id].user_data)

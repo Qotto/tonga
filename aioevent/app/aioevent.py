@@ -195,7 +195,7 @@ class AioEvent(BaseApp):
         Returns:
             BaseConsumer instance
         """
-        self._consumers[consumer_name] = KafkaConsumer(app=self, serializer=self.serializer, **kwargs)
+        self._consumers[consumer_name] = KafkaConsumer(app=self, serializer=self.serializer, loop=self._loop, **kwargs)  # type: ignore
         if listen_event:
             asyncio.ensure_future(self._consumers[consumer_name].listen_event(mod), loop=self._loop)
         return self._consumers[consumer_name]
@@ -211,7 +211,7 @@ class AioEvent(BaseApp):
         Returns:
             BaseProducer instance
         """
-        self._producers[producer_name] = KafkaProducer(serializer=self.serializer, **kwargs)
+        self._producers[producer_name] = KafkaProducer(serializer=self.serializer, loop=self._loop, **kwargs)
         return self._producers[producer_name]
 
     def add_task(self, task: Union[Callable, Coroutine]) -> None:

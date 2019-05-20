@@ -63,7 +63,8 @@ class KafkaConsumer(BaseConsumer):
                                 which have been aborted. Non-transactional messages will be returned unconditionally in
                                 either mode.
         _assignors_data (Dict[str, Any]): Dict with assignors information, more details in StatefulsetPartitionAssignor
-        _store_builder (BaseStoreBuilder): If this flag is step consumer run build_stores() otherwise listen_event was started
+        _store_builder (BaseStoreBuilder): If this flag is step consumer run build_stores() otherwise listen_event
+                                           was started
         _running (bool): Is running flag
         _kafka_consumer (AIOKafkaConsumer): AioKafkaConsumer for more information go to
         __current_offsets (Dict[TopicPartition, int]): Contains current TopicPartition and offsets
@@ -87,13 +88,13 @@ class KafkaConsumer(BaseConsumer):
     _assignors_data: Dict[str, Any]
     _store_builder: BaseStoreBuilder
     _running: bool
-    _kafka_consumer = AIOKafkaConsumer
+    _kafka_consumer: AIOKafkaConsumer
 
     __current_offsets: Dict[TopicPartition, int]
     __last_offsets: Dict[TopicPartition, int]
     __last_committed_offsets: Dict[TopicPartition, int]
 
-    _loop = AbstractEventLoop
+    _loop: AbstractEventLoop
     logger: Logger
 
     def __init__(self, name: str, app: BaseApp, serializer: BaseSerializer, bootstrap_servers: Union[str, List[str]],

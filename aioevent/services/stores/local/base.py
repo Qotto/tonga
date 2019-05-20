@@ -4,7 +4,7 @@
 
 from aiokafka import TopicPartition
 
-from typing import Dict, Any
+from typing import Dict
 
 from aioevent.services.stores.base import BaseStores, BaseStoreMetaData
 
@@ -18,7 +18,7 @@ class BaseLocalStore(BaseStores):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def get(self, key: str) -> Any:
+    def get(self, key: str) -> bytes:
         raise NotImplementedError
 
     def set(self, key: str, value: bytes) -> None:
