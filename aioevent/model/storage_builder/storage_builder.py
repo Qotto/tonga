@@ -6,7 +6,7 @@ from aiokafka import TopicPartition
 
 from typing import Dict, Any
 
-from aioevent.services.store_builder.store_builder import StoreBuilder
+from aioevent.services.store_builder.base import BaseStoreBuilder
 from aioevent.model.storage_builder.base import BaseStorageBuilder
 from aioevent.model.exceptions import KtableUnknownType
 
@@ -34,7 +34,7 @@ class StorageBuilder(BaseStorageBuilder):
     def event_name(cls) -> str:
         return 'aioevent.storage.builder'
 
-    async def local_state_handler(self, store_builder: StoreBuilder, group_id: str, tp: TopicPartition, offset: int):
+    async def local_state_handler(self, store_builder: BaseStoreBuilder, group_id: str, tp: TopicPartition, offset: int):
         # TODO check if is metadata
         if self.type == 'set':
             store_builder.get_local_store().set(self.key, self.value)
@@ -44,7 +44,7 @@ class StorageBuilder(BaseStorageBuilder):
             raise KtableUnknownType(f'Local state type: {self.type} is unknown', 500)
         store_builder.get_local_store().update_metadata_tp_offset(tp, offset)
 
-    async def global_state_handler(self, store_builder: StoreBuilder, group_id: str, tp: TopicPartition, offset: int):
+    async def global_state_handler(self, store_builder: BaseStoreBuilder, group_id: str, tp: TopicPartition, offset: int):
         # TODO check if is metadata
         if self.type == 'set':
             store_builder.get_global_store().global_set(self.key, self.value)

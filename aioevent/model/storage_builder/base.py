@@ -8,7 +8,7 @@ from aiokafka import TopicPartition
 
 from typing import Dict, Any
 
-from aioevent.services.store_builder.store_builder import StoreBuilder
+from aioevent.services.store_builder.base import BaseStoreBuilder
 
 __all__ = [
     'BaseStorageBuilder'
@@ -45,10 +45,10 @@ class BaseStorageBuilder(object):
     def from_data(cls, event_data: Dict[str, Any]):
         raise NotImplementedError
 
-    async def local_state_handler(self, store_builder: StoreBuilder, group_id: str, topic: TopicPartition,
+    async def local_state_handler(self, store_builder: BaseStoreBuilder, group_id: str, topic: TopicPartition,
                                   offset: int) -> None:
         raise NotImplementedError
 
-    async def global_state_handler(self, store_builder: StoreBuilder, group_id: str, topic: TopicPartition,
+    async def global_state_handler(self, store_builder: BaseStoreBuilder, group_id: str, topic: TopicPartition,
                                    offset: int) -> None:
         raise NotImplementedError
