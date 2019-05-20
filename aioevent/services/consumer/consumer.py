@@ -97,11 +97,11 @@ class AioeventConsumer(BaseConsumer):
     _loop: AbstractEventLoop
     logger: Logger
 
-    def __init__(self, name: str, app: BaseApp, serializer: BaseSerializer, bootstrap_servers: Union[str, List[str]],
-                 client_id: str, topics: List[str], loop: AbstractEventLoop, group_id: str = None,
-                 auto_offset_reset: str = 'earliest', max_retries: int = 10, retry_interval: int = 1000,
-                 retry_backoff_coeff: int = 2, assignors_data=None, store_builder: BaseStoreBuilder = None,
-                 isolation_level: str = 'read_uncommitted') -> None:
+    def __init__(self, name: str, serializer: BaseSerializer, bootstrap_servers: Union[str, List[str]],
+                 client_id: str, topics: List[str], loop: AbstractEventLoop, app: BaseApp = None,
+                 group_id: str = None, auto_offset_reset: str = 'earliest', max_retries: int = 10,
+                 retry_interval: int = 1000, retry_backoff_coeff: int = 2, assignors_data=None,
+                 store_builder: BaseStoreBuilder = None, isolation_level: str = 'read_uncommitted') -> None:
         """
         KafkaConsumer constructor
 
@@ -333,6 +333,9 @@ class AioeventConsumer(BaseConsumer):
         Returns:
             None
         """
+        if self._app is None:
+            raise KeyError
+
         if not self._running:
             await self.load_offsets(mod)
 
@@ -619,7 +622,7 @@ class AioeventConsumer(BaseConsumer):
             await self._kafka_consumer.seek_to_committed()
             self.logger.debug(f'Seek to last committed for all topics & partitions')
 
-    async def seek_custom(self, partition: int = None, topic: str = None,  offset: int = None) -> None:
+    async def seek_custom(self, topic: str = None,  partition: int = None, offset: int = None) -> None:
         """
         Seek to custom offsets
 
