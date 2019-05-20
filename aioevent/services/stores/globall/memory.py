@@ -59,3 +59,7 @@ class GlobalStoreMemory(BaseGlobalStore):
 
     def _update_metadata(self) -> None:
         self._db['metadata'] = bytes(str(self.store_metadata.to_dict()), 'utf-8')
+
+    def flush(self) -> None:
+        del self._db
+        self._db = {'metadata': bytes(str(self.store_metadata.to_dict()), 'utf-8')}

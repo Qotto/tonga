@@ -40,3 +40,6 @@ class BaseGlobalStore(BaseStores):
 
     def _update_metadata(self) -> None:
         raise NotImplementedError
+
+    def flush(self) -> None:
+        raise NotImplementedError
