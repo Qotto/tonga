@@ -18,7 +18,7 @@ class BaseStoreMetaData(object):
     assigned_partitions: List[TopicPartition]
     current_instance = int
     nb_replica = int
-    last_offsets: Dict[TopicPartition: int]
+    last_offsets: Dict[TopicPartition, int]
 
     def __init__(self, assigned_partitions: List[TopicPartition], last_offsets: Dict[TopicPartition, int],
                  current_instance: int, nb_replica: int):
@@ -46,9 +46,24 @@ class BaseStoreMetaData(object):
             self.assigned_partitions.remove(tp)
             del self.last_offsets[tp]
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'assigned_partitions': [{'topic': tp.topic, 'partition': tp.partition} for tp in self.assigned_partitions],
+            'current_instance': self.current_instance,
+            'nb_replica': self.nb_replica,
+            'last_offsets': [{'topic': tp.topic, 'partition': tp.partition, 'offsets': key} for tp, key in
+                             self.last_offsets.items()]
+        }
+
     @classmethod
     def from_dict(cls, meta_dict: Dict[str, Any]):
-        return cls(**meta_dict)
+        assigned_partitions = [TopicPartition(tp['topic'], tp['partition']) for tp in
+                               meta_dict['assigned_partitions']]
+        last_offsets = {}
+        for tp in meta_dict['last_offsets']:
+            last_offsets[TopicPartition(tp['topic'], tp['partition'])] = tp['offsets']
+        return cls(assigned_partitions=assigned_partitions, last_offsets=last_offsets,
+                   current_instance=meta_dict['current_instance'], nb_replica=meta_dict['nb_replica'])
 
 
 class BaseStores(object):
@@ -64,7 +79,10 @@ class BaseStores(object):
     def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
         raise NotImplementedError
 
-    def _get_metadata(self) -> BaseStoreMetaData:
+    def set_metadata(self, metadata: BaseStoreMetaData) -> None:
+        raise NotImplementedError
+
+    def get_metadata(self) -> BaseStoreMetaData:
         raise NotImplementedError
 
     def _update_metadata(self) -> None:

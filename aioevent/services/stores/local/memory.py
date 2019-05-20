@@ -2,6 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+import ast
 from aiokafka import TopicPartition
 
 from typing import Dict, Any, List
@@ -12,46 +13,49 @@ from aioevent.model.exceptions import StoreKeyNotFound, StoreMetadataCantNotUpda
 
 
 class LocalStoreMemory(BaseLocalStore):
-    _db = Dict[bytes, Any]
+    _db = Dict[str, bytes]
     store_metadata = BaseStoreMetaData
 
     def __init__(self, assigned_partitions: List[TopicPartition], last_offsets: Dict[TopicPartition, int],
-                 current_instance: int, nb_replica: int):
-        super().__init__()
+                 current_instance: int, nb_replica: int, **kwargs):
+        super().__init__(**kwargs)
         self._db = dict()
         self.store_metadata = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
         self._update_metadata()
 
-    def get(self, key: bytes) -> Any:
-        if not isinstance(key, bytes):
+    def get(self, key: str) -> Any:
+        if not isinstance(key, str):
             raise ValueError
         if key not in self._db:
             raise StoreKeyNotFound(f'key: {key} was not found in LocalStoreMemory', 500)
         return self._db[key]
 
-    def set(self, key: bytes, value: Any) -> None:
-        if not isinstance(key, bytes):
+    def set(self, key: str, value: bytes) -> None:
+        if not isinstance(key, str) or not isinstance(value, bytes):
             raise ValueError
-        if key == b'metadata':
+        if key == 'metadata':
             raise StoreMetadataCantNotUpdated(f'Fail to update metadata with set function', 500)
         self._db[key] = value
 
-    def delete(self, key: bytes) -> None:
-        if not isinstance(key, bytes):
+    def delete(self, key: str) -> None:
+        if not isinstance(key, str):
             raise ValueError
         if key not in self._db:
             raise StoreKeyNotFound(f'Fail to delete key: {key}, not found in LocalStoreMemory', 500)
         del self._db[key]
 
-    def get_all(self) -> Dict[bytes, Any]:
-        return self._db.copy()
+    def get_all(self) -> Dict[str, bytes]:
+        return self._db
 
-    def update_metadata_tp_offset(self, tp: TopicPartition, offset: int):
+    def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
         self.store_metadata.update_last_offsets(tp, offset)
         self._update_metadata()
 
-    def _get_metadata(self) -> BaseStoreMetaData:
-        return BaseStoreMetaData.from_dict(self._db[b'metadata'])
+    def get_metadata(self) -> BaseStoreMetaData:
+        return BaseStoreMetaData.from_dict(ast.literal_eval(self._db['metadata'].decode('utf-8')))
+
+    def set_metadata(self, metadata: BaseStoreMetaData) -> None:
+        self._db['metadata'] = bytes(str(metadata.to_dict()), 'utf-8')
 
     def _update_metadata(self) -> None:
-        self._db[b'metadata'] = self.store_metadata.__dict__
+        self._db['metadata'] = bytes(str(self.store_metadata.to_dict()), 'utf-8')

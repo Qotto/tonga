@@ -18,22 +18,25 @@ class BaseLocalStore(BaseStores):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def get(self, key: bytes) -> Any:
+    def get(self, key: str) -> Any:
         raise NotImplementedError
 
-    def set(self, key: bytes, value: Any) -> None:
+    def set(self, key: str, value: bytes) -> None:
         raise NotImplementedError
 
-    def delete(self, key: bytes) -> None:
+    def delete(self, key: str) -> None:
         raise NotImplementedError
 
-    def get_all(self) -> Dict[bytes, Any]:
+    def get_all(self) -> Dict[str, bytes]:
+        raise NotImplementedError
+
+    def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         raise NotImplementedError
 
     def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
         raise NotImplementedError
 
-    def _get_metadata(self) -> BaseStoreMetaData:
+    def get_metadata(self) -> BaseStoreMetaData:
         raise NotImplementedError
 
     def _update_metadata(self) -> None:

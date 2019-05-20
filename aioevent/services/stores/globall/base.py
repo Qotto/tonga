@@ -20,13 +20,22 @@ class BaseGlobalStore(BaseStores):
     def get(self, key: str) -> Any:
         raise NotImplementedError
 
-    def get_all(self) -> Dict[str, Any]:
+    def get_all(self) -> Dict[str, bytes]:
+        raise NotImplementedError
+
+    def global_set(self, key: str, value: bytes) -> None:
+        raise NotImplementedError
+
+    def global_delete(self, key: str) -> None:
+        raise NotImplementedError
+
+    def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         raise NotImplementedError
 
     def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
         raise NotImplementedError
 
-    def _get_metadata(self) -> BaseStoreMetaData:
+    def get_metadata(self) -> BaseStoreMetaData:
         raise NotImplementedError
 
     def _update_metadata(self) -> None:
