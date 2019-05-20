@@ -19,8 +19,8 @@ from typing import Dict, Any, List, Union, Callable, Coroutine
 
 from .base import BaseApp
 from aioevent.services.serializer import BaseSerializer, AvroSerializer
-from aioevent.services.consumer import BaseConsumer, KafkaConsumer
-from aioevent.services.producer import BaseProducer, KafkaProducer
+from aioevent.services.consumer import BaseConsumer, AioeventConsumer
+from aioevent.services.producer import BaseProducer, AioeventProducer
 from aioevent.services.store_builder.store_builder import StoreBuilder
 from aioevent.services.stores.local.base import BaseLocalStore
 from aioevent.services.stores.globall.base import BaseGlobalStore
@@ -63,8 +63,8 @@ class AioEvent(BaseApp):
     _avro_schemas_folder: str
     serializer: BaseSerializer
 
-    _consumers: Dict[str, KafkaConsumer]
-    _producers: Dict[str, KafkaProducer]
+    _consumers: Dict[str, AioeventConsumer]
+    _producers: Dict[str, AioeventProducer]
 
     _stores_builder: Dict[str, StoreBuilder]
 
@@ -195,7 +195,7 @@ class AioEvent(BaseApp):
         Returns:
             BaseConsumer instance
         """
-        self._consumers[consumer_name] = KafkaConsumer(app=self, serializer=self.serializer, loop=self._loop, **kwargs)  # type: ignore
+        self._consumers[consumer_name] = AioeventConsumer(app=self, serializer=self.serializer, loop=self._loop, **kwargs)  # type: ignore
         if listen_event:
             asyncio.ensure_future(self._consumers[consumer_name].listen_event(mod), loop=self._loop)
         return self._consumers[consumer_name]
@@ -211,7 +211,7 @@ class AioEvent(BaseApp):
         Returns:
             BaseProducer instance
         """
-        self._producers[producer_name] = KafkaProducer(serializer=self.serializer, loop=self._loop, **kwargs)
+        self._producers[producer_name] = AioeventProducer(serializer=self.serializer, loop=self._loop, **kwargs)
         return self._producers[producer_name]
 
     def add_task(self, task: Union[Callable, Coroutine]) -> None:

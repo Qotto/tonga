@@ -32,11 +32,11 @@ from aioevent.services.coordinator.assignors.statefulset_assignors import Statef
 
 
 __all__ = [
-    'KafkaConsumer',
+    'AioeventConsumer',
 ]
 
 
-class KafkaConsumer(BaseConsumer):
+class AioeventConsumer(BaseConsumer):
     """
     KafkaConsumer Class
 

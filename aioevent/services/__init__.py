@@ -4,15 +4,15 @@
 
 
 from .serializer import AvroSerializer, BaseSerializer
-from .consumer import KafkaConsumer, BaseConsumer
-from .producer import KafkaProducer, BaseProducer
+from .consumer import AioeventConsumer, BaseConsumer
+from .producer import AioeventProducer, BaseProducer
 
 
 __all__ = [
     'BaseSerializer',
     'AvroSerializer',
     'BaseProducer',
-    'KafkaProducer',
+    'AioeventProducer',
     'BaseConsumer',
-    'KafkaConsumer',
+    'AioeventConsumer',
 ]

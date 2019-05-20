@@ -3,9 +3,9 @@
 # Copyright (c) Qotto, 2019
 
 from .base import BaseProducer
-from .producer import KafkaProducer
+from .producer import AioeventProducer
 
 __all__ = [
     'BaseProducer',
-    'KafkaProducer',
+    'AioeventProducer',
 ]

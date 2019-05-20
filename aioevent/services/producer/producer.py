@@ -18,11 +18,11 @@ from aioevent.model.base import BaseModel
 from aioevent.model.exceptions import KafkaProducerError, BadSerializer
 
 __all__ = [
-    'KafkaProducer',
+    'AioeventProducer',
 ]
 
 
-class KafkaProducer(BaseProducer):
+class AioeventProducer(BaseProducer):
     """
     KafkaProducer Class, this class make bridge between AioKafkaProducer an AioEvent
 

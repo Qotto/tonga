@@ -14,8 +14,8 @@ from aioevent.services.store_builder.base import BaseStoreBuilder
 from aioevent.services.stores.local.base import BaseLocalStore
 from aioevent.services.stores.globall.base import BaseGlobalStore
 
-from aioevent.services.consumer.consumer import KafkaConsumer
-from aioevent.services.producer.producer import KafkaProducer
+from aioevent.services.consumer.consumer import AioeventConsumer
+from aioevent.services.producer.producer import AioeventProducer
 
 from aioevent.model.exceptions import StoreKeyNotFound
 
@@ -63,8 +63,8 @@ class StoreBuilder(BaseStoreBuilder):
 
     _loop: AbstractEventLoop
 
-    _store_consumer: KafkaConsumer
-    _store_producer: KafkaProducer
+    _store_consumer: AioeventConsumer
+    _store_producer: AioeventProducer
 
     _stores_partitions: List[TopicPartition]
 
