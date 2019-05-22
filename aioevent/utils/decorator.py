@@ -12,9 +12,10 @@ __all__ = [
 
 def check_initialized(func):
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         if args[0].is_initialized():
-            return func(*args, **kwargs)
+            response = await func(*args, **kwargs)
+            return response
         else:
             raise UninitializedStore('Uninitialized store', 500)
     return wrapper
