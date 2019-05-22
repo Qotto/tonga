@@ -38,7 +38,7 @@ async def test_global_memory_uninitialized_store(get_global_memory_store_connect
 
 # Test build store
 @pytest.mark.asyncio
-async def test_local_memory_store_build_set(get_global_memory_store_connection):
+async def test_global_memory_store_build_set(get_global_memory_store_connection):
     global_memory_store = get_global_memory_store_connection
     await global_memory_store.global_set('test', b'value')
     await global_memory_store.global_set('test2', b'value')
@@ -152,10 +152,10 @@ async def test_global_memory_get_metadata(get_global_memory_store_connection):
     last_offsets = {TopicPartition('test', 2): 0}
     current_instance = 2
     nb_replica = 4
-    local_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica).to_dict()
+    global_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica).to_dict()
 
     db_meta = await global_memory_store.get_metadata()
-    assert db_meta.to_dict() == local_meta
+    assert db_meta.to_dict() == global_meta
 
 
 @pytest.mark.asyncio
@@ -168,7 +168,7 @@ async def test_global_memory_update_metadata_tp_offset(get_global_memory_store_c
     last_offsets = {TopicPartition('test', 2): 4}
     current_instance = 2
     nb_replica = 4
-    local_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica).to_dict()
+    global_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica).to_dict()
 
     db_meta = await global_memory_store.get_metadata()
-    assert db_meta.to_dict() == local_meta
+    assert db_meta.to_dict() == global_meta
