@@ -18,8 +18,9 @@ class BaseLocalStore(BaseStores):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def set_store_position(self, current_instance: int, nb_replica: int, assigned_partitions: List[TopicPartition],
-                           last_offsets: Dict[TopicPartition, int]) -> None:
+    async def set_store_position(self, current_instance: int, nb_replica: int,
+                                 assigned_partitions: List[TopicPartition],
+                                 last_offsets: Dict[TopicPartition, int]) -> None:
         raise NotImplementedError
 
     def is_initialized(self) -> bool:
@@ -28,36 +29,36 @@ class BaseLocalStore(BaseStores):
     def set_initialized(self, initialized: bool) -> None:
         raise NotImplementedError
 
-    def get(self, key: str) -> bytes:
+    async def get(self, key: str) -> bytes:
         raise NotImplementedError
 
-    def set(self, key: str, value: bytes) -> None:
+    async def set(self, key: str, value: bytes) -> None:
         raise NotImplementedError
 
-    def delete(self, key: str) -> None:
+    async def delete(self, key: str) -> None:
         raise NotImplementedError
 
-    def build_set(self, key: str, value: bytes) -> None:
+    async def build_set(self, key: str, value: bytes) -> None:
         raise NotImplementedError
 
-    def build_delete(self, key: str) -> None:
+    async def build_delete(self, key: str) -> None:
         raise NotImplementedError
 
-    def get_all(self) -> Dict[str, bytes]:
+    async def get_all(self) -> Dict[str, bytes]:
         raise NotImplementedError
 
-    def set_metadata(self, metadata: BaseStoreMetaData) -> None:
+    async def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         raise NotImplementedError
 
-    def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
         raise NotImplementedError
 
-    def get_metadata(self) -> BaseStoreMetaData:
+    async def get_metadata(self) -> BaseStoreMetaData:
         raise NotImplementedError
 
-    def _update_metadata(self) -> None:
+    async def _update_metadata(self) -> None:
         raise NotImplementedError
 
-    def flush(self) -> None:
+    async def flush(self) -> None:
         raise NotImplementedError
 
