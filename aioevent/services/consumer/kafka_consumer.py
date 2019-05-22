@@ -20,7 +20,7 @@ from typing import List, Dict, Any, Union
 from aioevent.models.exceptions import BadSerializer, KafkaConsumerError
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
-from aioevent.models.storage_builder.base import BaseStorageBuilder
+from aioevent.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
 
 from aioevent.services.consumer.base import BaseConsumer
 from aioevent.services.serializer.base import BaseSerializer
@@ -394,7 +394,7 @@ class KafkaConsumer(BaseConsumer):
                         logging.error(f'Max retries, close consumer and exit')
                         exit(1)
 
-    async def listen_state_builder(self, rebuild: bool = False) -> None:
+    async def listen_store_records(self, rebuild: bool = False) -> None:
         """
         Listens events for store construction
 
@@ -440,25 +440,28 @@ class KafkaConsumer(BaseConsumer):
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
                 try:
-                    event = msg.value
+                    decode_dict = msg.value
+                    event_class: BaseModel = decode_dict['event_class']
+                    handler_class: BaseStoreRecordHandler = decode_dict['handler_class']
 
-                    logging.debug(f'Store event name : {event.event_name()}\nEvent content :\n{event.__dict__}\n')
+                    logging.debug(f'Store event name : {event_class.event_name()}\nEvent '
+                                  f'content :\n{event_class.__dict__}\n')
 
                     result = None
                     if msg.partition == self._store_builder.get_current_instance():
                         # Calls local_state_handler if event is instance BaseStorageBuilder
                         if rebuild:
-                            if isinstance(event, BaseStorageBuilder):
-                                result = await event.local_state_handler(store_builder=self._store_builder,
-                                                                         group_id=self._group_id, topic=tp,
-                                                                         offset=msg.offset)
+                            if isinstance(event_class, BaseStoreRecord):
+                                result = await handler_class.local_store_handler(store_record=event_class,
+                                                                                 group_id=self._group_id, tp=tp,
+                                                                                 offset=msg.offset)
                             else:
                                 raise ValueError
                     elif msg.partition != self._store_builder.get_current_instance():
-                        if isinstance(event, BaseStorageBuilder):
-                            result = await event.global_state_handler(store_builder=self._store_builder,
-                                                                      group_id=self._group_id, topic=tp,
-                                                                      offset=msg.offset)
+                        if isinstance(event_class, BaseStoreRecord):
+                            result = await handler_class.global_store_handler(store_record=event_class,
+                                                                              group_id=self._group_id, tp=tp,
+                                                                              offset=msg.offset)
                         else:
                             raise ValueError
 
@@ -468,7 +471,7 @@ class KafkaConsumer(BaseConsumer):
                         # Check if next commit was possible (Kafka offset)
                         if self.__last_committed_offsets[tp] is None or \
                                 self.__last_committed_offsets[tp] <= self.__current_offsets[tp]:
-                            self.logger.debug(f'Commit msg {event.event_name()} in topic {msg.topic} partition '
+                            self.logger.debug(f'Commit msg {event_class.event_name()} in topic {msg.topic} partition '
                                               f'{msg.partition} offset {self.__current_offsets[tp] + 1}')
                             await self._kafka_consumer.commit({tp: self.__current_offsets[tp] + 1})
                             self.__last_committed_offsets[tp] = msg.offset + 1

@@ -27,7 +27,7 @@ class BaseConsumer:
     async def listen_event(self, mod: str = 'latest') -> None:
         raise NotImplementedError
 
-    async def listen_state_builder(self, rebuild: bool = False) -> None:
+    async def listen_store_records(self, rebuild: bool = False) -> None:
         raise NotImplementedError
 
     async def get_many(self, partitions: List[int] = None, max_records: int = None):
