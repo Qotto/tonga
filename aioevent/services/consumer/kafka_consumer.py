@@ -17,31 +17,27 @@ from aiokafka.errors import (
 
 from typing import List, Dict, Any, Union
 
-from aioevent.app.base import BaseApp
-
-from aioevent.model.exceptions import BadSerializer, KafkaConsumerError
-from aioevent.model.event.event import BaseEvent
-from aioevent.model.result.result import BaseResult
-from aioevent.model.command.command import BaseCommand
-from aioevent.model.storage_builder.base import BaseStorageBuilder
+from aioevent.models.exceptions import BadSerializer, KafkaConsumerError
+from aioevent.models.events.base import BaseModel
+from aioevent.models.handler.base import BaseHandler
+from aioevent.models.storage_builder.base import BaseStorageBuilder
 
 from aioevent.services.consumer.base import BaseConsumer
 from aioevent.services.serializer.base import BaseSerializer
-from aioevent.services.store_builder.base import BaseStoreBuilder
+from aioevent.stores.store_builder.base import BaseStoreBuilder
 from aioevent.services.coordinator.assignors.statefulset_assignors import StatefulsetPartitionAssignor
 
 
 __all__ = [
-    'AioeventConsumer',
+    'KafkaConsumer',
 ]
 
 
-class AioeventConsumer(BaseConsumer):
+class KafkaConsumer(BaseConsumer):
     """
     KafkaConsumer Class
 
     Attributes:
-        name (str): Kafka consumer name
         serializer (BaseSerializer): Serializer encode & decode event
         _bootstrap_servers (Union[str, List[str]): ‘host[:port]’ string (or list of ‘host[:port]’ strings) that
                                  the consumer should contact to bootstrap initial cluster metadata
@@ -56,7 +52,6 @@ class AioeventConsumer(BaseConsumer):
         _max_retries (int): Number of retries before critical failure
         _retry_interval (int): Interval before next retries
         _retry_backoff_coeff (int): Backoff coeff for next retries
-        _app (BaseApp): BaseApp instance
         _isolation_level (str): Controls how to read messages written transactionally. If set to read_committed,
                                 will only return transactional messages which have been committed.
                                 If set to read_uncommitted, will return all messages, even transactional messages
@@ -73,7 +68,6 @@ class AioeventConsumer(BaseConsumer):
         _loop (AbstractEventLoop): Asyncio loop
         logger (Logger): Python logger
     """
-    name: str
     serializer: BaseSerializer
     _bootstrap_servers: Union[str, List[str]]
     _client_id: str
@@ -83,7 +77,6 @@ class AioeventConsumer(BaseConsumer):
     _max_retries: int
     _retry_interval: int
     _retry_backoff_coeff: int
-    _app: BaseApp
     _isolation_level: str
     _assignors_data: Dict[str, Any]
     _store_builder: BaseStoreBuilder
@@ -98,7 +91,7 @@ class AioeventConsumer(BaseConsumer):
     logger: Logger
 
     def __init__(self, name: str, serializer: BaseSerializer, bootstrap_servers: Union[str, List[str]],
-                 client_id: str, topics: List[str], loop: AbstractEventLoop, app: BaseApp = None,
+                 client_id: str, topics: List[str], loop: AbstractEventLoop,
                  group_id: str = None, auto_offset_reset: str = 'earliest', max_retries: int = 10,
                  retry_interval: int = 1000, retry_backoff_coeff: int = 2, assignors_data=None,
                  store_builder: BaseStoreBuilder = None, isolation_level: str = 'read_uncommitted') -> None:
@@ -107,7 +100,6 @@ class AioeventConsumer(BaseConsumer):
 
         Args:
             name (str): Kafka consumer name
-            app (BaseSerializer): Serializer encode & decode event
             serializer (BaseSerializer): Serializer encode & decode event
             bootstrap_servers (Union[str, List[str]): ‘host[:port]’ string (or list of ‘host[:port]’ strings) that
                                                        the consumer should contact to bootstrap initial cluster metadata
@@ -142,8 +134,6 @@ class AioeventConsumer(BaseConsumer):
             assignors_data = {}
 
         self.logger = logging.getLogger(__name__)
-
-        self._app = app
 
         if isinstance(serializer, BaseSerializer):
             self.serializer = serializer
@@ -219,6 +209,9 @@ class AioeventConsumer(BaseConsumer):
             self.logger.debug(f'Stop consumer : {self._client_id}, group_id : {self._group_id}')
         except KafkaError as err:
             raise KafkaConsumerError(err.__str__(), 500)
+
+    def is_running(self) -> bool:
+        return self._running
 
     async def get_last_committed_offsets(self) -> Dict[TopicPartition, int]:
         """
@@ -333,9 +326,6 @@ class AioeventConsumer(BaseConsumer):
         Returns:
             None
         """
-        if self._app is None:
-            raise KeyError
-
         if not self._running:
             await self.load_offsets(mod)
 
@@ -358,24 +348,18 @@ class AioeventConsumer(BaseConsumer):
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
                 try:
-                    event = msg.value
+                    decode_dict = msg.value
+                    event_class: BaseModel = decode_dict['event_class']
+                    handler_class: BaseHandler = decode_dict['handler_class']
 
-                    logging.debug(f'Event name : {event.event_name()}\nEvent content :\n{event.__dict__}\n')
+                    logging.debug(f'Event name : {event_class.event_name()}\nEvent content :\n{event_class.__dict__}\n')
 
-                    # Calls handle if event is instance BaseEvent
-                    if isinstance(event, BaseEvent):
-                        result = await event.handle(app=self._app, corr_id=event.correlation_id,
-                                                    group_id=self._group_id, topic=tp, offset=msg.offset)
-                    # Calls execute if event is instance BaseCommand
-                    elif isinstance(event, BaseCommand):
-                        result = await event.execute(app=self._app, corr_id=event.correlation_id,
-                                                     group_id=self._group_id, topic=tp, offset=msg.offset)
-                    # Calls on_result if event is instance BaseResult
-                    elif isinstance(event, BaseResult):
-                        result = await event.on_result(app=self._app, corr_id=event.correlation_id,
-                                                       group_id=self._group_id, topic=tp, offset=msg.offset)
-                    # Otherwise raise ValueError
+                    # Calls handle if event is instance BaseHandler
+                    if isinstance(handler_class, BaseHandler):
+                        result = await handler_class.handle(event=event_class, group_id=self._group_id, tp=tp,
+                                                            offset=msg.offset)
                     else:
+                        # Otherwise raise ValueError
                         raise ValueError
 
                     # If result is none (no transactional process), check if consumer has an
@@ -384,7 +368,7 @@ class AioeventConsumer(BaseConsumer):
                         # Check if next commit was possible (Kafka offset)
                         if self.__last_committed_offsets[tp] is None or \
                                 self.__last_committed_offsets[tp] <= self.__current_offsets[tp]:
-                            self.logger.debug(f'Commit msg {event.event_name()} in topic {msg.topic} partition '
+                            self.logger.debug(f'Commit msg {event_class.event_name()} in topic {msg.topic} partition '
                                               f'{msg.partition} offset {self.__current_offsets[tp] + 1}')
                             await self._kafka_consumer.commit({tp: self.__current_offsets[tp] + 1})
                             self.__last_committed_offsets[tp] = msg.offset + 1
@@ -423,25 +407,35 @@ class AioeventConsumer(BaseConsumer):
         if self._store_builder is None:
             raise KeyError
 
+        await self.start_consumer()
+        await self._store_builder.initialize_store_builder()
+
         if not self._running:
-            if rebuild:
-                await self.load_offsets('earliest')
-            else:
-                await self.load_offsets('committed')
+            raise KafkaConsumerError('Fail to start AioeventConsumer', 500)
 
         self.pprint_consumer_offsets()
 
         async for msg in self._kafka_consumer:
             # Debug Display
             print("------------------------------------------------------------------------------------------------")
-            self.logger.debug(f'New Message on consumer {self._client_id}, Topic {msg.topic}, '
+            self.logger.debug(f'New Message on state builder consumer {self._client_id}, Topic {msg.topic}, '
                               f'Partition {msg.partition}, Offset {msg.offset}, Key {msg.key}, Value {msg.value},'
                               f'Headers {msg.headers}')
             self.pprint_consumer_offsets()
 
             tp = TopicPartition(msg.topic, msg.partition)
             self.__current_offsets[tp] = msg.offset
-            # self.last_offsets = await self.get_last_offsets()
+
+            # Stop rebuild if last_offsets is reached
+            if not self._store_builder.get_local_store().is_initialized():
+                if self.__current_offsets[tp] == self.__last_offsets[tp]:
+                    self._store_builder.get_local_store().set_initialized(True)
+                    rebuild = False
+
+            # Set initialize to true if global state was reached all last_offset of own partitions
+            if not self._store_builder.get_global_store().is_initialized():
+                if self.__current_offsets == self._store_builder.get_global_store().get_metadata().last_offsets:
+                    self._store_builder.get_global_store().set_initialized(True)
 
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
@@ -450,15 +444,16 @@ class AioeventConsumer(BaseConsumer):
 
                     logging.debug(f'Store event name : {event.event_name()}\nEvent content :\n{event.__dict__}\n')
 
-                    if msg.partition == self._store_builder.get_current_instance() and \
-                            self._store_builder.is_event_sourcing():
+                    result = None
+                    if msg.partition == self._store_builder.get_current_instance():
                         # Calls local_state_handler if event is instance BaseStorageBuilder
-                        if isinstance(event, BaseStorageBuilder):
-                            result = await event.local_state_handler(store_builder=self._store_builder,
-                                                                     group_id=self._group_id, topic=tp,
-                                                                     offset=msg.offset)
-                        else:
-                            raise ValueError
+                        if rebuild:
+                            if isinstance(event, BaseStorageBuilder):
+                                result = await event.local_state_handler(store_builder=self._store_builder,
+                                                                         group_id=self._group_id, topic=tp,
+                                                                         offset=msg.offset)
+                            else:
+                                raise ValueError
                     elif msg.partition != self._store_builder.get_current_instance():
                         if isinstance(event, BaseStorageBuilder):
                             result = await event.global_state_handler(store_builder=self._store_builder,
@@ -466,8 +461,6 @@ class AioeventConsumer(BaseConsumer):
                                                                       offset=msg.offset)
                         else:
                             raise ValueError
-
-                    # TODO I'm here /!\
 
                     # If result is none (no transactional process), check if consumer has an
                     # group_id (mandatory to commit in Kafka)
@@ -479,12 +472,6 @@ class AioeventConsumer(BaseConsumer):
                                               f'{msg.partition} offset {self.__current_offsets[tp] + 1}')
                             await self._kafka_consumer.commit({tp: self.__current_offsets[tp] + 1})
                             self.__last_committed_offsets[tp] = msg.offset + 1
-
-                    # Transactional process no commit
-                    elif result == 'transaction':
-                        self.logger.debug(f'Transaction end')
-                        self.__current_offsets = await self.get_current_offsets()
-                        self.__last_committed_offsets = await self.get_last_committed_offsets()
                     # Otherwise raise ValueError
                     else:
                         raise ValueError
@@ -667,15 +654,6 @@ class AioeventConsumer(BaseConsumer):
         self.logger.debug(f'Last Offset = {self.__last_offsets}')
 
         self.logger.debug(f'Last committed offset = {self.__last_committed_offsets}')
-
-    def get_app(self) -> BaseApp:
-        """
-        Get main app
-
-        Returns:
-            AioEvent: Instance of Aioevent
-        """
-        return self._app
 
     def get_aiokafka_consumer(self) -> AIOKafkaConsumer:
         """
