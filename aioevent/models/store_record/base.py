@@ -6,16 +6,14 @@ from datetime import datetime as py_datetime
 from datetime import timezone
 from aiokafka import TopicPartition
 
-from typing import Dict, Any
-
-from aioevent.stores.store_builder.base import BaseStoreBuilder
 
 __all__ = [
-    'BaseStorageBuilder'
+    'BaseStoreRecord',
+    'BaseStoreRecordHandler'
 ]
 
 
-class BaseStorageBuilder(object):
+class BaseStoreRecord(object):
     name: str
     schema_version: str
     timestamp: int
@@ -41,14 +39,16 @@ class BaseStorageBuilder(object):
     def event_name(cls) -> str:
         raise NotImplementedError
 
+
+class BaseStoreRecordHandler:
     @classmethod
-    def from_data(cls, event_data: Dict[str, Any]):
+    def handler_name(cls) -> str:
         raise NotImplementedError
 
-    async def local_state_handler(self, store_builder: BaseStoreBuilder, group_id: str, topic: TopicPartition,
+    async def local_store_handler(self, store_record: BaseStoreRecord, group_id: str, tp: TopicPartition,
                                   offset: int) -> None:
         raise NotImplementedError
 
-    async def global_state_handler(self, store_builder: BaseStoreBuilder, group_id: str, topic: TopicPartition,
+    async def global_store_handler(self, store_record: BaseStoreRecord, group_id: str, tp: TopicPartition,
                                    offset: int) -> None:
         raise NotImplementedError
