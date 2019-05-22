@@ -24,7 +24,7 @@ fields:
 
   - name: key
     doc: Key for value
-    type: bytes
+    type: string
 
   - name: value
     doc: State value
