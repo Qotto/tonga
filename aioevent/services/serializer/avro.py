@@ -15,11 +15,13 @@ from avro.schema import NamedSchema, Parse
 from avro.io import AvroTypeException
 from io import BytesIO
 
-from typing import Dict, Type, Any
+from typing import Dict, Type, Any, Union
 
 from .base import BaseSerializer
-from aioevent.model.base import BaseModel
-from aioevent.model.exceptions import AvroEncodeError, AvroDecodeError
+
+from aioevent.models.events.base import BaseModel
+from aioevent.models.handler.base import BaseHandler
+from aioevent.models.exceptions import AvroEncodeError, AvroDecodeError
 
 
 __all__ = [
@@ -32,7 +34,7 @@ class AvroSerializer(BaseSerializer):
     logger: Logger
     schemas_folder: str
     _schemas: Dict[str, NamedSchema]
-    _events: Dict[object, Type[BaseModel]]
+    _events: Dict[object, Dict[str, Union[Type[BaseModel], Type[BaseHandler]]]]
 
     def __init__(self, schemas_folder: str):
         super().__init__()
@@ -63,7 +65,7 @@ class AvroSerializer(BaseSerializer):
                     raise Exception(f"Avro schema {schema_name} was defined more than once!")
                 self._schemas[schema_name] = avro_schema
 
-    def register_class(self, event_class: Type[BaseModel], event_name: str) -> None:
+    def register_class(self, event_name: str, event_class: Type[BaseModel], handler_class: Type[BaseHandler]) -> None:
         event_name_regex = re.compile(event_name)
 
         matched: bool = False
@@ -73,7 +75,7 @@ class AvroSerializer(BaseSerializer):
                 break
         if not matched:
             raise NameError(f"{event_name} does not match any schema")
-        self._events[event_name_regex] = event_class
+        self._events[event_name_regex] = {'event_class': event_class, 'handler_class': handler_class}
 
     def encode(self, event: BaseModel) -> bytes:
         schema = self._schemas[event.event_name()]
@@ -91,7 +93,7 @@ class AvroSerializer(BaseSerializer):
             raise AvroEncodeError(err, 500)
         return encoded_event
 
-    def decode(self, encoded_event: Any) -> BaseModel:
+    def decode(self, encoded_event: Any) -> Dict[str, Union[BaseModel, BaseHandler]]:
         try:
             reader = DataFileReader(BytesIO(encoded_event), DatumReader())
             schema = json.loads(reader.meta.get('avro.schema').decode('utf-8'))
@@ -102,9 +104,13 @@ class AvroSerializer(BaseSerializer):
 
         # finds a matching event name
         event_class = None
-        for e_name, e_class in self._events.items():
+        handler_class = None
+        for e_name, dict_class in self._events.items():
             if e_name.match(schema_name):  # type: ignore
-                event_class = e_class
+                event_class = dict_class['event_class']
+                handler_class = dict_class['handler_class']
                 break
-
-        return event_class.from_data(event_data=event_data)
+        r_dict = dict()
+        r_dict['event_class'] = event_class.from_data(event_data=event_data)
+        r_dict['handler_class'] = handler_class
+        return r_dict
