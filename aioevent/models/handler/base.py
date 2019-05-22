@@ -11,8 +11,8 @@ from aioevent.models.events.base import BaseModel
 
 class BaseHandler:
     @classmethod
-    def event_name(cls) -> str:
+    def handler_name(cls) -> str:
         raise NotImplementedError
 
-    def handle(self, event: BaseModel, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
+    async def handle(self, event: BaseModel, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
         raise NotImplementedError
