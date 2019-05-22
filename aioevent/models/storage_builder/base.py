@@ -8,7 +8,7 @@ from aiokafka import TopicPartition
 
 from typing import Dict, Any
 
-from aioevent.services.store_builder.base import BaseStoreBuilder
+from aioevent.stores.store_builder.base import BaseStoreBuilder
 
 __all__ = [
     'BaseStorageBuilder'
