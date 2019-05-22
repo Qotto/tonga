@@ -6,12 +6,52 @@ import pytest
 
 from aiokafka import TopicPartition
 
-from aioevent.services.stores.base import BaseStoreMetaData
-from aioevent.model.exceptions import StoreMetadataCantNotUpdated, StoreKeyNotFound
+from aioevent.stores import BaseStoreMetaData
+from aioevent.models.exceptions import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore
+
+
+# Initialization test
+def test_global_memory_store_set_store_position(get_global_memory_store_connection):
+    global_memory_store = get_global_memory_store_connection
+
+    assigned_partitions = [TopicPartition('test', 2)]
+    last_offsets = {TopicPartition('test', 2): 0}
+    current_instance = 2
+    nb_replica = 4
+    global_memory_store.set_store_position(current_instance, nb_replica, assigned_partitions, last_offsets)
+
+    db_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
+    assert global_memory_store.get_metadata().__dict__ == db_meta.__dict__
+
+
+# Test raise UninitializedStore
+def test_global_memory_uninitialized_store(get_global_memory_store_connection):
+    global_memory_store = get_global_memory_store_connection
+    with pytest.raises(UninitializedStore):
+        global_memory_store.get('test')
+    with pytest.raises(UninitializedStore):
+        global_memory_store.get_all()
+
+
+# Test build store
+def test_local_memory_store_build_set(get_global_memory_store_connection):
+    global_memory_store = get_global_memory_store_connection
+    global_memory_store.global_set('test', b'value')
+    global_memory_store.global_set('test2', b'value')
+    global_memory_store.global_set('test3', b'value')
+    global_memory_store.global_delete('test2')
+
+    global_memory_store.set_initialized(True)
+    assert global_memory_store.is_initialized
+    assert global_memory_store.get('test') == b'value'
+    with pytest.raises(StoreKeyNotFound):
+        global_memory_store.get('test2')
+    assert global_memory_store.get('test3') == b'value'
+    global_memory_store.global_delete('test')
+    global_memory_store.global_delete('test3')
+
 
 # Test set function
-
-
 def test_global_memory_store__global_set(get_global_memory_store_connection):
     global_memory_store = get_global_memory_store_connection
     global_memory_store.global_set('test', b'value')
