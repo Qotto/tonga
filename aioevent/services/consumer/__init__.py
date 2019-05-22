@@ -3,9 +3,9 @@
 # Copyright (c) Qotto, 2019
 
 from .base import BaseConsumer
-from .consumer import AioeventConsumer
+from .kafka_consumer import KafkaConsumer
 
 __all__ = [
     'BaseConsumer',
-    'AioeventConsumer',
+    'KafkaConsumer',
 ]
