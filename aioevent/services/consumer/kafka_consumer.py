@@ -434,7 +434,8 @@ class KafkaConsumer(BaseConsumer):
 
             # Set initialize to true if global state was reached all last_offset of own partitions
             if not self._store_builder.get_global_store().is_initialized():
-                if self.__current_offsets == self._store_builder.get_global_store().get_metadata().last_offsets:
+                global_store_metadata = await self._store_builder.get_global_store().get_metadata()
+                if self.__current_offsets == global_store_metadata.last_offsets:
                     self._store_builder.get_global_store().set_initialized(True)
 
             sleep_duration_in_ms = self._retry_interval
