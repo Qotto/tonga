@@ -29,7 +29,7 @@ from aioevent.services.consumer.kafka_consumer import KafkaConsumer
 from aioevent.services.producer.kafka_producer import KafkaProducer
 
 # Storage Builder import
-from aioevent.models.storage_builder.storage_builder import StorageBuilder
+from aioevent.models.store_record.store_record import StoreRecord
 
 # Exception import
 from aioevent.models.exceptions import StoreKeyNotFound, KafkaConsumerError, UninitializedStore
@@ -231,7 +231,7 @@ class StoreBuilder(BaseStoreBuilder):
             None
         """
         if self._local_store.is_initialized():
-            store_builder = StorageBuilder(key, 'set', value)
+            store_builder = StoreRecord(key, 'set', value)
             record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
                                                                                         self._topic_store)
             self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
@@ -267,7 +267,7 @@ class StoreBuilder(BaseStoreBuilder):
         """
         if self._local_store.is_initialized():
             value = self._local_store.get(key)
-            store_builder = StorageBuilder(key, 'del', value)
+            store_builder = StoreRecord(key, 'del', value)
             record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
                                                                                         self._topic_store)
             self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
