@@ -39,13 +39,16 @@ class AvroSerializer(BaseSerializer):
     def __init__(self, schemas_folder: str):
         super().__init__()
         self.schemas_folder = schemas_folder
+        # TODO Remove workaround
+        self.schemas_folder_lib = os.path.dirname(os.path.abspath(__file__)) + '/../../models/store_record/avro_schema'
         self.logger = logging.getLogger(__name__)
         self._schemas = dict()
         self._events = dict()
-        self._scan_schema_folder()
+        self._scan_schema_folder(self.schemas_folder)
+        self._scan_schema_folder(self.schemas_folder_lib)
 
-    def _scan_schema_folder(self) -> None:
-        with os.scandir(self.schemas_folder) as files:
+    def _scan_schema_folder(self, schemas_folder: str) -> None:
+        with os.scandir(schemas_folder) as files:
             for file in files:
                 if not file.is_file():
                     continue
