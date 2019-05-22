@@ -134,7 +134,7 @@ class StoreBuilder(BaseStoreBuilder):
                                                              'nb_replica': self._nb_replica,
                                                              'assignor_policy': 'all'},
                                              store_builder=self)
-        asyncio.ensure_future(self._store_consumer.listen_state_builder(self._rebuild), loop=self._loop)
+        asyncio.ensure_future(self._store_consumer.listen_store_records(self._rebuild), loop=self._loop)
 
         self._store_producer = KafkaProducer(name=f'{self.name}_producer', bootstrap_servers=self._bootstrap_server,
                                              client_id=f'{self.name}_producer_{self._current_instance}',
@@ -158,20 +158,20 @@ class StoreBuilder(BaseStoreBuilder):
             last_offsets = dict()
             assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
             last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
-            self._local_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
-                                                 last_offsets)
+            await self._local_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
+                                                       last_offsets)
         else:
             try:
                 # Try to get local_store_metadata, seek at last read offset
-                local_store_metadata = self._local_store.get_metadata()
+                local_store_metadata = await self._local_store.get_metadata()
             except StoreKeyNotFound:
                 # If metadata doesn't exist in DB, auto seek to earliest position for rebuild
                 assigned_partitions = list()
                 last_offsets = dict()
                 assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
                 last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
-                self._local_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
-                                                     last_offsets)
+                await self._local_store.set_store_position(self._current_instance, self._nb_replica,
+                                                           assigned_partitions, last_offsets)
             else:
                 # If metadata is exist in DB, , auto seek to last position
                 try:
@@ -180,9 +180,9 @@ class StoreBuilder(BaseStoreBuilder):
                     await self._store_consumer.seek_custom(self._topic_store, self._current_instance, last_offset)
                 except KafkaConsumerError:
                     exit(-1)  # TODO remove exit and replace by an exception
-                self._local_store.set_store_position(self._current_instance, self._nb_replica,
-                                                     local_store_metadata.assigned_partitions,
-                                                     local_store_metadata.last_offsets)
+                await self._local_store.set_store_position(self._current_instance, self._nb_replica,
+                                                           local_store_metadata.assigned_partitions,
+                                                           local_store_metadata.last_offsets)
 
         # Initialize global store
         if isinstance(self._global_store, GlobalStoreMemory):
@@ -193,11 +193,11 @@ class StoreBuilder(BaseStoreBuilder):
                 assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
             for j in range(0, self._nb_replica):
                 last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
-            self._global_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
-                                                  last_offsets)
+            await self._global_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
+                                                        last_offsets)
         else:
             try:
-                global_store_metadata = self._global_store.get_metadata()
+                global_store_metadata = await self._global_store.get_metadata()
             except StoreKeyNotFound:
                 # If metadata doesn't exist in DB
                 assigned_partitions = list()
@@ -206,8 +206,8 @@ class StoreBuilder(BaseStoreBuilder):
                     assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
                 for j in range(0, self._nb_replica):
                     last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
-                self._global_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
-                                                      last_offsets)
+                await self._global_store.set_store_position(self._current_instance, self._nb_replica,
+                                                            assigned_partitions, last_offsets)
             else:
                 # If metadata is exist in DB
                 for tp, offset in global_store_metadata.last_offsets.items():
@@ -215,9 +215,9 @@ class StoreBuilder(BaseStoreBuilder):
                         await self._store_consumer.seek_custom(tp.topic, tp.partition, offset)
                     except KafkaConsumerError:
                         exit(-1)  # TODO remove exit and replace by an exception
-                self._global_store.set_store_position(self._current_instance, self._nb_replica,
-                                                      global_store_metadata.assigned_partitions,
-                                                      global_store_metadata.last_offsets)
+                await self._global_store.set_store_position(self._current_instance, self._nb_replica,
+                                                            global_store_metadata.assigned_partitions,
+                                                            global_store_metadata.last_offsets)
 
     # Sugar functions for local store management
     async def set_from_local_store(self, key: str, value: bytes) -> None:
@@ -231,17 +231,17 @@ class StoreBuilder(BaseStoreBuilder):
             None
         """
         if self._local_store.is_initialized():
-            store_builder = StoreRecord(key, 'set', value)
+            store_builder = StoreRecord(key=key, ttype='set', value=value)
             record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
                                                                                         self._topic_store)
-            self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
-                                                                       record_metadata.partition),
-                                                        record_metadata.offset)
-            self._local_store.set(key, value)
+            await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
+                                                                             record_metadata.partition),
+                                                              record_metadata.offset)
+            await self._local_store.set(key, value)
         else:
             raise UninitializedStore('Uninitialized local store', 500)
 
-    def get_from_local_store(self, key: str) -> bytes:
+    async def get_from_local_store(self, key: str) -> bytes:
         """
         Get from local store
 
@@ -252,7 +252,7 @@ class StoreBuilder(BaseStoreBuilder):
             bytes: Object value as bytes
         """
         if self._local_store.is_initialized():
-            return self._local_store.get(key)
+            return await self._local_store.get(key)
         raise UninitializedStore('Uninitialized local store', 500)
 
     async def delete_from_local_store(self, key: str) -> None:
@@ -267,23 +267,23 @@ class StoreBuilder(BaseStoreBuilder):
         """
         if self._local_store.is_initialized():
             value = self._local_store.get(key)
-            store_builder = StoreRecord(key, 'del', value)
+            store_builder = StoreRecord(key=key, ttype='del', value=value)
             record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
                                                                                         self._topic_store)
-            self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
-                                                                       record_metadata.partition),
-                                                        record_metadata.offset)
-            self._local_store.delete(key)
+            await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
+                                                                             record_metadata.partition),
+                                                              record_metadata.offset)
+            await self._local_store.delete(key)
         else:
             raise UninitializedStore('Uninitialized local store', 500)
 
     async def set_from_local_store_rebuild(self, key: str, value: bytes) -> None:
-        self._local_store.build_set(key, value)
+        await self._local_store.build_set(key, value)
 
     async def delete_from_local_store_rebuild(self, key: str) -> None:
-        self._local_store.build_delete(key)
+        await self._local_store.build_delete(key)
 
-    def update_metadata_from_local_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_local_store(self, tp: TopicPartition, offset: int) -> None:
         """
         Sugar function, update local store metadata
 
@@ -294,10 +294,10 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             None
         """
-        self._local_store.update_metadata_tp_offset(tp, offset)
+        await self._local_store.update_metadata_tp_offset(tp, offset)
 
     # Sugar function for global store management
-    def get_from_global_store(self, key: str) -> bytes:
+    async def get_from_global_store(self, key: str) -> bytes:
         """
         Sugar function, get from global store
 
@@ -307,9 +307,9 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             None
         """
-        return self._global_store.get(key)
+        return await self._global_store.get(key)
 
-    def set_from_global_store(self, key: str, value: bytes) -> None:
+    async def set_from_global_store(self, key: str, value: bytes) -> None:
         """
         Sugar function, set from global store
 
@@ -320,9 +320,9 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             None
         """
-        self._global_store.global_set(key, value)
+        await self._global_store.global_set(key, value)
 
-    def delete_from_global_store(self, key: str) -> None:
+    async def delete_from_global_store(self, key: str) -> None:
         """
         Sugar function, delete from global store
 
@@ -332,9 +332,9 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             None
         """
-        self._global_store.global_delete(key)
+        await self._global_store.global_delete(key)
 
-    def update_metadata_from_global_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_global_store(self, tp: TopicPartition, offset: int) -> None:
         """
         Sugar function, update global store metadata
 
@@ -345,7 +345,7 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             None
         """
-        self._global_store.update_metadata_tp_offset(tp, offset)
+        await self._global_store.update_metadata_tp_offset(tp, offset)
 
     # Get stores
     def get_local_store(self) -> BaseLocalStore:

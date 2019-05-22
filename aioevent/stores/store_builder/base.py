@@ -43,13 +43,13 @@ class BaseStoreBuilder:
     async def set_from_local_store(self, key: str, value: bytes) -> None:
         raise NotImplementedError
 
-    def get_from_local_store(self, key: str) -> bytes:
+    async def get_from_local_store(self, key: str) -> bytes:
         raise NotImplementedError
 
     async def delete_from_local_store(self, key: str) -> None:
         raise NotImplementedError
 
-    def update_metadata_from_local_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_local_store(self, tp: TopicPartition, offset: int) -> None:
         raise NotImplementedError
 
     async def set_from_local_store_rebuild(self, key: str, value: bytes) -> None:
@@ -59,14 +59,14 @@ class BaseStoreBuilder:
         raise NotImplementedError
 
     # Function for global store management
-    def get_from_global_store(self, key: str) -> bytes:
+    async def get_from_global_store(self, key: str) -> bytes:
         raise NotImplementedError
 
-    def set_from_global_store(self, key: str, value: bytes) -> None:
+    async def set_from_global_store(self, key: str, value: bytes) -> None:
         raise NotImplementedError
 
-    def delete_from_global_store(self, key: str) -> None:
+    async def delete_from_global_store(self, key: str) -> None:
         raise NotImplementedError
 
-    def update_metadata_from_global_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_global_store(self, tp: TopicPartition, offset: int) -> None:
         raise NotImplementedError
