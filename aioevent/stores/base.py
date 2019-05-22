@@ -6,7 +6,7 @@ from aiokafka import TopicPartition
 
 from typing import Dict, Any, List
 
-from aioevent.model.exceptions import StorePartitionAlreadyAssigned, StorePartitionNotAssigned
+from aioevent.models.exceptions import StorePartitionAlreadyAssigned, StorePartitionNotAssigned
 
 __all__ = [
     'BaseStores',
@@ -70,11 +70,14 @@ class BaseStores(object):
     def __init__(self, name: str):
         self._name = name
 
-    def set_store_position(self, assigned_partitions: List[TopicPartition],
+    def set_store_position(self, current_instance: int, nb_replica: int, assigned_partitions: List[TopicPartition],
                            last_offsets: Dict[TopicPartition, int]) -> None:
         raise NotImplementedError
 
     def is_initialized(self) -> bool:
+        raise NotImplementedError
+
+    def set_initialized(self, initialized: bool) -> None:
         raise NotImplementedError
 
     def get(self, key: str) -> bytes:
