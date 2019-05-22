@@ -18,8 +18,12 @@ class BaseStoreRecord(object):
     schema_version: str
     timestamp: int
     datetime: str
+    key: str
+    type: str
+    value: bytes
 
-    def __init__(self, schema_version: str = None, datetime: str = None, timestamp: int = None) -> None:
+    def __init__(self, key: str, ttype: str, value: bytes, schema_version: str = None,
+                 datetime: str = None, timestamp: int = None) -> None:
         if schema_version is None:
             self.schema_version = '0.0.0'
         else:
@@ -34,6 +38,9 @@ class BaseStoreRecord(object):
             self.datetime = py_datetime.now(timezone.utc).isoformat()
         else:
             self.datetime = datetime
+        self.key = key
+        self.type = ttype
+        self.value = value
 
     @classmethod
     def event_name(cls) -> str:
