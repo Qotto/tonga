@@ -4,9 +4,9 @@
 
 from aiokafka import TopicPartition
 
-from typing import Dict, Any
+from typing import Dict, Any, List
 
-from aioevent.services.stores.base import BaseStores, BaseStoreMetaData
+from aioevent.stores import BaseStores, BaseStoreMetaData
 
 __all_ = [
     'BaseGlobalStore',
@@ -16,6 +16,16 @@ __all_ = [
 class BaseGlobalStore(BaseStores):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+    def set_store_position(self, current_instance: int, nb_replica: int, assigned_partitions: List[TopicPartition],
+                           last_offsets: Dict[TopicPartition, int]) -> None:
+        raise NotImplementedError
+
+    def is_initialized(self) -> bool:
+        raise NotImplementedError
+
+    def set_initialized(self, initialized: bool) -> None:
+        raise NotImplementedError
 
     def get(self, key: str) -> Any:
         raise NotImplementedError
