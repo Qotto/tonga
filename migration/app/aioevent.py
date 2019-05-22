@@ -21,9 +21,9 @@ from .base import BaseApp
 from aioevent.services.serializer import BaseSerializer, AvroSerializer
 from aioevent.services.consumer import BaseConsumer, AioeventConsumer
 from aioevent.services.producer import BaseProducer, AioeventProducer
-from aioevent.services.store_builder.store_builder import StoreBuilder
-from aioevent.services.stores.local.base import BaseLocalStore
-from aioevent.services.stores.globall.base import BaseGlobalStore
+from aioevent.stores.store_builder import StoreBuilder
+from aioevent.stores import BaseLocalStore
+from aioevent.stores import BaseGlobalStore
 
 __all__ = [
     'AioEvent',
@@ -52,7 +52,7 @@ class AioEvent(BaseApp):
         _assigned_topics (List[TopicPartition]): List of assigned topics
         _stores_topics (List[TopicPartition]): List of stores topics
         logger (Logger): Aioevent logger
-        _loop (AbstractEventLoop): Asyncio event loo
+        _loop (AbstractEventLoop): Asyncio event loop
     """
     name: str
     _sanic_host: str
@@ -160,7 +160,8 @@ class AioEvent(BaseApp):
             self._loop.stop()
 
     def append_store_builder(self, store_builder_name: str, topic_store: str, local_store: BaseLocalStore,
-                             global_store: BaseGlobalStore, rebuild: bool) -> StoreBuilder:
+                             global_store: BaseGlobalStore, bootstrap_server: str, rebuild: bool,
+                             event_sourcing: bool = False) -> StoreBuilder:
         """
         Append a new store builder, this class create a new store_consumer & store_producer.
 
@@ -169,16 +170,22 @@ class AioEvent(BaseApp):
             topic_store (str): Topic name to store state event
             local_store (BaseLocalStore): Local store, Memory / Shelve / RockDB
             global_store (BaseGlobalStore): Global store, Memory / Shelve / RockerDB
+            bootstrap_server (str): Kafka server host & ip
             rebuild (bool): Optional param, set to true for build store from fist topic partition offset
+            event_sourcing (bool): If this flag is true as true Aioevent turn on event_sourcing StoreBuilder
 
         Returns:
             StoreBuilder instance
         """
-        self._stores_builder[store_builder_name] = StoreBuilder(store_builder_name, self._instance, self._nb_replica,
-                                                                topic_store=topic_store, local_store=local_store,
-                                                                global_store=global_store, rebuild=rebuild,
+        self._stores_builder[store_builder_name] = StoreBuilder(store_builder_name=store_builder_name,
+                                                                current_instance=self._instance,
+                                                                nb_replica=self._nb_replica, topic_store=topic_store,
+                                                                local_store=local_store, global_store=global_store,
+                                                                serializer=self.serializer,
+                                                                bootstrap_server=bootstrap_server,
                                                                 cluster_metadata=self._cluster_metadata,
-                                                                cluster_admin=self._cluster_admin, loop=self._loop)
+                                                                cluster_admin=self._cluster_admin, loop=self._loop,
+                                                                rebuild=rebuild, event_sourcing=event_sourcing)
         return self._stores_builder[store_builder_name]
 
     def append_consumer(self, consumer_name: str, mod: str = 'latest', listen_event: bool = True,
