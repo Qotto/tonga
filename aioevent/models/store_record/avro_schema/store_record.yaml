@@ -1,5 +1,5 @@
-namespace: aioevent.ktable
-name: KTableRecord
+namespace: aioevent.store
+name: record
 doc: This event is dispatched when local state as been updated
 type: record
 fields:
