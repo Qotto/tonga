@@ -4,7 +4,7 @@
 
 from aiokafka import TopicPartition
 from aioevent import BaseEvent, AioEvent
-from aioevent.model.exceptions import KafkaConsumerError
+from aioevent.models.exceptions import KafkaConsumerError
 
 from typing import Dict, Any
 

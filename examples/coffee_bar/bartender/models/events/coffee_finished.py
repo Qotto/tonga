@@ -4,7 +4,7 @@
 
 from aiokafka import TopicPartition
 from aioevent import BaseEvent
-from aioevent.app.base import BaseApp
+from migration.app import BaseApp
 
 from typing import Dict, Any
 

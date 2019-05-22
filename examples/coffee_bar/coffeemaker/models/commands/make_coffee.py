@@ -3,8 +3,8 @@
 # Copyright (c) Qotto, 2019
 
 from aioevent import AioEvent
-from aioevent.model import BaseCommand
-from aioevent.model.exceptions import KafkaProducerError, KafkaConsumerError
+from aioevent.models import BaseCommand
+from aioevent.models.exceptions import KafkaProducerError, KafkaConsumerError
 from aiokafka import TopicPartition
 
 from typing import Dict, Any, Union

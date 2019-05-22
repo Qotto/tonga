@@ -4,7 +4,7 @@
 
 from datetime import datetime, timezone
 from aioevent import BaseResult, AioEvent
-from aioevent.model.exceptions import KafkaProducerError, KafkaConsumerError
+from aioevent.models.exceptions import KafkaProducerError, KafkaConsumerError
 from aiokafka import TopicPartition
 
 from typing import Dict, Any, Union
@@ -33,8 +33,6 @@ class MakeCoffeeResult(BaseResult):
             # Do stuff if an error as been reached
             return 'error'
 
-        max_retries = 5
-        retries = 0
         # Tries and retries transaction
         while True:
             try:

@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from aiokafka import TopicPartition
 from aioevent import BaseEvent
 from aioevent import AioEvent
-from aioevent.model.exceptions import KafkaProducerError, KafkaConsumerError
+from aioevent.models.exceptions import KafkaProducerError, KafkaConsumerError
 
 from typing import Dict, Any
 
