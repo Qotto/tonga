@@ -39,8 +39,9 @@ class LocalStoreMemory(BaseLocalStore):
         self._assigned_partitions = list()
         self._last_offsets = dict()
 
-    def set_store_position(self, current_instance: int, nb_replica: int, assigned_partitions: List[TopicPartition],
-                           last_offsets: Dict[TopicPartition, int]) -> None:
+    async def set_store_position(self, current_instance: int, nb_replica: int,
+                                 assigned_partitions: List[TopicPartition],
+                                 last_offsets: Dict[TopicPartition, int]) -> None:
         self._assigned_partitions = assigned_partitions
         self._last_offsets = last_offsets
         self._nb_replica = nb_replica
@@ -48,7 +49,7 @@ class LocalStoreMemory(BaseLocalStore):
 
         self._store_metadata = BaseStoreMetaData(self._assigned_partitions, self._last_offsets, self._current_instance,
                                                  self._nb_replica)
-        self._update_metadata()
+        await self._update_metadata()
 
     def set_initialized(self, initialized: bool) -> None:
         self._initialized = initialized
@@ -57,7 +58,7 @@ class LocalStoreMemory(BaseLocalStore):
         return self._initialized
 
     @check_initialized
-    def get(self, key: str) -> Any:
+    async def get(self, key: str) -> Any:
         if not isinstance(key, str):
             raise ValueError
         if key not in self._db:
@@ -65,7 +66,7 @@ class LocalStoreMemory(BaseLocalStore):
         return self._db[key]
 
     @check_initialized
-    def set(self, key: str, value: bytes) -> None:
+    async def set(self, key: str, value: bytes) -> None:
         if not isinstance(key, str) or not isinstance(value, bytes):
             raise ValueError
         if key == 'metadata':
@@ -73,21 +74,21 @@ class LocalStoreMemory(BaseLocalStore):
         self._db[key] = value
 
     @check_initialized
-    def delete(self, key: str) -> None:
+    async def delete(self, key: str) -> None:
         if not isinstance(key, str):
             raise ValueError
         if key not in self._db:
             raise StoreKeyNotFound(f'Fail to delete key: {key}, not found in LocalStoreMemory', 500)
         del self._db[key]
 
-    def build_set(self, key: str, value: bytes) -> None:
+    async def build_set(self, key: str, value: bytes) -> None:
         if not isinstance(key, str) or not isinstance(value, bytes):
             raise ValueError
         if key == 'metadata':
             raise StoreMetadataCantNotUpdated(f'Fail to update metadata with set function', 500)
         self._db[key] = value
 
-    def build_delete(self, key: str) -> None:
+    async def build_delete(self, key: str) -> None:
         if not isinstance(key, str):
             raise ValueError
         if key not in self._db:
@@ -95,24 +96,24 @@ class LocalStoreMemory(BaseLocalStore):
         del self._db[key]
 
     @check_initialized
-    def get_all(self) -> Dict[str, bytes]:
+    async def get_all(self) -> Dict[str, bytes]:
         return self._db
 
-    def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
         self._store_metadata.update_last_offsets(tp, offset)
-        self._update_metadata()
+        await self._update_metadata()
 
-    def get_metadata(self) -> BaseStoreMetaData:
+    async def get_metadata(self) -> BaseStoreMetaData:
         if 'metadata' not in self._db:
             raise StoreKeyNotFound(f'Metadata was not found in LocalStoreMemory', 500)
         return BaseStoreMetaData.from_dict(ast.literal_eval(self._db['metadata'].decode('utf-8')))
 
-    def set_metadata(self, metadata: BaseStoreMetaData) -> None:
+    async def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         self._db['metadata'] = bytes(str(metadata.to_dict()), 'utf-8')
 
-    def _update_metadata(self) -> None:
+    async def _update_metadata(self) -> None:
         self._db['metadata'] = bytes(str(self._store_metadata.to_dict()), 'utf-8')
 
-    def flush(self) -> None:
+    async def flush(self) -> None:
         del self._db
         self._db = {'metadata': bytes(str(self._store_metadata.to_dict()), 'utf-8')}
