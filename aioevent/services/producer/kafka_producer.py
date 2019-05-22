@@ -25,7 +25,7 @@ from aioevent.services.coordinator.partitioner.statefulset_partitioner import St
 
 # Model import
 from aioevent.models.events.base import BaseModel
-from aioevent.models.storage_builder.storage_builder import StorageBuilder
+from aioevent.models.store_record.base import BaseStoreRecord
 
 # Exception import
 from aioevent.models.exceptions import KafkaProducerError, BadSerializer
@@ -163,7 +163,7 @@ class KafkaProducer(BaseProducer):
         """
         await self._kafka_producer.send_offsets_to_transaction(committed_offsets, group_id)
 
-    async def send_and_await(self, event: Union[BaseModel, StorageBuilder], topic: str) -> RecordMetadata:
+    async def send_and_await(self, event: Union[BaseModel, BaseStoreRecord], topic: str) -> Union[RecordMetadata, None]:
         """
         This function send a massage and await an acknowledgments
 
@@ -180,12 +180,13 @@ class KafkaProducer(BaseProducer):
         """
         if not self._running:
             await self.start_producer()
+        record_metadata = None
         try:
             self.logger.debug(f'Send event {event.event_name()}')
             if isinstance(event, BaseModel):
                 record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
                                                                            key=event.partition_key)
-            elif isinstance(event, StorageBuilder):
+            elif isinstance(event, BaseStoreRecord):
                 record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
                                                                            key=event.key)
         except (KafkaError, KafkaTimeoutError, KafkaProducerError) as err:
