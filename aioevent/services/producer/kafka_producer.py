@@ -5,24 +5,37 @@
 import logging
 from asyncio import AbstractEventLoop
 from logging import Logger
+from aiokafka import TopicPartition
+from aiokafka.producer.message_accumulator import RecordMetadata
 from aiokafka.producer import AIOKafkaProducer
 from aiokafka.producer.message_accumulator import BatchBuilder
 from aiokafka.errors import KafkaError, KafkaTimeoutError
+from aiokafka.producer.producer import TransactionContext
 
-from typing import Union, List
+from typing import Union, List, Dict
 
-from aioevent.services.producer.base import BaseProducer
+# Serializer import
 from aioevent.services.serializer.base import BaseSerializer
+
+# Base Producer import
+from aioevent.services.producer.base import BaseProducer
+
+# Statefulset Partitioner import
 from aioevent.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
-from aioevent.model.base import BaseModel
-from aioevent.model.exceptions import KafkaProducerError, BadSerializer
+
+# Model import
+from aioevent.models.events.base import BaseModel
+from aioevent.models.storage_builder.storage_builder import StorageBuilder
+
+# Exception import
+from aioevent.models.exceptions import KafkaProducerError, BadSerializer
 
 __all__ = [
-    'AioeventProducer',
+    'KafkaProducer',
 ]
 
 
-class AioeventProducer(BaseProducer):
+class KafkaProducer(BaseProducer):
     """
     KafkaProducer Class, this class make bridge between AioKafkaProducer an AioEvent
 
@@ -124,7 +137,33 @@ class AioeventProducer(BaseProducer):
         except KafkaError as err:
             raise KafkaProducerError(err.__str__(), 500)
 
-    async def send_and_await(self, event: BaseModel, topic: str) -> None:
+    def is_running(self) -> bool:
+        return self._running
+
+    # Transaction sugar function
+    def init_transaction(self) -> TransactionContext:
+        """
+        Sugar function, inits transaction
+
+        Returns:
+            TransactionContext: Aiokafka TransactionContext
+        """
+        return self._kafka_producer.transaction()
+
+    async def end_transaction(self, committed_offsets: Dict[TopicPartition, int], group_id: str) -> None:
+        """
+        Sugar function, ends transaction
+
+        Args:
+            committed_offsets (Dict[TopicPartition, int]): Committed offsets during transaction
+            group_id (str): Group_id to commit
+
+        Returns:
+            None
+        """
+        await self._kafka_producer.send_offsets_to_transaction(committed_offsets, group_id)
+
+    async def send_and_await(self, event: Union[BaseModel, StorageBuilder], topic: str) -> RecordMetadata:
         """
         This function send a massage and await an acknowledgments
 
@@ -143,7 +182,12 @@ class AioeventProducer(BaseProducer):
             await self.start_producer()
         try:
             self.logger.debug(f'Send event {event.event_name()}')
-            await self._kafka_producer.send_and_wait(topic=topic, value=event, key=event.partition_key)
+            if isinstance(event, BaseModel):
+                record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
+                                                                           key=event.partition_key)
+            elif isinstance(event, StorageBuilder):
+                record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
+                                                                           key=event.key)
         except (KafkaError, KafkaTimeoutError, KafkaProducerError) as err:
             self.logger.error(f'Kafka error = {err}')
             raise KafkaProducerError(err.__str__(), 500)
@@ -153,6 +197,7 @@ class AioeventProducer(BaseProducer):
         except Exception as er_ex:
             self.logger.error(f'Exception : {er_ex}')
             raise KafkaProducerError(er_ex.__str__(), 500)
+        return record_metadata
 
     async def send(self, event: BaseModel, topic: str) -> None:
         if not self._running:
@@ -194,3 +239,6 @@ class AioeventProducer(BaseProducer):
         except (KafkaError, KafkaTimeoutError) as err:
             raise KafkaProducerError(err, 500)
         return partitions
+
+    def get_kafka_producer(self) -> AIOKafkaProducer:
+        return self._kafka_producer
