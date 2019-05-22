@@ -17,6 +17,7 @@ __all__ = [
     'StoreKeyNotFound',
     'KtableUnknownType',
     'StoreMetadataCantNotUpdated',
+    'UninitializedStore',
 ]
 
 
@@ -193,6 +194,23 @@ class KtableUnknownType(AioEventBaseException):
 class StoreMetadataCantNotUpdated(AioEventBaseException):
     """
     Raised when developer try to update metadata with set function
+
+    Args:
+        msg (str): Human readable string describing the exception.
+        code (int): Error code.
+    Attributes:
+        msg (str): Human readable string describing the exception.
+        code (int): Exception error code.
+    """
+
+    def __init__(self, msg: str, code: int) -> None:
+        self.msg = msg
+        self.code = code
+
+
+class UninitializedStore(AioEventBaseException):
+    """
+    Raised when store is uninitialized and try to get / set / delete / etc
 
     Args:
         msg (str): Human readable string describing the exception.

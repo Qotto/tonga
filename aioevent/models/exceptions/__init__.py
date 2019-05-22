@@ -4,7 +4,7 @@
 
 from .exceptions import AvroDecodeError, AvroEncodeError, CommandEventMissingProcessGuarantee, BadSerializer, \
     KafkaProducerError, KafkaConsumerError, StorePartitionAlreadyAssigned, StorePartitionNotAssigned, \
-    StoreKeyNotFound, KtableUnknownType, StoreMetadataCantNotUpdated
+    StoreKeyNotFound, KtableUnknownType, StoreMetadataCantNotUpdated, UninitializedStore
 
 __all__ = [
     'AvroEncodeError',
@@ -18,4 +18,5 @@ __all__ = [
     'StoreKeyNotFound',
     'KtableUnknownType',
     'StoreMetadataCantNotUpdated',
+    'UninitializedStore',
 ]
