@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e3a219344647e9d0764df69e7b0e8d8adbe4a19507143974aca47d5bfcbf58b5"
+            "sha256": "10e6d9963f1fdca1c9d21bb7395bb73566f77efd2d9a20def2b5bb1bcbfdf4e8"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -44,7 +44,11 @@
             "version": "==0.0.13"
         },
         "kafka-python": {
-            "version": "==1.4.6"
+            "hashes": [
+                "sha256:078acdcd1fc6eddacc46d437c664998b4cf7613b7e79ced66a460965f2648f88",
+                "sha256:0b56f286b674dcb331d80c1d39a01a753cc3acc962bee707da5f207db74f0a26"
+            ],
+            "version": "==1.4.3"
         },
         "multidict": {
             "hashes": [
@@ -357,6 +361,14 @@
             ],
             "index": "pypi",
             "version": "==4.5.0"
+        },
+        "pytest-asyncio": {
+            "hashes": [
+                "sha256:9fac5100fd716cbecf6ef89233e8590a4ad61d729d1732e0a96b84182df1daaf",
+                "sha256:d734718e25cfc32d2bf78d346e99d33724deeba774cc4afdf491530c6184b63b"
+            ],
+            "index": "pypi",
+            "version": "==0.10.0"
         },
         "six": {
             "hashes": [

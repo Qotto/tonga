@@ -9,6 +9,7 @@ mypy = "*"
 aiohttp = "*"
 pytest = "*"
 coverage = "*"
+pytest-asyncio = "*"
 
 [packages]
 sanic = "*"
