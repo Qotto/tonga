@@ -2,10 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from typing import Any, Type, Dict, Union
+from typing import Any, Tuple, Union
 
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
+from aioevent.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
 
 __all__ = [
     'BaseSerializer',
@@ -19,8 +20,9 @@ class BaseSerializer:
     def encode(self, event: BaseModel) -> bytes:
         raise NotImplementedError
 
-    def decode(self, encoded_event: Any) -> Dict[str, Union[BaseModel, BaseHandler]]:
+    def decode(self, encoded_event: Any) -> Tuple[Union[BaseModel, BaseStoreRecord],
+                                                  Union[BaseHandler, BaseStoreRecordHandler]]:
         raise NotImplementedError
 
-    def register_class(self, event_name: str, event_class: Type[BaseModel], handler_class: Type[BaseHandler]) -> None:
+    def register_class(self, event_name: str, event_class: BaseModel, handler_class: BaseHandler) -> None:
         raise NotImplementedError
