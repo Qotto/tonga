@@ -10,17 +10,17 @@ import json
 from yaml import FullLoader  # type: ignore
 from logging import Logger
 from avro.datafile import DataFileWriter, DataFileReader
-from avro.io import DatumWriter, DatumReader
+from avro.io import DatumWriter, DatumReader, AvroTypeException
 from avro.schema import NamedSchema, Parse
-from avro.io import AvroTypeException
 from io import BytesIO
 
-from typing import Dict, Type, Any, Union
+from typing import Dict, Any, Union
 
 from .base import BaseSerializer
 
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
+from aioevent.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
 from aioevent.models.exceptions import AvroEncodeError, AvroDecodeError
 
 
@@ -34,7 +34,7 @@ class AvroSerializer(BaseSerializer):
     logger: Logger
     schemas_folder: str
     _schemas: Dict[str, NamedSchema]
-    _events: Dict[object, Dict[str, Union[Type[BaseModel], Type[BaseHandler]]]]
+    _events: Dict[object, Dict[str, Union[BaseModel, BaseStoreRecord, BaseHandler, BaseStoreRecordHandler]]]
 
     def __init__(self, schemas_folder: str):
         super().__init__()
@@ -46,6 +46,11 @@ class AvroSerializer(BaseSerializer):
         self._events = dict()
         self._scan_schema_folder(self.schemas_folder)
         self._scan_schema_folder(self.schemas_folder_lib)
+
+    def register_event_handler_store_record(self, store_record_event: BaseStoreRecord,
+                                              store_record_handler: BaseStoreRecordHandler):
+        event_name_regex = re.compile(store_record_event.event_name())
+        self._events[event_name_regex] = {'event_class': store_record_event, 'handler_class': store_record_handler}
 
     def _scan_schema_folder(self, schemas_folder: str) -> None:
         with os.scandir(schemas_folder) as files:
@@ -68,7 +73,14 @@ class AvroSerializer(BaseSerializer):
                     raise Exception(f"Avro schema {schema_name} was defined more than once!")
                 self._schemas[schema_name] = avro_schema
 
-    def register_class(self, event_name: str, event_class: Type[BaseModel], handler_class: Type[BaseHandler]) -> None:
+    def get_schemas(self) -> Dict[str, NamedSchema]:
+        return self._schemas
+
+    def get_events(self) -> Dict[object, Dict[str, Union[BaseModel, BaseStoreRecord,
+                                                         BaseHandler, BaseStoreRecordHandler]]]:
+        return self._events
+
+    def register_class(self, event_name: str, event_class: BaseModel, handler_class: BaseHandler) -> None:
         event_name_regex = re.compile(event_name)
 
         matched: bool = False
