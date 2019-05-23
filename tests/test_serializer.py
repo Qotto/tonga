@@ -43,10 +43,18 @@ def test_register_event_handler_store_record_avro_serializer(get_avro_serializer
 
     events = serializer.get_events()
     found = False
-    for e_name, dict_class in events.items():
+    for e_name, event in events.items():
         if e_name.match('aioevent.store.record'):
-            assert dict_class['event_class'] == StoreRecord
-            assert dict_class['handler_class'] == store_record_handler
+            assert event == StoreRecord
+            found = True
+            break
+    assert found
+
+    found = False
+    handlers = serializer.get_handlers()
+    for e_name, handler in handlers.items():
+        if e_name.match('aioevent.store.record'):
+            assert handler == store_record_handler
             found = True
             break
     assert found
@@ -60,10 +68,18 @@ def test_register_base_event_class_avro_serializer(get_avro_serializer):
 
     events = serializer.get_events()
     found = False
-    for e_name, dict_class in events.items():
+    for e_name, event in events.items():
         if e_name.match('aioevent.event.test'):
-            assert dict_class['event_class'] == TestEvent
-            assert dict_class['handler_class'] == test_event_handler
+            assert event == TestEvent
+            found = True
+            break
+    assert found
+
+    found = False
+    handlers = serializer.get_handlers()
+    for e_name, handler in handlers.items():
+        if e_name.match('aioevent.event.test'):
+            assert handler == test_event_handler
             found = True
             break
     assert found
@@ -110,6 +126,6 @@ def test_encode_avro_serializer(get_avro_serializer):
 
     test_encode = TestEvent(test='LOL')
     encoded_test = serializer.encode(test_encode)
-    decoded_test = serializer.decode(encoded_test)
-    assert test_encode.__dict__ == decoded_test['event_class'].__dict__
-    assert decoded_test['handler_class'].handler_name() == 'aioevent.event.test'
+    decoded_test, handler_test = serializer.decode(encoded_test)
+    assert test_encode.__dict__ == decoded_test.__dict__
+    assert handler_test.handler_name() == 'aioevent.event.test'
