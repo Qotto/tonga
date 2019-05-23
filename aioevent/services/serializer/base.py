@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from typing import Any, Tuple, Union
+from typing import Any, Tuple, Union, Type
 
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
@@ -24,5 +24,5 @@ class BaseSerializer:
                                                   Union[BaseHandler, BaseStoreRecordHandler]]:
         raise NotImplementedError
 
-    def register_class(self, event_name: str, event_class: BaseModel, handler_class: BaseHandler) -> None:
+    def register_class(self, event_name: str, event_class: Type[BaseModel], handler_class: BaseHandler) -> None:
         raise NotImplementedError

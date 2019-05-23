@@ -14,7 +14,7 @@ from avro.io import DatumWriter, DatumReader, AvroTypeException
 from avro.schema import NamedSchema, Parse
 from io import BytesIO
 
-from typing import Dict, Any, Union, Tuple
+from typing import Dict, Any, Union, Tuple, Type
 
 from .base import BaseSerializer
 
@@ -22,7 +22,6 @@ from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
 from aioevent.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
 from aioevent.models.exceptions import AvroEncodeError, AvroDecodeError, AvroAlreadyRegister
-
 
 __all__ = [
     'AvroSerializer',
@@ -34,7 +33,7 @@ class AvroSerializer(BaseSerializer):
     logger: Logger
     schemas_folder: str
     _schemas: Dict[str, NamedSchema]
-    _events: Dict[object, Union[BaseModel, BaseStoreRecord]]
+    _events: Dict[object, Union[Type[BaseModel], Type[BaseStoreRecord]]]
     _handlers: Dict[object, Union[BaseHandler, BaseStoreRecordHandler]]
 
     def __init__(self, schemas_folder: str):
@@ -70,7 +69,7 @@ class AvroSerializer(BaseSerializer):
                     raise AvroAlreadyRegister(f"Avro schema {schema_name} was defined more than once!", 500)
                 self._schemas[schema_name] = avro_schema
 
-    def register_event_handler_store_record(self, store_record_event: BaseStoreRecord,
+    def register_event_handler_store_record(self, store_record_event: Type[BaseStoreRecord],
                                             store_record_handler: BaseStoreRecordHandler) -> None:
         event_name_regex = re.compile(store_record_event.event_name())
         self._events[event_name_regex] = store_record_event
@@ -79,13 +78,13 @@ class AvroSerializer(BaseSerializer):
     def get_schemas(self) -> Dict[str, NamedSchema]:
         return self._schemas
 
-    def get_events(self) -> Dict[object, Union[BaseModel, BaseStoreRecord]]:
+    def get_events(self) -> Dict[object, Union[Type[BaseModel], Type[BaseStoreRecord]]]:
         return self._events
 
     def get_handlers(self) -> Dict[object, Union[BaseHandler, BaseStoreRecordHandler]]:
         return self._handlers
 
-    def register_class(self, event_name: str, event_class: BaseModel, handler_class: BaseHandler) -> None:
+    def register_class(self, event_name: str, event_class: Type[BaseModel], handler_class: BaseHandler) -> None:
         event_name_regex = re.compile(event_name)
 
         matched: bool = False
