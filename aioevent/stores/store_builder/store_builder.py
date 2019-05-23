@@ -138,8 +138,7 @@ class StoreBuilder(BaseStoreBuilder):
 
         self._store_producer = KafkaProducer(name=f'{self.name}_producer', bootstrap_servers=self._bootstrap_server,
                                              client_id=f'{self.name}_producer_{self._current_instance}',
-                                             loop=self._loop, serializer=self._serializer, acks='all',
-                                             transactional_id=f'{self.name}_producer_{self._current_instance}')
+                                             loop=self._loop, serializer=self._serializer, acks='all')
 
         self._stores_partitions = list()
 
@@ -218,6 +217,12 @@ class StoreBuilder(BaseStoreBuilder):
                 await self._global_store.set_store_position(self._current_instance, self._nb_replica,
                                                             global_store_metadata.assigned_partitions,
                                                             global_store_metadata.last_offsets)
+
+    def set_local_store_initialize(self, initialized: bool) -> None:
+        self._local_store.set_initialized(initialized)
+
+    def set_global_store_initialize(self, initialized: bool) -> None:
+        self._global_store.set_initialized(initialized)
 
     # Sugar functions for local store management
     async def set_from_local_store(self, key: str, value: bytes) -> None:
