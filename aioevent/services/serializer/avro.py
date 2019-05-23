@@ -21,7 +21,7 @@ from .base import BaseSerializer
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
 from aioevent.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
-from aioevent.models.exceptions import AvroEncodeError, AvroDecodeError
+from aioevent.models.exceptions import AvroEncodeError, AvroDecodeError, AvroAlreadyRegister
 
 
 __all__ = [
@@ -48,7 +48,7 @@ class AvroSerializer(BaseSerializer):
         self._scan_schema_folder(self.schemas_folder_lib)
 
     def register_event_handler_store_record(self, store_record_event: BaseStoreRecord,
-                                              store_record_handler: BaseStoreRecordHandler):
+                                            store_record_handler: BaseStoreRecordHandler):
         event_name_regex = re.compile(store_record_event.event_name())
         self._events[event_name_regex] = {'event_class': store_record_event, 'handler_class': store_record_handler}
 
@@ -70,7 +70,7 @@ class AvroSerializer(BaseSerializer):
                 avro_schema = Parse(avro_schema_data)
                 schema_name = avro_schema.namespace + '.' + avro_schema.name
                 if schema_name in self._schemas:
-                    raise Exception(f"Avro schema {schema_name} was defined more than once!")
+                    raise AvroAlreadyRegister(f"Avro schema {schema_name} was defined more than once!", 500)
                 self._schemas[schema_name] = avro_schema
 
     def get_schemas(self) -> Dict[str, NamedSchema]:
@@ -93,10 +93,11 @@ class AvroSerializer(BaseSerializer):
         self._events[event_name_regex] = {'event_class': event_class, 'handler_class': handler_class}
 
     def encode(self, event: BaseModel) -> bytes:
-        schema = self._schemas[event.event_name()]
-
-        if schema is None:
+        try:
+            schema = self._schemas[event.event_name()]
+        except KeyError:
             raise NameError(f"No schema found to encode event with name {event.event_name()}")
+
         try:
             output = BytesIO()
             writer = DataFileWriter(output, DatumWriter(), schema)
