@@ -17,7 +17,7 @@ from aioevent.services.producer.kafka_producer import KafkaProducer
 from aioevent.services.consumer.kafka_consumer import KafkaConsumer
 
 # Import exceptions
-from aioevent.models.exceptions import UninitializedStore
+from aioevent.models.exceptions import UninitializedStore, StoreKeyNotFound
 
 
 @pytest.mark.asyncio
@@ -131,3 +131,60 @@ async def test_initialize_store_builder(get_store_builder):
 
     assert global_store_metadata.to_dict() == test_store_metadata_global.to_dict()
 
+
+@pytest.mark.asyncio
+async def test_local_store_rebuild_store_builder(get_store_builder):
+    store_builder = get_store_builder
+
+    await store_builder.set_from_local_store_rebuild('test', b'value')
+    await store_builder.set_from_local_store_rebuild('test1', b'value1')
+    await store_builder.set_from_local_store_rebuild('test2', b'value2')
+
+    await store_builder.delete_from_local_store_rebuild('test1')
+    store_builder.set_local_store_initialize(True)
+
+    assert await store_builder.get_from_local_store('test') == b'value'
+
+    with pytest.raises(StoreKeyNotFound):
+        await store_builder.get_from_local_store('test1')
+
+    assert await store_builder.get_from_local_store('test2') == b'value2'
+
+
+@pytest.mark.asyncio
+async def test_global_store_rebuild_store_builder(get_store_builder):
+    store_builder = get_store_builder
+
+    await store_builder.set_from_global_store('test', b'value')
+    await store_builder.set_from_global_store('test1', b'value1')
+    await store_builder.set_from_global_store('test2', b'value2')
+
+    await store_builder.delete_from_global_store('test1')
+    store_builder.set_global_store_initialize(True)
+
+    assert await store_builder.get_from_global_store('test') == b'value'
+
+    with pytest.raises(StoreKeyNotFound):
+        await store_builder.get_from_global_store('test1')
+
+    assert await store_builder.get_from_global_store('test2') == b'value2'
+
+
+@pytest.mark.skip(reason='First patch assignors / partitioner')
+@pytest.mark.asyncio
+async def test_set_from_local_store_store_builder(get_store_builder):
+    store_builder = get_store_builder
+
+    await store_builder.set_from_local_store('test3', b'value3')
+    assert await store_builder.get_from_local_store('test3') == b'value3'
+
+
+@pytest.mark.skip(reason='First patch assignors / partitioner')
+@pytest.mark.asyncio
+async def test_delete_from_local_store_store_builder(get_store_builder):
+    store_builder = get_store_builder
+
+    await store_builder.set_from_local_store('test4', b'value4')
+    await store_builder.delete_from_local_store('test4')
+    with pytest.raises(StoreKeyNotFound):
+        await store_builder.get_from_local_store('test4')
