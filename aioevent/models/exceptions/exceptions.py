@@ -18,6 +18,7 @@ __all__ = [
     'KtableUnknownType',
     'StoreMetadataCantNotUpdated',
     'UninitializedStore',
+    'AvroAlreadyRegister',
 ]
 
 
@@ -211,6 +212,23 @@ class StoreMetadataCantNotUpdated(AioEventBaseException):
 class UninitializedStore(AioEventBaseException):
     """
     Raised when store is uninitialized and try to get / set / delete / etc
+
+    Args:
+        msg (str): Human readable string describing the exception.
+        code (int): Error code.
+    Attributes:
+        msg (str): Human readable string describing the exception.
+        code (int): Exception error code.
+    """
+
+    def __init__(self, msg: str, code: int) -> None:
+        self.msg = msg
+        self.code = code
+
+
+class AvroAlreadyRegister(AioEventBaseException):
+    """
+    Raised when event class is already register in avro serializer
 
     Args:
         msg (str): Human readable string describing the exception.
