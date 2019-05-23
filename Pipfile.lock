@@ -44,11 +44,7 @@
             "version": "==0.0.13"
         },
         "kafka-python": {
-            "hashes": [
-                "sha256:078acdcd1fc6eddacc46d437c664998b4cf7613b7e79ced66a460965f2648f88",
-                "sha256:0b56f286b674dcb331d80c1d39a01a753cc3acc962bee707da5f207db74f0a26"
-            ],
-            "version": "==1.4.3"
+            "version": "==1.4.6"
         },
         "multidict": {
             "hashes": [
