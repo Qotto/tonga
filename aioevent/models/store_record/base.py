@@ -6,6 +6,7 @@ from datetime import datetime as py_datetime
 from datetime import timezone
 from aiokafka import TopicPartition
 
+from typing import Dict, Any
 
 __all__ = [
     'BaseStoreRecord',
@@ -44,6 +45,10 @@ class BaseStoreRecord(object):
 
     @classmethod
     def event_name(cls) -> str:
+        raise NotImplementedError
+
+    @classmethod
+    def from_data(cls, event_data: Dict[str, Any]):
         raise NotImplementedError
 
 
