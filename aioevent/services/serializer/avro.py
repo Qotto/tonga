@@ -14,7 +14,7 @@ from avro.io import DatumWriter, DatumReader, AvroTypeException
 from avro.schema import NamedSchema, Parse
 from io import BytesIO
 
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, Tuple
 
 from .base import BaseSerializer
 
@@ -34,7 +34,8 @@ class AvroSerializer(BaseSerializer):
     logger: Logger
     schemas_folder: str
     _schemas: Dict[str, NamedSchema]
-    _events: Dict[object, Dict[str, Union[BaseModel, BaseStoreRecord, BaseHandler, BaseStoreRecordHandler]]]
+    _events: Dict[object, Union[BaseModel, BaseStoreRecord]]
+    _handlers: Dict[object, Union[BaseHandler, BaseStoreRecordHandler]]
 
     def __init__(self, schemas_folder: str):
         super().__init__()
@@ -44,13 +45,9 @@ class AvroSerializer(BaseSerializer):
         self.logger = logging.getLogger(__name__)
         self._schemas = dict()
         self._events = dict()
+        self._handlers = dict()
         self._scan_schema_folder(self.schemas_folder)
         self._scan_schema_folder(self.schemas_folder_lib)
-
-    def register_event_handler_store_record(self, store_record_event: BaseStoreRecord,
-                                            store_record_handler: BaseStoreRecordHandler):
-        event_name_regex = re.compile(store_record_event.event_name())
-        self._events[event_name_regex] = {'event_class': store_record_event, 'handler_class': store_record_handler}
 
     def _scan_schema_folder(self, schemas_folder: str) -> None:
         with os.scandir(schemas_folder) as files:
@@ -73,12 +70,20 @@ class AvroSerializer(BaseSerializer):
                     raise AvroAlreadyRegister(f"Avro schema {schema_name} was defined more than once!", 500)
                 self._schemas[schema_name] = avro_schema
 
+    def register_event_handler_store_record(self, store_record_event: BaseStoreRecord,
+                                            store_record_handler: BaseStoreRecordHandler) -> None:
+        event_name_regex = re.compile(store_record_event.event_name())
+        self._events[event_name_regex] = store_record_event
+        self._handlers[event_name_regex] = store_record_handler
+
     def get_schemas(self) -> Dict[str, NamedSchema]:
         return self._schemas
 
-    def get_events(self) -> Dict[object, Dict[str, Union[BaseModel, BaseStoreRecord,
-                                                         BaseHandler, BaseStoreRecordHandler]]]:
+    def get_events(self) -> Dict[object, Union[BaseModel, BaseStoreRecord]]:
         return self._events
+
+    def get_handlers(self) -> Dict[object, Union[BaseHandler, BaseStoreRecordHandler]]:
+        return self._handlers
 
     def register_class(self, event_name: str, event_class: BaseModel, handler_class: BaseHandler) -> None:
         event_name_regex = re.compile(event_name)
@@ -90,7 +95,8 @@ class AvroSerializer(BaseSerializer):
                 break
         if not matched:
             raise NameError(f"{event_name} does not match any schema")
-        self._events[event_name_regex] = {'event_class': event_class, 'handler_class': handler_class}
+        self._events[event_name_regex] = event_class
+        self._handlers[event_name_regex] = handler_class
 
     def encode(self, event: BaseModel) -> bytes:
         try:
@@ -109,7 +115,8 @@ class AvroSerializer(BaseSerializer):
             raise AvroEncodeError(err, 500)
         return encoded_event
 
-    def decode(self, encoded_event: Any) -> Dict[str, Union[BaseModel, BaseHandler]]:
+    def decode(self, encoded_event: Any) -> Tuple[Union[BaseModel, BaseStoreRecord],
+                                                  Union[BaseHandler, BaseStoreRecordHandler]]:
         try:
             reader = DataFileReader(BytesIO(encoded_event), DatumReader())
             schema = json.loads(reader.meta.get('avro.schema').decode('utf-8'))
@@ -118,15 +125,17 @@ class AvroSerializer(BaseSerializer):
         except AvroTypeException as err:
             raise AvroDecodeError(err, 500)
 
-        # finds a matching event name
+        # Finds a matching event name
         event_class = None
-        handler_class = None
-        for e_name, dict_class in self._events.items():
+        for e_name, event in self._events.items():
             if e_name.match(schema_name):  # type: ignore
-                event_class = dict_class['event_class']
-                handler_class = dict_class['handler_class']
+                event_class = event
                 break
-        r_dict = dict()
-        r_dict['event_class'] = event_class.from_data(event_data=event_data)
-        r_dict['handler_class'] = handler_class
-        return r_dict
+
+        # Finds a matching handler name
+        handler_class = None
+        for e_name, handler in self._handlers.items():
+            if e_name.match(schema_name):  # type: ignore
+                handler_class = handler
+                break
+        return event_class.from_data(event_data=event_data), handler_class
