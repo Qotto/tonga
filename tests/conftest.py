@@ -42,7 +42,7 @@ cluster_metadata = ClusterMetadata(bootstrap_servers='localhost:9092')
 loop = asyncio.get_event_loop()
 test_store_builder_local_memory_store = LocalStoreMemory(name='test_store_builder_local_memory_store')
 test_store_builder_global_memory_store = GlobalStoreMemory(name='test_store_builder_global_memory_store')
-test_store_builder = StoreBuilder('test_store_builder', 0, 1, 'test-store', test_serializer,
+test_store_builder = StoreBuilder('test_store_builder', 0, 1, 'test-store', store_builder_serializer,
                                   test_store_builder_local_memory_store, test_store_builder_global_memory_store,
                                   'localhost:9092', cluster_metadata, admin_client, loop, False, False)
 store_record_handler = StoreRecordHandler(test_store_builder)
