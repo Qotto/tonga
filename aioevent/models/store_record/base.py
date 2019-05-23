@@ -53,6 +53,9 @@ class BaseStoreRecord(object):
 
 
 class BaseStoreRecordHandler:
+    def __init__(self):
+        pass
+
     @classmethod
     def handler_name(cls) -> str:
         raise NotImplementedError

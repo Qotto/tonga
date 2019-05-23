@@ -17,6 +17,7 @@ class StoreRecordHandler(BaseStoreRecordHandler):
     _store_builder: BaseStoreBuilder
 
     def __init__(self, store_builder):
+        super().__init__()
         self._store_builder = store_builder
 
     @classmethod
