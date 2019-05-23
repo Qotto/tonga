@@ -2,17 +2,21 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+import pytest
+import asyncio
+import os
 from avro.schema import NamedSchema
 from kafka import KafkaAdminClient
 from kafka.cluster import ClusterMetadata
-import asyncio
 
 from aioevent.stores.store_builder.store_builder import StoreBuilder
 from aioevent.models.store_record.store_record import StoreRecord
 from aioevent.models.store_record.store_record_handler import StoreRecordHandler
+from aioevent.services.serializer.avro import AvroSerializer
 
 from tests.misc.event_class.test_event import TestEvent
 from tests.misc.handler_class.test_event_handler import TestEventHandler
+from aioevent.models.exceptions import AvroAlreadyRegister, AvroDecodeError, AvroEncodeError
 
 
 def test_init_avro_serializer(get_avro_serializer):
@@ -63,6 +67,42 @@ def test_register_base_event_class_avro_serializer(get_avro_serializer):
             found = True
             break
     assert found
+
+
+def test_register_more_than_once_avro_serializer():
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    with pytest.raises(AvroAlreadyRegister):
+        serializer = AvroSerializer(BASE_DIR + '/misc/schemas/bad')
+
+
+def test_register_bad_event_name_avro_serializer(get_avro_serializer):
+    serializer = get_avro_serializer
+    test_event_handler = TestEventHandler()
+    with pytest.raises(NameError):
+        serializer.register_class('aioevent.test', TestEvent, test_event_handler)
+
+
+def event_name():
+    return 'test'
+
+
+def test_encode_name_error_avro_serializer(get_avro_serializer):
+    serializer = get_avro_serializer
+
+    test_encode = TestEvent(test='LOL')
+    test_encode.event_name = event_name
+    assert test_encode.event_name() == 'test'
+    with pytest.raises(NameError):
+        encoded_test = serializer.encode(test_encode)
+
+
+def test_encode_fail_error_avro_serializer(get_avro_serializer):
+    serializer = get_avro_serializer
+
+    test_encode = TestEvent(test='LOL')
+    test_encode.__delattr__('test')
+    with pytest.raises(AvroEncodeError):
+        encoded_test = serializer.encode(test_encode)
 
 
 def test_encode_avro_serializer(get_avro_serializer):
