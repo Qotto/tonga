@@ -376,6 +376,15 @@ class StoreBuilder(BaseStoreBuilder):
         """
         return self._current_instance
 
+    def get_nb_replica(self) -> int:
+        """
+        Returns nb replica
+
+        Returns:
+            int: current instance as integer
+        """
+        return self._nb_replica
+
     def is_event_sourcing(self) -> bool:
         """
         Returns if StoreBuilder as in event_sourcing mod
