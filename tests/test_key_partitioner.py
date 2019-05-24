@@ -19,24 +19,28 @@ def get_good_partition(key, all_partitions):
 
 
 def test_key_partitioner_with_str_uuid_key():
+    key_partitioner = KeyPartitioner()
     for i in range(0, 100):
         test_uuid = uuid.uuid4().hex
-        assert KeyPartitioner.__call__(test_uuid, [0, 1, 2, 3], [0, 1, 2, 3]) == get_good_partition(test_uuid,
+        assert key_partitioner(test_uuid, [0, 1, 2, 3], [0, 1, 2, 3]) == get_good_partition(test_uuid,
                                                                                                     [0, 1, 2, 3])
 
 
 def test_key_partitioner_with_bytes_uuid_key():
+    key_partitioner = KeyPartitioner()
     for i in range(0, 100):
         test_uuid = uuid.uuid4().hex
-        assert KeyPartitioner.__call__(bytes(test_uuid, 'utf-8'), [0, 1, 2, 3],
+        assert key_partitioner(bytes(test_uuid, 'utf-8'), [0, 1, 2, 3],
                                        [0, 1, 2, 3]) == get_good_partition(bytes(test_uuid, 'utf-8'), [0, 1, 2, 3])
 
 
 def test_key_partitioner_bad_format():
+    key_partitioner = KeyPartitioner()
     with pytest.raises(ValueError):
-        KeyPartitioner.__call__(['rofl'], [0, 1, 2, 3], [0, 1, 2, 3])
+        key_partitioner(['rofl'], [0, 1, 2, 3], [0, 1, 2, 3])
 
 
 def test_key_partitioner_missing_key():
-    r = KeyPartitioner.__call__(None, [0, 1, 2, 3], [0, 1, 2, 3])
+    key_partitioner = KeyPartitioner()
+    r = key_partitioner(None, [0, 1, 2, 3], [0, 1, 2, 3])
     assert r in range(0, 4)
