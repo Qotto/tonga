@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
-    name = 'custom'
+    name = 'StatefulsetPartitionAssignor'
     version = 0
     assignors_data: bytes = b''
 
@@ -29,7 +29,6 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         logger.debug(f'Cluster = {cluster}\nMembers = {members}')
 
         # Get all topic
-
         all_topics: Set = set()
         for key, metadata in members.items():
             all_topics.update(metadata.subscription)
