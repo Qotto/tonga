@@ -4,9 +4,9 @@
 
 import os
 import pytest
-import asyncio
 import uvloop
 from kafka import KafkaAdminClient
+from kafka.client import KafkaClient
 from kafka.cluster import ClusterMetadata
 
 # Serializer
@@ -35,6 +35,10 @@ test_global_memory_store = GlobalStoreMemory(name='global_store_memory_test')
 test_serializer = AvroSerializer(BASE_DIR + '/misc/schemas')
 test_serializer_local_memory_store = LocalStoreMemory(name='local_store_memory_serializer_test')
 test_serializer_global_memory_store = GlobalStoreMemory(name='global_store_memory_serializer_test')
+
+# StatefulsetPartitionAssignor test
+assignor_kafka_client = KafkaClient(bootstrap_servers='localhost:9092', client_id='test_client')
+assignor_cluster_metadata = ClusterMetadata(bootstrap_servers='localhost:9092')
 
 # StoreBuilder test
 store_builder_serializer = AvroSerializer(BASE_DIR + '/misc/schemas')
@@ -74,6 +78,16 @@ def get_avro_serializer():
 @pytest.fixture
 def get_avro_serializer_store():
     return test_serializer_local_memory_store, test_serializer_global_memory_store
+
+
+@pytest.fixture
+def get_assignor_kafka_client():
+    return assignor_kafka_client
+
+
+@pytest.fixture
+def get_assignor_cluster_metadata():
+    return assignor_cluster_metadata
 
 
 @pytest.fixture
