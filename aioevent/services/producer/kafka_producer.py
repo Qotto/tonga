@@ -12,16 +12,16 @@ from aiokafka.producer.message_accumulator import BatchBuilder
 from aiokafka.errors import KafkaError, KafkaTimeoutError
 from aiokafka.producer.producer import TransactionContext
 
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Type
 
 # Serializer import
 from aioevent.services.serializer.base import BaseSerializer
 
+# BasePartitioner import
+from aioevent.services.coordinator.partitioner.base import BasePartitioner
+
 # Base Producer import
 from aioevent.services.producer.base import BaseProducer
-
-# Statefulset Partitioner import
-from aioevent.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
 
 # Model import
 from aioevent.models.events.base import BaseModel
@@ -66,7 +66,8 @@ class KafkaProducer(BaseProducer):
     _loop: AbstractEventLoop
 
     def __init__(self, name: str, bootstrap_servers: Union[str, List[str]], client_id: str, serializer: BaseSerializer,
-                 loop: AbstractEventLoop, acks: Union[int, str] = 1, transactional_id: str = None) -> None:
+                 loop: AbstractEventLoop, partitioner: Type[BasePartitioner], acks: Union[int, str] = 1,
+                 transactional_id: str = None) -> None:
         """
         KafkaProducer constructor
 
@@ -104,7 +105,7 @@ class KafkaProducer(BaseProducer):
                                                     client_id=self._client_id, acks=self._acks,
                                                     value_serializer=self.serializer.encode,
                                                     transactional_id=self._transactional_id,
-                                                    partitioner=StatefulsetPartitioner())
+                                                    partitioner=partitioner)
         except (ValueError, KafkaError) as err:
             raise KafkaProducerError(err.__str__(), 500)
         self.logger.debug(f'Create new producer {client_id}')
