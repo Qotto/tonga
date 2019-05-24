@@ -139,8 +139,7 @@ class StoreBuilder(BaseStoreBuilder):
                                              store_builder=self)
         asyncio.ensure_future(self._store_consumer.listen_store_records(self._rebuild), loop=self._loop)
 
-        partitioner = StatefulsetPartitioner
-        setattr(partitioner, 'instance', self._current_instance)
+        partitioner = StatefulsetPartitioner(instance=self._current_instance)
         self._store_producer = KafkaProducer(name=f'{self.name}_producer', bootstrap_servers=self._bootstrap_server,
                                              client_id=f'{self.name}_producer_{self._current_instance}',
                                              partitioner=partitioner,
@@ -277,8 +276,7 @@ class StoreBuilder(BaseStoreBuilder):
             None
         """
         if self._local_store.is_initialized():
-            value = self._local_store.get(key)
-            store_builder = StoreRecord(key=key, ttype='del', value=value)
+            store_builder = StoreRecord(key=key, ttype='del', value=b'')
             record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
                                                                                         self._topic_store)
             await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
