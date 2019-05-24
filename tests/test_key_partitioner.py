@@ -22,8 +22,7 @@ def test_key_partitioner_with_str_uuid_key():
     key_partitioner = KeyPartitioner()
     for i in range(0, 100):
         test_uuid = uuid.uuid4().hex
-        assert key_partitioner(test_uuid, [0, 1, 2, 3], [0, 1, 2, 3]) == get_good_partition(test_uuid,
-                                                                                                    [0, 1, 2, 3])
+        assert key_partitioner(test_uuid, [0, 1, 2, 3], [0, 1, 2, 3]) == get_good_partition(test_uuid, [0, 1, 2, 3])
 
 
 def test_key_partitioner_with_bytes_uuid_key():
@@ -31,7 +30,7 @@ def test_key_partitioner_with_bytes_uuid_key():
     for i in range(0, 100):
         test_uuid = uuid.uuid4().hex
         assert key_partitioner(bytes(test_uuid, 'utf-8'), [0, 1, 2, 3],
-                                       [0, 1, 2, 3]) == get_good_partition(bytes(test_uuid, 'utf-8'), [0, 1, 2, 3])
+                               [0, 1, 2, 3]) == get_good_partition(bytes(test_uuid, 'utf-8'), [0, 1, 2, 3])
 
 
 def test_key_partitioner_bad_format():
