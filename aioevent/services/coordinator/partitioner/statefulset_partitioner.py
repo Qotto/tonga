@@ -10,11 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class StatefulsetPartitioner(BasePartitioner):
-    instance: int = 0
+    _instance: int
 
-    @classmethod
-    def __call__(cls, key, all_partitions, available):
+    def __init__(self, instance, **kwargs):
+        super().__init__(**kwargs)
+        self._instance = instance
+
+    def __call__(self, key, all_partitions, available):
         logger.debug('StatefulsetPartitioner')
-        if cls.instance <= len(all_partitions):
-            return all_partitions[cls.instance]
+        if self._instance <= len(all_partitions):
+            return all_partitions[self._instance]
         raise ValueError
