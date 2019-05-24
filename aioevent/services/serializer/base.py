@@ -17,12 +17,8 @@ class BaseSerializer:
     def __init__(self) -> None:
         pass
 
-    def encode(self, event: BaseModel) -> bytes:
+    def encode(self, event: Any) -> Any:
         raise NotImplementedError
 
-    def decode(self, encoded_event: Any) -> Tuple[Union[BaseModel, BaseStoreRecord],
-                                                  Union[BaseHandler, BaseStoreRecordHandler]]:
-        raise NotImplementedError
-
-    def register_class(self, event_name: str, event_class: Type[BaseModel], handler_class: BaseHandler) -> None:
+    def decode(self, encoded_event: Any) -> Any:
         raise NotImplementedError
