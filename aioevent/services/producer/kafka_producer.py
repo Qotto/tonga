@@ -14,8 +14,9 @@ from aiokafka.producer.producer import TransactionContext
 
 from typing import Union, List, Dict, Type
 
-# Serializer import
+# BaseSerializer / KafkaKeySerializer import
 from aioevent.services.serializer.base import BaseSerializer
+from aioevent.services.serializer.kafka_key import KafkaKeySerializer
 
 # BasePartitioner import
 from aioevent.services.coordinator.partitioner.base import BasePartitioner
@@ -66,7 +67,7 @@ class KafkaProducer(BaseProducer):
     _loop: AbstractEventLoop
 
     def __init__(self, name: str, bootstrap_servers: Union[str, List[str]], client_id: str, serializer: BaseSerializer,
-                 loop: AbstractEventLoop, partitioner: Type[BasePartitioner], acks: Union[int, str] = 1,
+                 loop: AbstractEventLoop, partitioner: BasePartitioner, acks: Union[int, str] = 1,
                  transactional_id: str = None) -> None:
         """
         KafkaProducer constructor
@@ -105,6 +106,7 @@ class KafkaProducer(BaseProducer):
                                                     client_id=self._client_id, acks=self._acks,
                                                     value_serializer=self.serializer.encode,
                                                     transactional_id=self._transactional_id,
+                                                    key_serializer=KafkaKeySerializer.encode,
                                                     partitioner=partitioner)
         except (ValueError, KafkaError) as err:
             raise KafkaProducerError(err.__str__(), 500)
@@ -213,9 +215,9 @@ class KafkaProducer(BaseProducer):
         except KeyError as er_key:
             self.logger.error(f'Key error = {er_key}')
             raise KafkaProducerError(f'KeyError, event not found in serializer, extra : {er_key}', 500)
-        except Exception as er_ex:
-            self.logger.error(f'Exception : {er_ex}')
-            raise KafkaProducerError(er_ex.__str__(), 500)
+        except Exception:
+            self.logger.exception(f'Something went wrong')
+            raise
 
     async def create_batch(self) -> BatchBuilder:
         if not self._running:
