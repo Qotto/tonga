@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class KeyPartitioner(BasePartitioner):
-    @classmethod
-    def __call__(cls, key, all_partitions, available):
+    def __call__(self, key, all_partitions, available):
         logger.debug('KeyPartitioner')
 
         if key is None:
