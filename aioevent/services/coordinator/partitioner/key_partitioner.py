@@ -7,10 +7,12 @@ import random
 
 from kafka.partitioner.hashed import murmur2
 
+from aioevent.services.coordinator.partitioner.base import BasePartitioner
+
 logger = logging.getLogger(__name__)
 
 
-class KeyPartitioner(object):
+class KeyPartitioner(BasePartitioner):
     @classmethod
     def __call__(cls, key, all_partitions, available):
         logger.debug('KeyPartitioner')

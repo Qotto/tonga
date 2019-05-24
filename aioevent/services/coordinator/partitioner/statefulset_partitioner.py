@@ -3,14 +3,13 @@
 # Copyright (c) Qotto, 2019
 
 import logging
-import random
 
-from kafka.partitioner.hashed import murmur2
+from aioevent.services.coordinator.partitioner.base import BasePartitioner
 
 logger = logging.getLogger(__name__)
 
 
-class StatefulsetPartitioner(object):
+class StatefulsetPartitioner(BasePartitioner):
     instance: int = 0
 
     @classmethod
@@ -19,4 +18,3 @@ class StatefulsetPartitioner(object):
         if cls.instance <= len(all_partitions):
             return all_partitions[cls.instance]
         raise ValueError
-
