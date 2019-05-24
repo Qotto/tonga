@@ -17,16 +17,26 @@ from aiokafka.errors import (
 
 from typing import List, Dict, Any, Union
 
-from aioevent.models.exceptions import BadSerializer, KafkaConsumerError
+# Model import
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
 from aioevent.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
 
+# BaseConsumer import
 from aioevent.services.consumer.base import BaseConsumer
+
+# BaseSerializer / KafkaKeySerializer import
 from aioevent.services.serializer.base import BaseSerializer
-from aioevent.stores.store_builder.base import BaseStoreBuilder
+from aioevent.services.serializer.kafka_key import KafkaKeySerializer
+
+# Import StatefulsetPartitionAssignor
 from aioevent.services.coordinator.assignors.statefulset_assignors import StatefulsetPartitionAssignor
 
+# BaseStoreBuilder import
+from aioevent.stores.store_builder.base import BaseStoreBuilder
+
+# Exception import
+from aioevent.models.exceptions import BadSerializer, KafkaConsumerError
 
 __all__ = [
     'KafkaConsumer',
@@ -167,6 +177,7 @@ class KafkaConsumer(BaseConsumer):
                                                     value_deserializer=self.serializer.decode,
                                                     auto_offset_reset=self._auto_offset_reset,
                                                     isolation_level=self._isolation_level, enable_auto_commit=False,
+                                                    key_deserializer=KafkaKeySerializer.decode,
                                                     partition_assignment_strategy=[StatefulsetPartitionAssignor])
         except (ValueError, KafkaError) as err:
             raise KafkaConsumerError(err.__str__(), 500)
