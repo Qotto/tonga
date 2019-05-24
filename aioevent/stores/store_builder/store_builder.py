@@ -18,6 +18,9 @@ from aioevent.stores.store_builder.base import BaseStoreBuilder
 # Serializer import
 from aioevent.services.serializer.base import BaseSerializer
 
+# StatefulsetPartitioner import
+from aioevent.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
+
 # Stores import
 from aioevent.stores.local.base import BaseLocalStore
 from aioevent.stores.local.memory import LocalStoreMemory
@@ -136,8 +139,11 @@ class StoreBuilder(BaseStoreBuilder):
                                              store_builder=self)
         asyncio.ensure_future(self._store_consumer.listen_store_records(self._rebuild), loop=self._loop)
 
+        partitioner = StatefulsetPartitioner
+        setattr(partitioner, 'instance', self._current_instance)
         self._store_producer = KafkaProducer(name=f'{self.name}_producer', bootstrap_servers=self._bootstrap_server,
                                              client_id=f'{self.name}_producer_{self._current_instance}',
+                                             partitioner=partitioner,
                                              loop=self._loop, serializer=self._serializer, acks='all')
 
         self._stores_partitions = list()
