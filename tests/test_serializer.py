@@ -14,8 +14,18 @@ from aioevent.models.store_record.store_record import StoreRecord
 from aioevent.models.store_record.store_record_handler import StoreRecordHandler
 from aioevent.services.serializer.avro import AvroSerializer
 
+# TestEvent / TestEventHandler import
 from tests.misc.event_class.test_event import TestEvent
 from tests.misc.handler_class.test_event_handler import TestEventHandler
+
+# TestCommand / TestCommandHandler import
+from tests.misc.event_class.test_command import TestCommand
+from tests.misc.handler_class.test_command_handler import TestCommandHandler
+
+# TestResult / TestResultHandler import
+from tests.misc.event_class.test_result import TestResult
+from tests.misc.handler_class.test_result_handler import TestResultHandler
+
 from aioevent.models.exceptions import AvroAlreadyRegister, AvroDecodeError, AvroEncodeError
 
 
@@ -60,16 +70,16 @@ def test_register_event_handler_store_record_avro_serializer(get_avro_serializer
     assert found
 
 
-def test_register_base_event_class_avro_serializer(get_avro_serializer):
+def test_register_event_class_avro_serializer(get_avro_serializer):
     serializer = get_avro_serializer
 
     test_event_handler = TestEventHandler()
-    serializer.register_class('aioevent.event.test', TestEvent, test_event_handler)
+    serializer.register_class('aioevent.test.event', TestEvent, test_event_handler)
 
     events = serializer.get_events()
     found = False
     for e_name, event in events.items():
-        if e_name.match('aioevent.event.test'):
+        if e_name.match('aioevent.test.event'):
             assert event == TestEvent
             found = True
             break
@@ -78,8 +88,58 @@ def test_register_base_event_class_avro_serializer(get_avro_serializer):
     found = False
     handlers = serializer.get_handlers()
     for e_name, handler in handlers.items():
-        if e_name.match('aioevent.event.test'):
+        if e_name.match('aioevent.test.event'):
             assert handler == test_event_handler
+            found = True
+            break
+    assert found
+
+
+def test_register_command_class_avro_serializer(get_avro_serializer):
+    serializer = get_avro_serializer
+
+    test_command_handler = TestCommandHandler()
+    serializer.register_class('aioevent.test.command', TestCommand, test_command_handler)
+
+    events = serializer.get_events()
+    found = False
+    for e_name, event in events.items():
+        if e_name.match('aioevent.test.command'):
+            assert event == TestCommand
+            found = True
+            break
+    assert found
+
+    found = False
+    handlers = serializer.get_handlers()
+    for e_name, handler in handlers.items():
+        if e_name.match('aioevent.test.command'):
+            assert handler == test_command_handler
+            found = True
+            break
+    assert found
+
+
+def test_register_result_class_avro_serializer(get_avro_serializer):
+    serializer = get_avro_serializer
+
+    test_result_handler = TestResultHandler()
+    serializer.register_class('aioevent.test.result', TestResult, test_result_handler)
+
+    events = serializer.get_events()
+    found = False
+    for e_name, event in events.items():
+        if e_name.match('aioevent.test.result'):
+            assert event == TestResult
+            found = True
+            break
+    assert found
+
+    found = False
+    handlers = serializer.get_handlers()
+    for e_name, handler in handlers.items():
+        if e_name.match('aioevent.test.result'):
+            assert handler == test_result_handler
             found = True
             break
     assert found
