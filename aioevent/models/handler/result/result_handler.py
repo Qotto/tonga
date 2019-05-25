@@ -7,7 +7,7 @@ from aiokafka import TopicPartition
 from typing import Union
 
 from aioevent.models.handler.base import BaseHandler
-from aioevent.models.events.base import BaseModel
+from aioevent.models.events.result.result import BaseResult
 
 __all__ = [
     'BaseResultHandler',
@@ -19,5 +19,5 @@ class BaseResultHandler(BaseHandler):
     def handler_name(cls) -> str:
         raise NotImplementedError
 
-    async def on_result(self, event: BaseModel, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
+    async def on_result(self, event: BaseResult, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
         raise NotImplementedError
