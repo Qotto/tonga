@@ -20,7 +20,7 @@ class TestEventHandler(BaseEventHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.event.test'
+        return 'aioevent.test.event'
 
     async def handle(self, event: BaseEvent, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
         raise NotImplementedError

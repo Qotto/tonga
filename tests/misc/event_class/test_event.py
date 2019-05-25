@@ -24,4 +24,4 @@ class TestEvent(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.event.test'
+        return 'aioevent.test.event'
