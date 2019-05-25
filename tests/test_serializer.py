@@ -35,7 +35,7 @@ def test_init_avro_serializer(get_avro_serializer):
     schemas = serializer.get_schemas()
 
     assert isinstance(schemas['aioevent.store.record'], NamedSchema)
-    assert isinstance(schemas['aioevent.event.test'], NamedSchema)
+    assert isinstance(schemas['aioevent.test.event'], NamedSchema)
 
 
 def test_register_event_handler_store_record_avro_serializer(get_avro_serializer, get_avro_serializer_store):
@@ -155,7 +155,7 @@ def test_register_bad_event_name_avro_serializer(get_avro_serializer):
     serializer = get_avro_serializer
     test_event_handler = TestEventHandler()
     with pytest.raises(NameError):
-        serializer.register_class('aioevent.test', TestEvent, test_event_handler)
+        serializer.register_class('aioevent.qlf', TestEvent, test_event_handler)
 
 
 def event_name():
@@ -188,4 +188,4 @@ def test_encode_avro_serializer(get_avro_serializer):
     encoded_test = serializer.encode(test_encode)
     decoded_test, handler_test = serializer.decode(encoded_test)
     assert test_encode.__dict__ == decoded_test.__dict__
-    assert handler_test.handler_name() == 'aioevent.event.test'
+    assert handler_test.handler_name() == 'aioevent.test.event'
