@@ -7,7 +7,7 @@ from aiokafka import TopicPartition
 from typing import Union
 
 from aioevent.models.handler.base import BaseHandler
-from aioevent.models.events.base import BaseModel
+from aioevent.models.events.command.command import BaseCommand
 
 __all__ = [
     'BaseCommandHandler'
@@ -19,5 +19,5 @@ class BaseCommandHandler(BaseHandler):
     def handler_name(cls) -> str:
         raise NotImplementedError
 
-    async def execute(self, event: BaseModel, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
+    async def execute(self, event: BaseCommand, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
         raise NotImplementedError
