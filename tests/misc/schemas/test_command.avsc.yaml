@@ -1,5 +1,5 @@
 namespace: aioevent.test
-name: result
+name: command
 doc: Result test
 type: record
 fields:
