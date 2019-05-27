@@ -2,12 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aiokafka import TopicPartition
-from aioevent import BaseEvent, AioEvent
-
 from typing import Dict, Any
 
-from examples.coffee_bar.waiter.models.coffee import Coffee
+from aioevent.models.events.event import BaseEvent
 
 __all__ = [
     'CoffeeOrdered'
@@ -28,15 +25,6 @@ class CoffeeOrdered(BaseEvent):
         self.coffee_type = coffee_type
         self.coffee_for = coffee_for
         self.amount = amount
-
-    async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
-        coffee = Coffee(self.coffee_type, self.cup_type, self.coffee_for, self.amount, uuid=self.uuid)
-        app.get('waiter_local_repository').add_coffee(coffee)
-
-    async def state_builder(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition,
-                            offset: int) -> None:
-        coffee = Coffee(self.coffee_type, self.cup_type, self.coffee_for, self.amount, uuid=self.uuid)
-        app.get('waiter_global_repository').add_coffee(coffee)
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):
