@@ -4,8 +4,6 @@
 
 import json
 import pytest
-from kafka.coordinator.protocol import ConsumerProtocolMemberMetadata, ConsumerProtocolMemberAssignment
-
 
 from aioevent.services.coordinator.assignors.statefulset_assignors import StatefulsetPartitionAssignor
 
@@ -173,4 +171,103 @@ def test_assign_statefulset_assignors_mode_full_2_client(get_assignor_cluster_me
     assert consumer_protocol_member_assignment1['version'] == 0
     assert consumer_protocol_member_assignment1['assignment'] == [('test-assignor', [1])]
     assert consumer_protocol_member_assignment1['user_data'] == b'{"instance": 1, "nb_replica": 4, ' \
+                                                                b'"assignor_policy": "only_own"}'
+
+
+@pytest.mark.skip(reason='Not yet implemented')
+def test_assign_statefulset_assignors_2_instance_4_partitions(get_assignor_cluster_metadata, get_assignor_kafka_client):
+    cluster_metadata = get_assignor_cluster_metadata
+    client = get_assignor_kafka_client
+
+    response_metadata = client.poll(future=client.cluster.request_update())
+    cluster_metadata.update_metadata(response_metadata[0])
+
+    # Client 0
+    assignors_data0 = {'instance': 0, 'nb_replica': 2, 'assignor_policy': 'only_own'}
+    statefulset_assignor0 = StatefulsetPartitionAssignor
+    setattr(statefulset_assignor0, 'assignors_data', bytes(json.dumps(assignors_data0), 'utf-8'))
+    assignors_metadata0 = statefulset_assignor0.metadata(['test-assignor-i'])
+
+    # Client 1
+    assignors_data1 = {'instance': 1, 'nb_replica': 2, 'assignor_policy': 'only_own'}
+    statefulset_assignor1 = StatefulsetPartitionAssignor
+    setattr(statefulset_assignor1, 'assignors_data', bytes(json.dumps(assignors_data1), 'utf-8'))
+    assignors_metadata1 = statefulset_assignor1.metadata(['test-assignor-i'])
+
+    assignor_dict = {'client1': assignors_metadata0, 'client2': assignors_metadata1}
+
+    member_assignment = statefulset_assignor0.assign(cluster_metadata, assignor_dict)
+
+    consumer_protocol_member_assignment0 = member_assignment['client1'].__dict__
+    assert consumer_protocol_member_assignment0['version'] == 0
+    assert consumer_protocol_member_assignment0['assignment'] == [('test-assignor-i', [0, 1])]
+    assert consumer_protocol_member_assignment0['user_data'] == b'{"instance": 0, "nb_replica": 2, ' \
+                                                                b'"assignor_policy": "only_own"}'
+
+    consumer_protocol_member_assignment1 = member_assignment['client2'].__dict__
+    assert consumer_protocol_member_assignment1['version'] == 0
+    assert consumer_protocol_member_assignment1['assignment'] == [('test-assignor-i', [2, 3])]
+    assert consumer_protocol_member_assignment1['user_data'] == b'{"instance": 1, "nb_replica": 2, ' \
+                                                                b'"assignor_policy": "only_own"}'
+
+
+@pytest.mark.skip(reason='Not yet implemented')
+def test_assign_statefulset_assignors_4_instance_2_partitions(get_assignor_cluster_metadata, get_assignor_kafka_client):
+    cluster_metadata = get_assignor_cluster_metadata
+    client = get_assignor_kafka_client
+
+    response_metadata = client.poll(future=client.cluster.request_update())
+    cluster_metadata.update_metadata(response_metadata[0])
+
+    # Client 0
+    assignors_data0 = {'instance': 0, 'nb_replica': 4, 'assignor_policy': 'only_own'}
+    statefulset_assignor0 = StatefulsetPartitionAssignor
+    setattr(statefulset_assignor0, 'assignors_data', bytes(json.dumps(assignors_data0), 'utf-8'))
+    assignors_metadata0 = statefulset_assignor0.metadata(['test-assignor-j'])
+
+    # Client 1
+    assignors_data1 = {'instance': 1, 'nb_replica': 4, 'assignor_policy': 'only_own'}
+    statefulset_assignor1 = StatefulsetPartitionAssignor
+    setattr(statefulset_assignor1, 'assignors_data', bytes(json.dumps(assignors_data1), 'utf-8'))
+    assignors_metadata1 = statefulset_assignor1.metadata(['test-assignor-j'])
+
+    # Client 2
+    assignors_data2 = {'instance': 2, 'nb_replica': 4, 'assignor_policy': 'only_own'}
+    statefulset_assignor2 = StatefulsetPartitionAssignor
+    setattr(statefulset_assignor2, 'assignors_data', bytes(json.dumps(assignors_data2), 'utf-8'))
+    assignors_metadata2 = statefulset_assignor2.metadata(['test-assignor-j'])
+
+    # Client 3
+    assignors_data3 = {'instance': 3, 'nb_replica': 4, 'assignor_policy': 'only_own'}
+    statefulset_assignor3 = StatefulsetPartitionAssignor
+    setattr(statefulset_assignor3, 'assignors_data', bytes(json.dumps(assignors_data3), 'utf-8'))
+    assignors_metadata3 = statefulset_assignor3.metadata(['test-assignor-j'])
+
+    assignor_dict = {'client1': assignors_metadata0, 'client2': assignors_metadata1,
+                     'client3': assignors_metadata2, 'client4': assignors_metadata3}
+
+    member_assignment = statefulset_assignor0.assign(cluster_metadata, assignor_dict)
+
+    consumer_protocol_member_assignment0 = member_assignment['client1'].__dict__
+    assert consumer_protocol_member_assignment0['version'] == 0
+    assert consumer_protocol_member_assignment0['assignment'] == [('test-assignor-j', [0])]
+    assert consumer_protocol_member_assignment0['user_data'] == b'{"instance": 0, "nb_replica": 4, ' \
+                                                                b'"assignor_policy": "only_own"}'
+
+    consumer_protocol_member_assignment1 = member_assignment['client2'].__dict__
+    assert consumer_protocol_member_assignment1['version'] == 0
+    assert consumer_protocol_member_assignment1['assignment'] == [('test-assignor-j', [1])]
+    assert consumer_protocol_member_assignment1['user_data'] == b'{"instance": 1, "nb_replica": 4, ' \
+                                                                b'"assignor_policy": "only_own"}'
+
+    consumer_protocol_member_assignment1 = member_assignment['client3'].__dict__
+    assert consumer_protocol_member_assignment1['version'] == 0
+    assert consumer_protocol_member_assignment1['assignment'] == [('test-assignor-j', [0])]
+    assert consumer_protocol_member_assignment1['user_data'] == b'{"instance": 2, "nb_replica": 4, ' \
+                                                                b'"assignor_policy": "only_own"}'
+
+    consumer_protocol_member_assignment1 = member_assignment['client4'].__dict__
+    assert consumer_protocol_member_assignment1['version'] == 0
+    assert consumer_protocol_member_assignment1['assignment'] == [('test-assignor-j', [1])]
+    assert consumer_protocol_member_assignment1['user_data'] == b'{"instance": 3, "nb_replica": 4, ' \
                                                                 b'"assignor_policy": "only_own"}'
