@@ -230,7 +230,7 @@ class StoreBuilder(BaseStoreBuilder):
         self._global_store.set_initialized(initialized)
 
     # Sugar functions for local store management
-    async def set_from_local_store(self, key: str, value: bytes) -> None:
+    async def set_from_local_store(self, key: str, value: bytes) -> RecordMetadata:
         """
         Set from local store
 
@@ -248,6 +248,7 @@ class StoreBuilder(BaseStoreBuilder):
                                                                              record_metadata.partition),
                                                               record_metadata.offset)
             await self._local_store.set(key, value)
+            return record_metadata
         else:
             raise UninitializedStore('Uninitialized local store', 500)
 
@@ -265,7 +266,7 @@ class StoreBuilder(BaseStoreBuilder):
             return await self._local_store.get(key)
         raise UninitializedStore('Uninitialized local store', 500)
 
-    async def delete_from_local_store(self, key: str) -> None:
+    async def delete_from_local_store(self, key: str) -> RecordMetadata:
         """
         Delete from local store
 
@@ -283,6 +284,7 @@ class StoreBuilder(BaseStoreBuilder):
                                                                              record_metadata.partition),
                                                               record_metadata.offset)
             await self._local_store.delete(key)
+            return record_metadata
         else:
             raise UninitializedStore('Uninitialized local store', 500)
 
