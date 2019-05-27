@@ -5,6 +5,7 @@
 import logging
 import json
 import collections
+import math
 
 from kafka import TopicPartition
 from kafka.protocol.types import Array, Bytes, Int16, Int32, Schema, String
@@ -12,7 +13,7 @@ from kafka.cluster import ClusterMetadata
 from kafka.coordinator.assignors.abstract import AbstractPartitionAssignor
 from kafka.coordinator.protocol import ConsumerProtocolMemberMetadata, ConsumerProtocolMemberAssignment
 
-from typing import Dict, DefaultDict, Any, Set
+from typing import Dict, DefaultDict, Any, Set, List
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +48,32 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
 
         # Create default dict with lambda
         assignment: DefaultDict[str, Any] = collections.defaultdict(lambda: collections.defaultdict(list))
-        for member_id in members:
-            for tp in all_topic_partitions:
-                user_data = json.loads(members[member_id].user_data)
-                if user_data['assignor_policy'] == 'all':
-                    assignment[member_id][tp.topic].append(tp.partition)
-                elif user_data['assignor_policy'] == 'only_own':
-                    if tp.partition == user_data['instance']:
-                        assignment[member_id][tp.topic].append(tp.partition)
+
+        advanced_assignor_dict = cls.get_advanced_assignor_dict(all_topic_partitions)
+
+        for topic, partitions in advanced_assignor_dict.items():
+            for member_id, member_data in members.items():
+                # Loads member assignors data
+                user_data = json.loads(member_data.user_data)
+                # Get number of partitions by topic name
+                topic_number_partitions = len(partitions)
+
+                # Logic assignors if nb_replica as same as topic_numbers_partitions (used by StoreBuilder for
+                # assign each partitions to right instance, in this case nb_replica is same as topic_number_partitions)
+                if user_data['nb_replica'] == topic_number_partitions:
+                    if user_data['assignor_policy'] == 'all':
+                        for partition in partitions:
+                            assignment[member_id][topic].append(partition)
+                    elif user_data['assignor_policy'] == 'only_own':
+                        if user_data['instance'] in partitions:
+                            assignment[member_id][topic].append(partitions[user_data['instance']])
+                    else:
+                        raise ValueError
+
                 else:
-                    raise ValueError
+                    # Todo Add repartition
+                    raise NotImplementedError
+
         logger.debug(f'Assignment = {assignment}')
 
         protocol_assignment = {}
@@ -67,6 +84,15 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
 
         logger.debug(f'Protocol Assignment = {protocol_assignment}')
         return protocol_assignment
+
+    @staticmethod
+    def get_advanced_assignor_dict(all_topic_partitions: List[TopicPartition]) -> Dict[str, List[int]]:
+        result = dict()
+        for tp in all_topic_partitions:
+            if tp.topic not in result:
+                result[tp.topic] = list()
+            result[tp.topic].append(tp.partition)
+        return result
 
     @classmethod
     def metadata(cls, topics):
