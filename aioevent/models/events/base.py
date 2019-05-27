@@ -19,13 +19,13 @@ class BaseModel(object):
     name: str
     schema_version: str
     record_id: str
-    partition_key: bytes
+    partition_key: str
     timestamp: int
     datetime: str
     correlation_id: str
     context: Dict[str, Any]
 
-    def __init__(self, record_id: str = None, schema_version: str = None, partition_key: bytes = None,
+    def __init__(self, record_id: str = None, schema_version: str = None, partition_key: str = None,
                  correlation_id: str = None, datetime: str = None, timestamp: int = None,
                  context: Dict[str, Any] = None) -> None:
 
@@ -35,7 +35,7 @@ class BaseModel(object):
             self.record_id = record_id
 
         if partition_key is None:
-            self.partition_key = b'0'
+            self.partition_key = '0'
         else:
             self.partition_key = partition_key
 
