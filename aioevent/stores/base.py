@@ -2,6 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+import logging
+from logging import Logger
 from aiokafka import TopicPartition
 
 from typing import Dict, Any, List
@@ -67,8 +69,12 @@ class BaseStoreMetaData(object):
 
 
 class BaseStores(object):
+    _name: str
+    _logger: Logger
+
     def __init__(self, name: str):
         self._name = name
+        self._logger = logging.getLogger('aioevent')
 
     async def set_store_position(self, current_instance: int, nb_replica: int,
                                  assigned_partitions: List[TopicPartition],
