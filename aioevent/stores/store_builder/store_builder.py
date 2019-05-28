@@ -3,6 +3,8 @@
 # Copyright (c) Qotto, 2019
 
 import asyncio
+import logging
+from logging import Logger
 from asyncio import AbstractEventLoop
 from aiokafka import TopicPartition
 from aiokafka.producer.producer import TransactionContext
@@ -84,6 +86,8 @@ class StoreBuilder(BaseStoreBuilder):
     _store_consumer: KafkaConsumer
     _store_producer: KafkaProducer
 
+    _logger: Logger
+
     _stores_partitions: List[TopicPartition]
 
     def __init__(self, name: str, current_instance: int, nb_replica: int, topic_store: str,
@@ -126,6 +130,7 @@ class StoreBuilder(BaseStoreBuilder):
         self._cluster_metadata = cluster_metadata
         self._cluster_admin = cluster_admin
 
+        self._logger = logging.getLogger('aioevent')
         self._loop = loop
 
         self._store_consumer = KafkaConsumer(name=f'{self.name}_consumer', serializer=self._serializer,
@@ -156,14 +161,17 @@ class StoreBuilder(BaseStoreBuilder):
             None
         """
         # Initialize local store
+        self._logger.info('Start initialize store builder')
         if isinstance(self._local_store, LocalStoreMemory):
             # If _local_store is an instance from LocalStoreMemory, auto seek to earliest position for rebuild
+            self._logger.info('LocalStoreMemory seek to earliest')
             assigned_partitions = list()
             last_offsets = dict()
             assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
             last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
             await self._local_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
                                                        last_offsets)
+            await self._store_consumer.load_offsets('earliest')
         else:
             try:
                 # Try to get local_store_metadata, seek at last read offset
@@ -191,14 +199,16 @@ class StoreBuilder(BaseStoreBuilder):
         # Initialize global store
         if isinstance(self._global_store, GlobalStoreMemory):
             # If _global_store is an instance from GlobalStoreMemory, auto seek to earliest position for rebuild
+            self._logger.info('GlobalStoreMemory seek to earliest')
             assigned_partitions = list()
             last_offsets = dict()
             for i in range(0, self._nb_replica):
-                assigned_partitions.append(TopicPartition(self._topic_store, self._current_instance))
+                assigned_partitions.append(TopicPartition(self._topic_store, i))
             for j in range(0, self._nb_replica):
-                last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
+                last_offsets[TopicPartition(self._topic_store, j)] = 0
             await self._global_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
                                                         last_offsets)
+            await self._store_consumer.load_offsets('earliest')
         else:
             try:
                 global_store_metadata = await self._global_store.get_metadata()
