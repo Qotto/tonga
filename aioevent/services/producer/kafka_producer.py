@@ -88,7 +88,7 @@ class KafkaProducer(BaseProducer):
         """
         super().__init__()
         self.name = name
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('aioevent')
 
         self._bootstrap_servers = bootstrap_servers
         self._client_id = client_id
