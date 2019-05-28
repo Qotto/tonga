@@ -4,6 +4,7 @@
 
 import logging
 import json
+import copy
 import asyncio
 from asyncio import AbstractEventLoop
 from logging import Logger
@@ -143,7 +144,7 @@ class KafkaConsumer(BaseConsumer):
         if assignors_data is None:
             assignors_data = {}
 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('aioevent')
 
         if isinstance(serializer, BaseSerializer):
             self.serializer = serializer
@@ -169,8 +170,8 @@ class KafkaConsumer(BaseConsumer):
         self.__last_committed_offsets = dict()
 
         try:
-            statefulset_assignor = StatefulsetPartitionAssignor
-            setattr(statefulset_assignor, 'assignors_data', bytes(json.dumps(assignors_data), 'utf-8'))
+            self.logger.info(json.dumps(assignors_data))
+            statefulset_assignor = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data), 'utf-8'))
             self._kafka_consumer = AIOKafkaConsumer(*self._topics, loop=self._loop,
                                                     bootstrap_servers=self._bootstrap_servers,
                                                     client_id=client_id, group_id=group_id,
@@ -178,7 +179,7 @@ class KafkaConsumer(BaseConsumer):
                                                     auto_offset_reset=self._auto_offset_reset,
                                                     isolation_level=self._isolation_level, enable_auto_commit=False,
                                                     key_deserializer=KafkaKeySerializer.decode,
-                                                    partition_assignment_strategy=[StatefulsetPartitionAssignor])
+                                                    partition_assignment_strategy=[statefulset_assignor])
         except (ValueError, KafkaError) as err:
             raise KafkaConsumerError(err.__str__(), 500)
         self.logger.debug(f'Create new consumer {client_id}, group_id {group_id}')
@@ -322,10 +323,10 @@ class KafkaConsumer(BaseConsumer):
         """
         while True:
             message = await self._kafka_consumer.getone()
-            print('----------------------------------------------------------------------------------------')
-            print(f'Topic {message.topic}, Partition {message.partition}, Offset {message.offset}, Key {message.key}, '
-                  f'Value {message.value}, Headers {message.headers}')
-            print('----------------------------------------------------------------------------------------')
+            self.logger.info('----------------------------------------------------------------------------------------')
+            self.logger.info(f'Topic {message.topic}, Partition {message.partition}, Offset {message.offset}, '
+                             f'Key {message.key}, Value {message.value}, Headers {message.headers}')
+            self.logger.info('----------------------------------------------------------------------------------------')
 
     async def listen_event(self, mod: str = 'earliest') -> None:
         """
@@ -418,18 +419,38 @@ class KafkaConsumer(BaseConsumer):
         if self._store_builder is None:
             raise KeyError
 
+        self.logger.info('Start listen store records')
+
         await self.start_consumer()
         await self._store_builder.initialize_store_builder()
 
         if not self._running:
             raise KafkaConsumerError('Fail to start AioeventConsumer', 500)
 
+        # Check if store is ready
+        self.logger.info('-------------------------------------------------------')
+        self.logger.info(self.__last_offsets)
+        ack = False
+        for tp, offset in self.__last_offsets.items():
+            self.logger.info(f'Topic : {tp.topic}, partition : {tp.partition}, offset: {offset}')
+            if tp.partition == self._store_builder.get_current_instance():
+                self.logger.info('Own partition')
+                if offset == 0:
+                    self._store_builder.get_local_store().set_initialized(True)
+                else:
+                    ack = False
+            else:
+                ack = True if offset == 0 else False
+        if ack:
+            self._store_builder.get_global_store().set_initialized(True)
+        self.logger.info('-------------------------------------------------------')
+
         self.pprint_consumer_offsets()
 
         async for msg in self._kafka_consumer:
             # Debug Display
             print("------------------------------------------------------------------------------------------------")
-            self.logger.debug(f'New Message on state builder consumer {self._client_id}, Topic {msg.topic}, '
+            self.logger.debug(f'New Message on store builder consumer {self._client_id}, Topic {msg.topic}, '
                               f'Partition {msg.partition}, Offset {msg.offset}, Key {msg.key}, Value {msg.value},'
                               f'Headers {msg.headers}')
             self.pprint_consumer_offsets()
@@ -437,17 +458,18 @@ class KafkaConsumer(BaseConsumer):
             tp = TopicPartition(msg.topic, msg.partition)
             self.__current_offsets[tp] = msg.offset
 
-            # Stop rebuild if last_offsets is reached
-            if not self._store_builder.get_local_store().is_initialized():
-                if self.__current_offsets[tp] == self.__last_offsets[tp]:
-                    self._store_builder.get_local_store().set_initialized(True)
-                    rebuild = False
-
-            # Set initialize to true if global state was reached all last_offset of own partitions
-            if not self._store_builder.get_global_store().is_initialized():
-                global_store_metadata = await self._store_builder.get_global_store().get_metadata()
-                if self.__current_offsets == global_store_metadata.last_offsets:
-                    self._store_builder.get_global_store().set_initialized(True)
+            # Check if store is ready
+            ack = False
+            for tp, offset in self.__last_offsets.items():
+                if tp.partition == self._store_builder.get_current_instance():
+                    if offset == 0:
+                        self._store_builder.get_local_store().set_initialized(True)
+                    else:
+                        ack = False
+                else:
+                    ack = True if offset == 0 else False
+            if ack:
+                self._store_builder.get_global_store().set_initialized(True)
 
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
