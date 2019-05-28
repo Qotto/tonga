@@ -41,7 +41,7 @@ class AvroSerializer(BaseSerializer):
         self.schemas_folder = schemas_folder
         # TODO Remove workaround
         self.schemas_folder_lib = os.path.dirname(os.path.abspath(__file__)) + '/../../models/store_record/avro_schema'
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('aioevent')
         self._schemas = dict()
         self._events = dict()
         self._handlers = dict()
