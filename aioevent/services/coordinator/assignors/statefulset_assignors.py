@@ -5,10 +5,8 @@
 import logging
 import json
 import collections
-import math
 
 from kafka import TopicPartition
-from kafka.protocol.types import Array, Bytes, Int16, Int32, Schema, String
 from kafka.cluster import ClusterMetadata
 from kafka.coordinator.assignors.abstract import AbstractPartitionAssignor
 from kafka.coordinator.protocol import ConsumerProtocolMemberMetadata, ConsumerProtocolMemberAssignment
@@ -23,8 +21,10 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
     version = 0
     assignors_data: bytes = b''
 
-    @classmethod
-    def assign(cls, cluster: ClusterMetadata, members: Dict[str, ConsumerProtocolMemberMetadata]) \
+    def __init__(self, assignors_data):
+        self.assignors_data = assignors_data
+
+    def assign(self, cluster: ClusterMetadata, members: Dict[str, ConsumerProtocolMemberMetadata]) \
             -> Dict[str, ConsumerProtocolMemberAssignment]:
         logger.info('Statefulset Partition Assignor')
         logger.debug(f'Cluster = {cluster}\nMembers = {members}')
@@ -49,7 +49,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         # Create default dict with lambda
         assignment: DefaultDict[str, Any] = collections.defaultdict(lambda: collections.defaultdict(list))
 
-        advanced_assignor_dict = cls.get_advanced_assignor_dict(all_topic_partitions)
+        advanced_assignor_dict = self.get_advanced_assignor_dict(all_topic_partitions)
 
         for topic, partitions in advanced_assignor_dict.items():
             for member_id, member_data in members.items():
@@ -78,7 +78,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
 
         protocol_assignment = {}
         for member_id in members:
-            protocol_assignment[member_id] = ConsumerProtocolMemberAssignment(cls.version,
+            protocol_assignment[member_id] = ConsumerProtocolMemberAssignment(self.version,
                                                                               sorted(assignment[member_id].items()),
                                                                               members[member_id].user_data)
 
@@ -94,9 +94,8 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
             result[tp.topic].append(tp.partition)
         return result
 
-    @classmethod
-    def metadata(cls, topics):
-        return ConsumerProtocolMemberMetadata(cls.version, list(topics), cls.assignors_data)
+    def metadata(self, topics):
+        return ConsumerProtocolMemberMetadata(self.version, list(topics), self.assignors_data)
 
     @classmethod
     def on_assignment(cls, assignment):
