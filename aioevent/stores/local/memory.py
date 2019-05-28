@@ -52,7 +52,6 @@ class LocalStoreMemory(BaseLocalStore):
         await self._update_metadata()
 
     def set_initialized(self, initialized: bool) -> None:
-        self._logger.info(f'LocalStoreMemory initialized: {initialized}')
         self._initialized = initialized
 
     def is_initialized(self) -> bool:

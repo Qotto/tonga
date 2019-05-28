@@ -16,7 +16,7 @@ fields:
     doc: A string determining to which partition your record will be assigned
     type:
       - "null"
-      - string
+      - bytes
   - name: timestamp
     doc: UNIX timestamp in milliseconds, when this record was generated
     type:

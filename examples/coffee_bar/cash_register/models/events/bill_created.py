@@ -2,7 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aioevent.models.events.event import BaseEvent
+from aiokafka import TopicPartition
+from aioevent import BaseEvent, AioEvent
 
 from typing import Dict, Any
 
@@ -22,6 +23,9 @@ class BillCreated(BaseEvent):
         self.uuid = uuid
         self.coffee_uuid = coffee_uuid
         self.amount = amount
+
+    async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
+        print(self.__dict__)
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):
