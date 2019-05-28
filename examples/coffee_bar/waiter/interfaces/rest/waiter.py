@@ -7,6 +7,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse
 
 from aioevent.models.exceptions import StoreKeyNotFound
+from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
 from examples.coffee_bar.waiter.models.events import CoffeeOrdered, CoffeeServed
 from examples.coffee_bar.waiter.models.coffee import Coffee
@@ -18,8 +19,12 @@ waiter_bp = Blueprint('waiter')
 async def coffee_new_order(request: Request) -> HTTPResponse:
     if request.json:
         # Creates coffee
+        key_partitioner = KeyPartitioner()
         try:
-            coffee = Coffee(**request.json)
+            while True:
+                coffee = Coffee(**request.json)
+                if key_partitioner(coffee.uuid, [0, 1], [0, 1]) == request['waiter']['instance']:
+                    break
         except (KeyError, ValueError) as err:
             return response.json({'error': err, 'error_code': 500}, status=500)
 
