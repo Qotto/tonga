@@ -4,12 +4,12 @@
 
 import os
 import logging
+from colorlog import ColoredFormatter
 import argparse
 import uvloop
 import asyncio
 from sanic import Sanic
 from sanic.request import Request
-from logging.config import dictConfig
 from signal import signal, SIGINT
 from kafka import KafkaAdminClient
 from kafka.cluster import ClusterMetadata
@@ -40,6 +40,31 @@ from examples.coffee_bar.waiter.models.handlers.coffee_finished_handler import C
 from examples.coffee_bar.waiter.models.handlers.coffee_served_handler import CoffeeServedHandler
 
 
+def setup_logger():
+    """Return a logger with a default ColoredFormatter."""
+    formatter = ColoredFormatter(
+        "%(log_color)s[%(asctime)s]%(levelname)s: %(name)s/%(module)s/%(funcName)s:%(lineno)d"
+        " (%(thread)d) %(blue)s%(message)s",
+        datefmt=None,
+        reset=True,
+        log_colors={
+            'DEBUG':    'cyan',
+            'INFO':     'green',
+            'WARNING':  'yellow',
+            'ERROR':    'red',
+            'CRITICAL': 'red',
+        }
+    )
+
+    logger = logging.getLogger('aioevent')
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+
+    return logger
+
+
 if __name__ == '__main__':
     # Argument parser, use for start waiter by instance
     parser = argparse.ArgumentParser(description='Waiter Parser')
@@ -59,35 +84,6 @@ if __name__ == '__main__':
         print('Bad instance !')
         exit(-1)
 
-    # Logger configuration
-
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': True,
-        'formatters': {
-            'verbose': {
-                'format': '[%(asctime)s] %(levelname)s: %(name)s/%(module)s/%(funcName)s:'
-                          '%(lineno)d (%(thread)d) %(message)s'
-            },
-        },
-        'handlers': {
-            'console': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-                'formatter': 'verbose',
-            },
-        },
-        'loggers': {
-            'aioevent': {
-                'level': 'DEBUG',
-                'handlers': ['console'],
-                'propagate': False,
-            },
-        }
-    }
-
-    dictConfig(LOGGING)
-
     # Creates sanic server
     sanic = Sanic(name=f'waiter-{cur_instance}')
 
@@ -99,23 +95,23 @@ if __name__ == '__main__':
     waiter_app['nb_replica'] = nb_replica
 
     # Registers logger
-    waiter_app['logger'] = logging.getLogger(__name__)
+    waiter_app['logger'] = setup_logger()
 
-    waiter_app['logger'].info('Hello my name is Albert !\nWaiter current instance : {cur_instance}')
+    waiter_app['logger'].info(f'Hello my name is Albert ! Waiter current instance : {cur_instance}')
 
     # Creates & registers event loop
     waiter_app['loop'] = uvloop.new_event_loop()
     asyncio.set_event_loop(waiter_app['loop'])
 
     waiter_app['serializer'] = AvroSerializer(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                           'tests/coffee_bar/avro_schemas'))
+                                                           'examples/coffee_bar/avro_schemas'))
 
     # Creates & registers local store memory / global store memory
 
     waiter_app['local_store'] = LocalStoreMemory(name=f'waiter-{cur_instance}-local-memory')
     waiter_app['global_store'] = GlobalStoreMemory(name=f'waiter-{cur_instance}-global-memory')
 
-    cluster_admin = KafkaAdminClient(bootstrap_servers='localhost:9092', client_id='test_store_builder')
+    cluster_admin = KafkaAdminClient(bootstrap_servers='localhost:9092', client_id=f'waiter-{cur_instance}')
     cluster_metadata = ClusterMetadata(bootstrap_servers='localhost:9092')
 
     # Creates & registers store builder
@@ -144,7 +140,7 @@ if __name__ == '__main__':
     # Creates & registers KafkaConsumer
     waiter_app['consumer'] = KafkaConsumer(name=f'waiter-{cur_instance}', serializer=waiter_app['serializer'],
                                            bootstrap_servers='localhost:9092', client_id=f'waiter-{cur_instance}',
-                                           topics=['waiter-events', 'bartender-events'],
+                                           topics=['bartender-events'],
                                            loop=waiter_app['loop'], group_id='waiter',
                                            assignors_data={'instance': cur_instance,
                                                            'nb_replica': nb_replica,

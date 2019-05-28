@@ -2,8 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from uuid import uuid4
 import ast
+from uuid import uuid4
 
 from typing import Dict, Any
 
