@@ -2,9 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aiokafka import TopicPartition
-from aioevent import BaseCommand
-from migration.app import BaseApp
+from aioevent.models.events.command.command import BaseCommand
 
 from typing import Dict, Any
 
@@ -23,9 +21,6 @@ class MakeCoffee(BaseCommand):
         self.uuid = uuid
         self.cup_type = cup_type
         self.coffee_type = coffee_type
-
-    async def execute(self, app: BaseApp, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
-        pass
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):

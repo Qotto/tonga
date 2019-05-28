@@ -2,15 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from datetime import datetime, timezone
-from aiokafka import TopicPartition
-from aioevent import BaseEvent
-from aioevent import AioEvent
-from aioevent.models.exceptions import KafkaProducerError, KafkaConsumerError
+# Import BaseEvent
+from aioevent.models.events.event import BaseEvent
 
 from typing import Dict, Any
 
-from ..commands import MakeCoffee
 
 __all__ = [
     'BillCreated'
@@ -20,29 +16,13 @@ __all__ = [
 class BillCreated(BaseEvent):
     uuid: str
     coffee_uuid: str
-    amount: bytes
+    amount: float
 
     def __init__(self, uuid: str, coffee_uuid: str, amount: float, **kwargs) -> None:
         super().__init__(**kwargs)
         self.uuid = uuid
         self.coffee_uuid = coffee_uuid
         self.amount = amount
-
-    async def handle(self, app: AioEvent, corr_id: str, group_id: str, topic: TopicPartition, offset: int) -> None:
-        try:
-            context = self.context
-            context['start_time'] = datetime.now(timezone.utc).timestamp()
-            context['bill_uuid'] = self.uuid
-            context['amount'] = self.amount
-
-            event = MakeCoffee(self.coffee_uuid, cup_type=self.context['cup_type'],
-                               coffee_type=self.context['coffee_type'], context=context,
-                               processing_guarantee='at_most_once')
-            await app.producers['bartender_producer'].send_and_await(event, 'coffee-maker-commands')
-        except KafkaProducerError as er:
-            raise KafkaConsumerError(f'Fail to send MakeCoffee command, info : {er.msg}', 500)
-        except Exception as e:
-            raise e
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):
