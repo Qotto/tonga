@@ -24,6 +24,9 @@ from aioevent.stores.local.memory import LocalStoreMemory
 from aioevent.stores.globall.memory import GlobalStoreMemory
 # Import store builder
 from aioevent.stores.store_builder.store_builder import StoreBuilder
+# Import StoreRecord & StoreRecordHandler
+from aioevent.models.store_record.store_record import StoreRecord
+from aioevent.models.store_record.store_record_handler import StoreRecordHandler
 # Import key partitioner
 from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
@@ -139,6 +142,7 @@ if __name__ == '__main__':
                                                                 acks='all', transactional_id=f'cash-register')
 
     # Initializes cash register handlers
+    store_record_handler = StoreRecordHandler(cash_register_app['store_builder'])
     bill_created_handler = BillCreatedHandler()
     bill_paid_handler = BillPaidHandler()
     coffee_ordered_handler = CoffeeOrderedHandler(cash_register_app['store_builder'],
@@ -147,6 +151,7 @@ if __name__ == '__main__':
                                                 cash_register_app['transactional_producer'])
 
     # Registers events / handlers in serializer
+    cash_register_app['serializer'].register_event_handler_store_record(StoreRecord, store_record_handler)
     cash_register_app['serializer'].register_class('aioevent.waiter.event.CoffeeOrdered', CoffeeOrdered,
                                                    coffee_ordered_handler)
     cash_register_app['serializer'].register_class('aioevent.waiter.event.CoffeeServed', CoffeeServed,

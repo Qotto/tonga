@@ -24,6 +24,9 @@ from aioevent.stores.local.memory import LocalStoreMemory
 from aioevent.stores.globall.memory import GlobalStoreMemory
 # Import store builder
 from aioevent.stores.store_builder.store_builder import StoreBuilder
+# Import StoreRecord & StoreRecordHandler
+from aioevent.models.store_record.store_record import StoreRecord
+from aioevent.models.store_record.store_record_handler import StoreRecordHandler
 # Import key partitioner
 from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
@@ -133,11 +136,13 @@ if __name__ == '__main__':
                                                          acks='all', transactional_id=f'waiter')
 
     # Initializes waiter handlers
+    store_record_handler = StoreRecordHandler(waiter_app['store_builder'])
     coffee_ordered_handler = CoffeeOrderedHandler()
     coffee_finished_handler = CoffeeFinishedHandler(waiter_app['store_builder'],  waiter_app['transactional_producer'])
     coffee_served_handler = CoffeeServedHandler()
 
     # Registers events / handlers in serializer
+    waiter_app['serializer'].register_event_handler_store_record(StoreRecord, store_record_handler)
     waiter_app['serializer'].register_class('aioevent.waiter.event.CoffeeOrdered', CoffeeOrdered,
                                             coffee_ordered_handler)
     waiter_app['serializer'].register_class('aioevent.bartender.event.CoffeeFinished', CoffeeFinished,
