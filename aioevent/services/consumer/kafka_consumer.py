@@ -12,9 +12,9 @@ from logging import Logger
 from aiokafka.consumer import AIOKafkaConsumer
 from aiokafka import TopicPartition
 from aiokafka.errors import KafkaError, KafkaTimeoutError
-from aiokafka.errors import (
-    TopicAuthorizationFailedError, OffsetOutOfRangeError,
-    ConsumerStoppedError, NoOffsetForPartitionError, RecordTooLargeError)
+from aiokafka.errors import (TopicAuthorizationFailedError, OffsetOutOfRangeError, IllegalStateError,
+                             UnsupportedVersionError, ConsumerStoppedError, NoOffsetForPartitionError,
+                             RecordTooLargeError, CommitFailedError, ConnectionError)
 
 from typing import List, Dict, Any, Union
 
@@ -41,7 +41,12 @@ from aioevent.services.coordinator.assignors.statefulset_assignors import Statef
 from aioevent.stores.store_builder.base import BaseStoreBuilder
 
 # Exception import
-from aioevent.models.exceptions import BadSerializer, KafkaConsumerError
+from aioevent.services.consumer.base import (ConsumerConnectionError, AioKafkaConsumerBadParams,
+                                             KafkaConsumerError, BadSerializer, ConsumerKafkaTimeoutError,
+                                             IllegalOperation, TopicPartitionError,
+                                             NoPartitionAssigned, OffsetError, UnknownStoreRecordHandler,
+                                             UnknownHandler, UnknownHandlerReturn,
+                                             HandlerException)
 
 __all__ = [
     'KafkaConsumer',
@@ -184,8 +189,12 @@ class KafkaConsumer(BaseConsumer):
                                                     isolation_level=self._isolation_level, enable_auto_commit=False,
                                                     key_deserializer=KafkaKeySerializer.decode,
                                                     partition_assignment_strategy=[statefulset_assignor])
-        except (ValueError, KafkaError) as err:
-            raise KafkaConsumerError(err.__str__(), 500)
+        except KafkaError as err:
+            self.logger.exception(f'{err.__str__()}')
+            raise err
+        except ValueError as err:
+            self.logger.exception(f'{err.__str__()}')
+            raise AioKafkaConsumerBadParams
         self.logger.debug(f'Create new consumer {client_id}, group_id {group_id}')
 
     async def start_consumer(self) -> None:
@@ -200,12 +209,24 @@ class KafkaConsumer(BaseConsumer):
             ValueError: If KafkaError or KafkaTimoutError is raised, exception value is contain
                         in KafkaConsumerError.msg
         """
-        try:
-            await self._kafka_consumer.start()
-            self._running = True
-            self.logger.debug(f'Start consumer : {self._client_id}, group_id : {self._group_id}')
-        except (KafkaError, KafkaTimeoutError) as err:
-            raise KafkaConsumerError(err.__str__(), 500)
+        for retry in range(1):
+            try:
+                await self._kafka_consumer.start()
+                self._running = True
+                self.logger.debug(f'Start consumer : {self._client_id}, group_id : {self._group_id}')
+            except KafkaTimeoutError as err:
+                self.logger.exception(f'{err.__str__()}')
+                await asyncio.sleep(1)
+            except ConnectionError as err:
+                self.logger.exception(f'{err.__str__()}')
+                await asyncio.sleep(1)
+            except KafkaError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise err
+            else:
+                break
+        else:
+            raise ConsumerConnectionError
 
     async def stop_consumer(self) -> None:
         """
@@ -223,8 +244,12 @@ class KafkaConsumer(BaseConsumer):
             await self._kafka_consumer.stop()
             self._running = False
             self.logger.debug(f'Stop consumer : {self._client_id}, group_id : {self._group_id}')
+        except KafkaTimeoutError as err:
+            self.logger.exception(f'{err.__str__()}')
+            raise ConsumerKafkaTimeoutError
         except KafkaError as err:
-            raise KafkaConsumerError(err.__str__(), 500)
+            self.logger.exception(f'{err.__str__()}')
+            raise err
 
     def is_running(self) -> bool:
         return self._running
@@ -238,6 +263,8 @@ class KafkaConsumer(BaseConsumer):
         """
         last_committed_offsets: Dict[TopicPartition, int] = dict()
         self.logger.debug(f'Get last committed offsets')
+        if self._group_id is None:
+            raise IllegalOperation
         for partition in self._kafka_consumer.assignment():
             offset = await self._kafka_consumer.committed(partition)
             last_committed_offsets[partition] = offset
@@ -253,7 +280,11 @@ class KafkaConsumer(BaseConsumer):
         current_offsets: Dict[TopicPartition, int] = dict()
         self.logger.debug(f'Get current offsets')
         for partition in self._kafka_consumer.assignment():
-            offset = await self._kafka_consumer.position(partition)
+            try:
+                offset = await self._kafka_consumer.position(partition)
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise err
             current_offsets[partition] = offset
         return current_offsets
 
@@ -267,7 +298,14 @@ class KafkaConsumer(BaseConsumer):
         beginning_offsets: Dict[TopicPartition, int] = dict()
         self.logger.debug(f'Get beginning offsets')
         for partition in self._kafka_consumer.assignment():
-            offset = (await self._kafka_consumer.beginning_offsets([partition]))[partition]
+            try:
+                offset = (await self._kafka_consumer.beginning_offsets([partition]))[partition]
+            except KafkaTimeoutError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise ConsumerKafkaTimeoutError
+            except UnsupportedVersionError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise err
             beginning_offsets[partition] = offset
         return beginning_offsets
 
@@ -281,7 +319,14 @@ class KafkaConsumer(BaseConsumer):
         last_offsets: Dict[TopicPartition, int] = dict()
         self.logger.debug(f'Get last offsets')
         for partition in self._kafka_consumer.assignment():
-            offset = (await self._kafka_consumer.end_offsets([partition]))[partition]
+            try:
+                offset = (await self._kafka_consumer.end_offsets([partition]))[partition]
+            except KafkaTimeoutError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise ConsumerKafkaTimeoutError
+            except UnsupportedVersionError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise err
             last_offsets[partition] = offset
         return last_offsets
 
@@ -298,6 +343,7 @@ class KafkaConsumer(BaseConsumer):
         self.logger.debug(f'Load offset mod : {mod}')
         if not self._running:
             await self.start_consumer()
+
         if mod == 'latest':
             await self.seek_to_end()
         elif mod == 'earliest':
@@ -315,8 +361,7 @@ class KafkaConsumer(BaseConsumer):
             for tp, offset in self.__last_committed_offsets.items():
                 if offset is None:
                     self.logger.debug(f'Seek to beginning, no committed offsets was found')
-                    await self.seek_to_beginning()
-                    break
+                    await self.seek_to_beginning(tp.partition, tp.topic)
 
     async def debug_print_all_msg(self):
         """
@@ -343,7 +388,10 @@ class KafkaConsumer(BaseConsumer):
             None
         """
         if not self._running:
-            await self.load_offsets(mod)
+            try:
+                await self.load_offsets(mod)
+            except ConsumerConnectionError:
+                raise ConsumerConnectionError
 
         self.pprint_consumer_offsets()
 
@@ -355,8 +403,8 @@ class KafkaConsumer(BaseConsumer):
             self.logger.debug(f'New Message on consumer {self._client_id}, Topic {msg.topic}, '
                               f'Partition {msg.partition}, Offset {msg.offset}, Key {msg.key}, Value {msg.value},'
                               f'Headers {msg.headers}')
-            self.logger.debug("---------------------------------------------------------------------------------")
             self.pprint_consumer_offsets()
+            self.logger.debug("---------------------------------------------------------------------------------")
 
             tp = TopicPartition(msg.topic, msg.partition)
             self.__current_offsets[tp] = msg.offset
@@ -369,7 +417,7 @@ class KafkaConsumer(BaseConsumer):
                     event_class: BaseModel = decode_dict['event_class']
                     handler_class: BaseHandler = decode_dict['handler_class']
 
-                    logging.debug(f'Event name : {event_class.event_name()}\nEvent content :\n{event_class.__dict__}\n')
+                    logging.debug(f'Event name : {event_class.event_name()}  Event content :\n{event_class.__dict__}')
 
                     # Calls handle if event is instance BaseHandler
                     if isinstance(handler_class, BaseEventHandler):
@@ -382,8 +430,8 @@ class KafkaConsumer(BaseConsumer):
                         result = await handler_class.on_result(event=event_class, group_id=self._group_id, tp=tp,
                                                                offset=msg.offset)
                     else:
-                        # Otherwise raise ValueError
-                        raise ValueError
+                        # Otherwise raise KafkaConsumerUnknownHandler
+                        raise UnknownHandler
 
                     # If result is none (no transactional process), check if consumer has an
                     # group_id (mandatory to commit in Kafka)
@@ -401,14 +449,23 @@ class KafkaConsumer(BaseConsumer):
                         self.logger.debug(f'Transaction end')
                         self.__current_offsets = await self.get_current_offsets()
                         self.__last_committed_offsets = await self.get_last_committed_offsets()
-                    # Otherwise raise ValueError
+                    # Otherwise raise KafkaConsumerUnknownHandlerReturn
                     else:
-                        raise ValueError
+                        raise UnknownHandlerReturn
 
                     # Break if everything was successfully processed
                     break
-                except Exception as e:
-                    logging.error(f'AioEvent consumer exception : {e}')
+                except IllegalStateError as err:
+                    self.logger.exception(f'{err.__str__()}')
+                    raise NoPartitionAssigned
+                except ValueError as err:
+                    self.logger.exception(f'{err.__str__()}')
+                    raise OffsetError
+                except CommitFailedError as err:
+                    self.logger.exception(f'{err.__str__()}')
+                    raise err
+                except (KafkaError, HandlerException) as err:
+                    self.logger.exception(f'{err.__str__()}')
                     sleep_duration_in_s = int(sleep_duration_in_ms / 1000)
                     await asyncio.sleep(sleep_duration_in_s)
                     sleep_duration_in_ms = sleep_duration_in_ms * self._retry_backoff_coeff
@@ -416,6 +473,27 @@ class KafkaConsumer(BaseConsumer):
                         await self.stop_consumer()
                         logging.error(f'Max retries, close consumer and exit')
                         exit(1)
+
+    def check_if_store_is_ready(self) -> None:
+        # TODO Optimize check store is ready
+        if self._store_builder.get_local_store().is_initialized() and self._store_builder.get_global_store().is_initialized():
+            return
+
+        self.logger.info('-------------------------------------------------------')
+        ack = False
+        for tp, offset in self.__last_offsets.items():
+            self.logger.info(f'Topic : {tp.topic}, partition : {tp.partition}, offset: {offset}')
+            if tp.partition == self._store_builder.get_current_instance():
+                self.logger.info('Own partition')
+                if offset == 0:
+                    self._store_builder.get_local_store().set_initialized(True)
+                else:
+                    ack = False
+            else:
+                ack = True if offset == 0 else False
+        if ack:
+            self._store_builder.get_global_store().set_initialized(True)
+        self.logger.info('-------------------------------------------------------')
 
     async def listen_store_records(self, rebuild: bool = False) -> None:
         """
@@ -439,24 +517,7 @@ class KafkaConsumer(BaseConsumer):
             raise KafkaConsumerError('Fail to start AioeventConsumer', 500)
 
         # Check if store is ready
-        # TODO Optimize check store is ready
-        self.logger.info('-------------------------------------------------------')
-        self.logger.info(self.__last_offsets)
-        ack = False
-        for tp, offset in self.__last_offsets.items():
-            self.logger.info(f'Topic : {tp.topic}, partition : {tp.partition}, offset: {offset}')
-            if tp.partition == self._store_builder.get_current_instance():
-                self.logger.info('Own partition')
-                if offset == 0:
-                    self._store_builder.get_local_store().set_initialized(True)
-                else:
-                    ack = False
-            else:
-                ack = True if offset == 0 else False
-        if ack:
-            self._store_builder.get_global_store().set_initialized(True)
-        self.logger.info('-------------------------------------------------------')
-
+        self.check_if_store_is_ready()
         self.pprint_consumer_offsets()
 
         async for msg in self._kafka_consumer:
@@ -465,30 +526,14 @@ class KafkaConsumer(BaseConsumer):
             self.logger.debug(f'New Message on store builder consumer {self._client_id}, Topic {msg.topic}, '
                               f'Partition {msg.partition}, Offset {msg.offset}, Key {msg.key}, Value {msg.value},'
                               f'Headers {msg.headers}')
-            self.logger.debug("---------------------------------------------------------------------")
             self.pprint_consumer_offsets()
+            self.logger.debug("---------------------------------------------------------------------")
+
+            # Check if store is ready
+            self.check_if_store_is_ready()
 
             tp = TopicPartition(msg.topic, msg.partition)
             self.__current_offsets[tp] = msg.offset
-
-            # Check if store is ready
-            # TODO Optimize check store is ready
-            self.logger.info('-------------------------------------------------------')
-            self.logger.info(self.__last_offsets)
-            ack = False
-            for tp, offset in self.__last_offsets.items():
-                self.logger.info(f'Topic : {tp.topic}, partition : {tp.partition}, offset: {offset}')
-                if tp.partition == self._store_builder.get_current_instance():
-                    self.logger.info('Own partition')
-                    if offset == 0:
-                        self._store_builder.get_local_store().set_initialized(True)
-                    else:
-                        ack = False
-                else:
-                    ack = True if offset == 0 else False
-            if ack:
-                self._store_builder.get_global_store().set_initialized(True)
-            self.logger.info('-------------------------------------------------------')
 
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
@@ -509,14 +554,14 @@ class KafkaConsumer(BaseConsumer):
                                                                                  group_id=self._group_id, tp=tp,
                                                                                  offset=msg.offset)
                             else:
-                                raise ValueError
+                                raise UnknownStoreRecordHandler
                     elif msg.partition != self._store_builder.get_current_instance():
                         if isinstance(event_class, BaseStoreRecord):
                             result = await handler_class.global_store_handler(store_record=event_class,
                                                                               group_id=self._group_id, tp=tp,
                                                                               offset=msg.offset)
                         else:
-                            raise ValueError
+                            raise UnknownStoreRecordHandler
 
                     # If result is none (no transactional process), check if consumer has an
                     # group_id (mandatory to commit in Kafka)
@@ -535,8 +580,17 @@ class KafkaConsumer(BaseConsumer):
 
                     # Break if everything was successfully processed
                     break
-                except Exception as e:
-                    logging.error(f'AioEvent consumer exception : {e}')
+                except IllegalStateError as err:
+                    self.logger.exception(f'{err.__str__()}')
+                    raise NoPartitionAssigned
+                except ValueError as err:
+                    self.logger.exception(f'{err.__str__()}')
+                    raise OffsetError
+                except CommitFailedError as err:
+                    self.logger.exception(f'{err.__str__()}')
+                    raise err
+                except (KafkaError, HandlerException) as err:
+                    self.logger.exception(f'{err.__str__()}')
                     sleep_duration_in_s = int(sleep_duration_in_ms / 1000)
                     await asyncio.sleep(sleep_duration_in_s)
                     sleep_duration_in_ms = sleep_duration_in_ms * self._retry_backoff_coeff
@@ -620,10 +674,21 @@ class KafkaConsumer(BaseConsumer):
         if not self._running:
             await self.start_consumer()
         if partition is not None and topic is not None:
-            await self._kafka_consumer.seek_to_beginning(TopicPartition(topic, partition))
+            try:
+                await self._kafka_consumer.seek_to_beginning(TopicPartition(topic, partition))
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise NoPartitionAssigned
+            except TypeError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise TopicPartitionError
             self.logger.debug(f'Seek to beginning for topic : {topic}, partition : {partition}')
         else:
-            await self._kafka_consumer.seek_to_beginning()
+            try:
+                await self._kafka_consumer.seek_to_beginning()
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise NoPartitionAssigned
             self.logger.debug(f'Seek to beginning for all topics & partitions')
 
     async def seek_to_end(self, partition: int = None, topic: str = None) -> None:
@@ -640,10 +705,21 @@ class KafkaConsumer(BaseConsumer):
         if not self._running:
             await self.start_consumer()
         if partition is not None and topic is not None:
-            await self._kafka_consumer.seek_to_end(TopicPartition(topic, partition))
+            try:
+                await self._kafka_consumer.seek_to_end(TopicPartition(topic, partition))
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise NoPartitionAssigned
+            except TypeError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise TopicPartitionError
             self.logger.debug(f'Seek to end for topic : {topic}, partition : {partition}')
         else:
-            await self._kafka_consumer.seek_to_end()
+            try:
+                await self._kafka_consumer.seek_to_end()
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise NoPartitionAssigned
             self.logger.debug(f'Seek to end for all topics & partitions')
 
     async def seek_to_last_commit(self, partition: int = None, topic: str = None) -> None:
@@ -657,13 +733,26 @@ class KafkaConsumer(BaseConsumer):
         Returns:
             None
         """
+        if self._group_id is None:
+            raise IllegalOperation
         if not self._running:
             await self.start_consumer()
         if partition is not None and topic is not None:
-            await self._kafka_consumer.seek_to_committed(TopicPartition(topic, partition))
+            try:
+                await self._kafka_consumer.seek_to_committed(TopicPartition(topic, partition))
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise NoPartitionAssigned
+            except TypeError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise TopicPartitionError
             self.logger.debug(f'Seek to last committed for topic : {topic}, partition : {partition}')
         else:
-            await self._kafka_consumer.seek_to_committed()
+            try:
+                await self._kafka_consumer.seek_to_committed()
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise NoPartitionAssigned
             self.logger.debug(f'Seek to last committed for all topics & partitions')
 
     async def seek_custom(self, topic: str = None,  partition: int = None, offset: int = None) -> None:
@@ -681,7 +770,17 @@ class KafkaConsumer(BaseConsumer):
         if not self._running:
             await self.start_consumer()
         if partition is not None and topic is not None and offset is not None:
-            await self._kafka_consumer.seek(TopicPartition(topic, partition), offset)
+            try:
+                await self._kafka_consumer.seek(TopicPartition(topic, partition), offset)
+            except ValueError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise OffsetError
+            except TypeError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise TopicPartitionError
+            except IllegalStateError as err:
+                self.logger.exception(f'{err.__str__()}')
+                raise NoPartitionAssigned
             self.logger.debug(f'Custom seek for topic : {topic}, partition : {partition}, offset : {offset}')
         else:
             raise KafkaConsumerError('Custom seek need 3 argv', 500)

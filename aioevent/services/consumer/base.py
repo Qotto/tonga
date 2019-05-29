@@ -8,6 +8,19 @@ from typing import List, Dict
 
 __all__ = [
     'BaseConsumer',
+    'ConsumerConnectionError',
+    'AioKafkaConsumerBadParams',
+    'KafkaConsumerError',
+    'BadSerializer',
+    'ConsumerKafkaTimeoutError',
+    'IllegalOperation',
+    'TopicPartitionError',
+    'NoPartitionAssigned',
+    'OffsetError',
+    'UnknownHandler',
+    'UnknownStoreRecordHandler',
+    'UnknownHandlerReturn',
+    'HandlerException',
 ]
 
 
@@ -35,3 +48,55 @@ class BaseConsumer:
 
     async def get_one(self, partitions: List[int] = None):
         raise NotImplementedError
+
+
+class ConsumerConnectionError(ConnectionError):
+    pass
+
+
+class AioKafkaConsumerBadParams(ValueError):
+    pass
+
+
+class KafkaConsumerError(RuntimeError):
+    pass
+
+
+class ConsumerKafkaTimeoutError(TimeoutError):
+    pass
+
+
+class IllegalOperation(TimeoutError):
+    pass
+
+
+class TopicPartitionError(TypeError):
+    pass
+
+
+class OffsetError(TypeError):
+    pass
+
+
+class NoPartitionAssigned(TypeError):
+    pass
+
+
+class BadSerializer(TypeError):
+    pass
+
+
+class UnknownHandler(TypeError):
+    pass
+
+
+class UnknownHandlerReturn(TypeError):
+    pass
+
+
+class UnknownStoreRecordHandler(TypeError):
+    pass
+
+
+class HandlerException(Exception):
+    pass
