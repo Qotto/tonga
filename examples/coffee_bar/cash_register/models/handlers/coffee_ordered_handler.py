@@ -12,6 +12,8 @@ from aioevent.models.events.event import BaseEvent
 from aioevent.models.handler.event.event_handler import BaseEventHandler
 # Import StoreBuilderBase
 from aioevent.stores.store_builder.base import BaseStoreBuilder
+# Import BaseProducer
+from aioevent.services.producer.base import BaseProducer
 
 # Import Coffee Model
 from examples.coffee_bar.cash_register.models.events.bill_created import BillCreated
@@ -20,13 +22,18 @@ from examples.coffee_bar.cash_register.models.bill import Bill
 
 class CoffeeOrderedHandler(BaseEventHandler):
     _store_builder: BaseStoreBuilder
+    _transactional_producer: BaseProducer
 
-    def __init__(self, store_builder: BaseStoreBuilder, **kwargs):
+    def __init__(self, store_builder: BaseStoreBuilder, transactional_producer: BaseProducer, **kwargs):
         super().__init__(**kwargs)
         self._store_builder = store_builder
+        self._transactional_producer = transactional_producer
 
     async def handle(self, event: BaseEvent, tp: TopicPartition, group_id: str, offset: int) -> Optional[str]:
-        async with self._store_builder.init_transaction():
+        if not self._transactional_producer.is_running():
+            await self._transactional_producer.start_producer()
+
+        async with self._transactional_producer.init_transaction():
             # Creates commit_offsets dict
             commit_offsets = {tp: offset + 1}
             # Instances bill class
@@ -40,10 +47,10 @@ class CoffeeOrderedHandler(BaseEventHandler):
                                        context=bill.context)
 
             # Sends BillCreated event
-            await self._store_builder.get_producer().send_and_await(bill_created, 'cash-register-events')
+            await self._transactional_producer.send_and_await(bill_created, 'cash-register-events')
 
             # End transaction
-            await self._store_builder.end_transaction(commit_offsets, group_id)
+            await self._transactional_producer.end_transaction(commit_offsets, group_id)
         # TODO raise an exception
         return 'transaction'
 

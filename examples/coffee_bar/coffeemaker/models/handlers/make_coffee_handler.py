@@ -20,17 +20,17 @@ from examples.coffee_bar.coffeemaker.models.events.coffee_started import CoffeeS
 
 
 class MakeCoffeeHandler(BaseCommandHandler):
-    _producer: BaseProducer
+    _transactional_producer: BaseProducer
 
-    def __init__(self, producer: BaseProducer, **kwargs) -> None:
+    def __init__(self, transactional_producer: BaseProducer, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._producer = producer
+        self._transactional_producer = transactional_producer
 
     async def execute(self, command: BaseCommand, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
-        if not self._producer.is_running():
-            await self._producer.start_producer()
+        if not self._transactional_producer.is_running():
+            await self._transactional_producer.start_producer()
 
-        async with self._producer.init_transaction():
+        async with self._transactional_producer.init_transaction():
             # Creates commit_offsets dict
             commit_offsets = {tp: offset + 1}
 
@@ -39,11 +39,11 @@ class MakeCoffeeHandler(BaseCommandHandler):
             make_coffee_result = MakeCoffeeResult(command.uuid, context=command.context)
 
             # Sends CoffeeFinished event
-            await self._producer.send_and_await(coffee_started, 'coffee-maker-events')
-            await self._producer.send_and_await(make_coffee_result, 'coffee-maker-results')
+            await self._transactional_producer.send_and_await(coffee_started, 'coffee-maker-events')
+            await self._transactional_producer.send_and_await(make_coffee_result, 'coffee-maker-results')
 
             # End transaction
-            await self._producer.end_transaction(commit_offsets, group_id)
+            await self._transactional_producer.end_transaction(commit_offsets, group_id)
         # TODO raise an exception
         return 'transaction'
 

@@ -19,14 +19,17 @@ from examples.coffee_bar.bartender.models.commands.make_coffee import MakeCoffee
 
 
 class BillCreatedHandler(BaseEventHandler):
-    _producer: BaseProducer
+    _transactional_producer: BaseProducer
 
     def __init__(self, producer: BaseProducer, **kwargs):
         super().__init__(**kwargs)
-        self._producer = producer
+        self._transactional_producer = producer
 
     async def handle(self, event: BaseEvent, tp: TopicPartition, group_id: str, offset: int) -> Optional[str]:
-        async with self._producer.init_transaction():
+        if not self._transactional_producer.is_running():
+            await self._transactional_producer.start_producer()
+
+        async with self._transactional_producer.init_transaction():
             # Creates commit_offsets dict
             commit_offsets = {tp: offset + 1}
 
@@ -42,10 +45,10 @@ class BillCreatedHandler(BaseEventHandler):
                                      processing_guarantee='at_most_once')
 
             # Sends MakeCoffee command
-            await self._producer.send_and_await(make_coffee, 'coffee-maker-commands')
+            await self._transactional_producer.send_and_await(make_coffee, 'coffee-maker-commands')
 
             # End transaction
-            await self._producer.end_transaction(commit_offsets, group_id)
+            await self._transactional_producer.end_transaction(commit_offsets, group_id)
         # TODO raise an exception
         return 'transaction'
 

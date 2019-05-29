@@ -19,22 +19,22 @@ from examples.coffee_bar.bartender.models.events.coffee_finished import CoffeeFi
 
 
 class MakeCoffeeResultHandler(BaseResultHandler):
-    _producer: BaseProducer
+    _transactional_producer: BaseProducer
 
     def __init__(self, producer: BaseProducer, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._producer = producer
+        self._transactional_producer = producer
 
     async def on_result(self, result: BaseResult, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
-        if not self._producer.is_running():
-            await self._producer.start_producer()
+        if not self._transactional_producer.is_running():
+            await self._transactional_producer.start_producer()
 
         # Checks error
         if result.error is not None:
             # Do stuff if an error as been reached
             return 'error'
 
-        async with self._producer.init_transaction():
+        async with self._transactional_producer.init_transaction():
             # Creates commit_offsets dict
             commit_offsets = {tp: offset + 1}
 
@@ -50,10 +50,10 @@ class MakeCoffeeResultHandler(BaseResultHandler):
                                              coffee_time=delta_coffee_time, context=context)
 
             # Sends CoffeeFinished event
-            await self._producer.send_and_await(coffee_finished, 'bartender-events')
+            await self._transactional_producer.send_and_await(coffee_finished, 'bartender-events')
 
             # End transaction
-            await self._producer.end_transaction(commit_offsets, group_id)
+            await self._transactional_producer.end_transaction(commit_offsets, group_id)
         # TODO raise an exception
         return 'transaction'
 
