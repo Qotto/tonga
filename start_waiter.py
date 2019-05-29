@@ -124,9 +124,17 @@ if __name__ == '__main__':
                                                cluster_admin=cluster_admin, loop=waiter_app['loop'], rebuild=True,
                                                event_sourcing=False)
 
+    # Creates & register transactional KafkaProducer
+    waiter_app['transactional_producer'] = KafkaProducer(name=f'waiter-{cur_instance}',
+                                                         bootstrap_servers='localhost:9092',
+                                                         client_id=f'waiter-{cur_instance}',
+                                                         serializer=waiter_app['serializer'],
+                                                         loop=waiter_app['loop'], partitioner=KeyPartitioner(),
+                                                         acks='all', transactional_id=f'waiter')
+
     # Initializes waiter handlers
     coffee_ordered_handler = CoffeeOrderedHandler()
-    coffee_finished_handler = CoffeeFinishedHandler(waiter_app['store_builder'])
+    coffee_finished_handler = CoffeeFinishedHandler(waiter_app['store_builder'],  waiter_app['transactional_producer'])
     coffee_served_handler = CoffeeServedHandler()
 
     # Registers events / handlers in serializer
@@ -153,8 +161,7 @@ if __name__ == '__main__':
     # Creates & register KafkaProducer
     waiter_app['producer'] = KafkaProducer(name=f'waiter-{cur_instance}', bootstrap_servers='localhost:9092',
                                            client_id=f'waiter-{cur_instance}', serializer=waiter_app['serializer'],
-                                           loop=waiter_app['loop'], partitioner=KeyPartitioner(), acks='all',
-                                           transactional_id=f'waiter')
+                                           loop=waiter_app['loop'], partitioner=KeyPartitioner(), acks='all')
 
     # Attach sanic blueprint
     sanic.blueprint(health_bp)
