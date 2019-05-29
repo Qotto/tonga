@@ -21,6 +21,10 @@ from typing import List, Dict, Any, Union
 # Model import
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
+from aioevent.models.handler.event.event_handler import BaseEventHandler
+from aioevent.models.handler.result.result_handler import BaseResultHandler
+from aioevent.models.handler.command.command_handler import BaseCommandHandler
+
 from aioevent.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
 
 # BaseConsumer import
@@ -347,10 +351,11 @@ class KafkaConsumer(BaseConsumer):
 
         async for msg in self._kafka_consumer:
             # Debug Display
-            print("------------------------------------------------------------------------------------------------")
+            self.logger.debug("---------------------------------------------------------------------------------")
             self.logger.debug(f'New Message on consumer {self._client_id}, Topic {msg.topic}, '
                               f'Partition {msg.partition}, Offset {msg.offset}, Key {msg.key}, Value {msg.value},'
                               f'Headers {msg.headers}')
+            self.logger.debug("---------------------------------------------------------------------------------")
             self.pprint_consumer_offsets()
 
             tp = TopicPartition(msg.topic, msg.partition)
@@ -367,9 +372,15 @@ class KafkaConsumer(BaseConsumer):
                     logging.debug(f'Event name : {event_class.event_name()}\nEvent content :\n{event_class.__dict__}\n')
 
                     # Calls handle if event is instance BaseHandler
-                    if isinstance(handler_class, BaseHandler):
+                    if isinstance(handler_class, BaseEventHandler):
                         result = await handler_class.handle(event=event_class, group_id=self._group_id, tp=tp,
                                                             offset=msg.offset)
+                    elif isinstance(handler_class, BaseCommandHandler):
+                        result = await handler_class.execute(event=event_class, group_id=self._group_id, tp=tp,
+                                                             offset=msg.offset)
+                    elif isinstance(handler_class, BaseResultHandler):
+                        result = await handler_class.on_result(event=event_class, group_id=self._group_id, tp=tp,
+                                                               offset=msg.offset)
                     else:
                         # Otherwise raise ValueError
                         raise ValueError
@@ -450,10 +461,11 @@ class KafkaConsumer(BaseConsumer):
 
         async for msg in self._kafka_consumer:
             # Debug Display
-            print("------------------------------------------------------------------------------------------------")
+            self.logger.debug("---------------------------------------------------------------------")
             self.logger.debug(f'New Message on store builder consumer {self._client_id}, Topic {msg.topic}, '
                               f'Partition {msg.partition}, Offset {msg.offset}, Key {msg.key}, Value {msg.value},'
                               f'Headers {msg.headers}')
+            self.logger.debug("---------------------------------------------------------------------")
             self.pprint_consumer_offsets()
 
             tp = TopicPartition(msg.topic, msg.partition)
@@ -508,17 +520,18 @@ class KafkaConsumer(BaseConsumer):
 
                     # If result is none (no transactional process), check if consumer has an
                     # group_id (mandatory to commit in Kafka)
-                    if result is None and self._group_id is not None:
-                        # Check if next commit was possible (Kafka offset)
-                        if self.__last_committed_offsets[tp] is None or \
-                                self.__last_committed_offsets[tp] <= self.__current_offsets[tp]:
-                            self.logger.debug(f'Commit msg {event_class.event_name()} in topic {msg.topic} partition '
-                                              f'{msg.partition} offset {self.__current_offsets[tp] + 1}')
-                            await self._kafka_consumer.commit({tp: self.__current_offsets[tp] + 1})
-                            self.__last_committed_offsets[tp] = msg.offset + 1
-                    # Otherwise raise ValueError
-                    else:
-                        raise ValueError
+                    # TODO Add commit store later V2
+                    # if result is None and self._group_id is not None:
+                    #     # Check if next commit was possible (Kafka offset)
+                    #     if self.__last_committed_offsets[tp] is None or \
+                    #             self.__last_committed_offsets[tp] <= self.__current_offsets[tp]:
+                    #         self.logger.debug(f'Commit msg {event_class.event_name()} in topic {msg.topic} partition '
+                    #                           f'{msg.partition} offset {self.__current_offsets[tp] + 1}')
+                    #         await self._kafka_consumer.commit({tp: self.__current_offsets[tp] + 1})
+                    #         self.__last_committed_offsets[tp] = msg.offset + 1
+                    # # Otherwise raise ValueError
+                    # else:
+                    #     raise ValueError
 
                     # Break if everything was successfully processed
                     break
