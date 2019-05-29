@@ -20,10 +20,10 @@ class BaseStoreRecord(object):
     timestamp: int
     datetime: str
     key: str
-    type: str
+    ctype: str
     value: bytes
 
-    def __init__(self, key: str, ttype: str, value: bytes, schema_version: str = None,
+    def __init__(self, key: str, ctype: str, value: bytes, schema_version: str = None,
                  datetime: str = None, timestamp: int = None) -> None:
         if schema_version is None:
             self.schema_version = '0.0.0'
@@ -40,7 +40,7 @@ class BaseStoreRecord(object):
         else:
             self.datetime = datetime
         self.key = key
-        self.type = ttype
+        self.ctype = ctype
         self.value = value
 
     @classmethod
