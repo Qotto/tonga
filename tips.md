@@ -1,5 +1,8 @@
 # Kafka Tips
 
+### Useful link
+https://kafka.apache.org/documentation/#prodconfig
+
 #### Read all Kafka msg by topic name
 ````bash
 kafka-console-consumer --bootstrap-server <broker_host>:9092 --topic test --from-beginning
