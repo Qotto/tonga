@@ -129,11 +129,22 @@ if __name__ == '__main__':
                                                       cluster_admin=cluster_admin, loop=cash_register_app['loop'],
                                                       rebuild=True, event_sourcing=False)
 
+    # Creates & register KafkaProducer
+    cash_register_app['transactional_producer'] = KafkaProducer(name=f'cash-register-{cur_instance}',
+                                                                bootstrap_servers='localhost:9092',
+                                                                client_id=f'cash-register-{cur_instance}',
+                                                                serializer=cash_register_app['serializer'],
+                                                                loop=cash_register_app['loop'],
+                                                                partitioner=KeyPartitioner(),
+                                                                acks='all', transactional_id=f'cash-register')
+
     # Initializes cash register handlers
     bill_created_handler = BillCreatedHandler()
     bill_paid_handler = BillPaidHandler()
-    coffee_ordered_handler = CoffeeOrderedHandler(cash_register_app['store_builder'])
-    coffee_served_handler = CoffeeServedHandler(cash_register_app['store_builder'])
+    coffee_ordered_handler = CoffeeOrderedHandler(cash_register_app['store_builder'],
+                                                  cash_register_app['transactional_producer'])
+    coffee_served_handler = CoffeeServedHandler(cash_register_app['store_builder'],
+                                                cash_register_app['transactional_producer'])
 
     # Registers events / handlers in serializer
     cash_register_app['serializer'].register_class('aioevent.waiter.event.CoffeeOrdered', CoffeeOrdered,
@@ -159,14 +170,6 @@ if __name__ == '__main__':
 
     # Ensures future of KafkaConsumer
     asyncio.ensure_future(cash_register_app['consumer'].listen_event('committed'), loop=cash_register_app['loop'])
-
-    # Creates & register KafkaProducer
-    cash_register_app['producer'] = KafkaProducer(name=f'cash-register-{cur_instance}',
-                                                  bootstrap_servers='localhost:9092',
-                                                  client_id=f'cash-register-{cur_instance}',
-                                                  serializer=cash_register_app['serializer'],
-                                                  loop=cash_register_app['loop'], partitioner=KeyPartitioner(),
-                                                  acks='all', transactional_id=f'cash-register')
 
     # Attach sanic blueprint
     sanic.blueprint(health_bp)
