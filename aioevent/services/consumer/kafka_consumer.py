@@ -428,6 +428,7 @@ class KafkaConsumer(BaseConsumer):
             raise KafkaConsumerError('Fail to start AioeventConsumer', 500)
 
         # Check if store is ready
+        # TODO Optimize check store is ready
         self.logger.info('-------------------------------------------------------')
         self.logger.info(self.__last_offsets)
         ack = False
@@ -459,9 +460,14 @@ class KafkaConsumer(BaseConsumer):
             self.__current_offsets[tp] = msg.offset
 
             # Check if store is ready
+            # TODO Optimize check store is ready
+            self.logger.info('-------------------------------------------------------')
+            self.logger.info(self.__last_offsets)
             ack = False
             for tp, offset in self.__last_offsets.items():
+                self.logger.info(f'Topic : {tp.topic}, partition : {tp.partition}, offset: {offset}')
                 if tp.partition == self._store_builder.get_current_instance():
+                    self.logger.info('Own partition')
                     if offset == 0:
                         self._store_builder.get_local_store().set_initialized(True)
                     else:
@@ -470,6 +476,7 @@ class KafkaConsumer(BaseConsumer):
                     ack = True if offset == 0 else False
             if ack:
                 self._store_builder.get_global_store().set_initialized(True)
+            self.logger.info('-------------------------------------------------------')
 
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
@@ -484,7 +491,7 @@ class KafkaConsumer(BaseConsumer):
                     result = None
                     if msg.partition == self._store_builder.get_current_instance():
                         # Calls local_state_handler if event is instance BaseStorageBuilder
-                        if rebuild:
+                        if rebuild and not self._store_builder.get_local_store().is_initialized():
                             if isinstance(event_class, BaseStoreRecord):
                                 result = await handler_class.local_store_handler(store_record=event_class,
                                                                                  group_id=self._group_id, tp=tp,
