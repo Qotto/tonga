@@ -5,3 +5,11 @@
 # Create ConsumerRebalanceListener
 
 # Topic partitions can't be change after creation !
+
+# Find `ERROR:root:AioEvent consumer exception : ("TopicPartition: TopicPartition(topic='waiter-stores', partition=0) is not assigned", 500)`
+
+# Find `Group Coordinator Request failed: [Error 15] CoordinatorNotAvailableError`
+
+# Find `Heartbeat failed for group waiter because it is rebalancing`
+
+# Find `ERROR:root:AioEvent consumer exception : ('Uninitialized local store', 500)`
