@@ -251,7 +251,7 @@ class StoreBuilder(BaseStoreBuilder):
             None
         """
         if self._local_store.is_initialized():
-            store_builder = StoreRecord(key=key, ttype='set', value=value)
+            store_builder = StoreRecord(key=key, ctype='set', value=value)
             record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
                                                                                         self._topic_store)
             await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
@@ -287,7 +287,7 @@ class StoreBuilder(BaseStoreBuilder):
             None
         """
         if self._local_store.is_initialized():
-            store_builder = StoreRecord(key=key, ttype='del', value=b'')
+            store_builder = StoreRecord(key=key, ctype='del', value=b'')
             record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
                                                                                         self._topic_store)
             await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
