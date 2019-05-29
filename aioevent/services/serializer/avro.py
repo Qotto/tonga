@@ -114,8 +114,8 @@ class AvroSerializer(BaseSerializer):
             raise AvroEncodeError(err, 500)
         return encoded_event
 
-    def decode(self, encoded_event: Any) -> Tuple[Union[BaseModel, BaseStoreRecord],
-                                                  Union[BaseHandler, BaseStoreRecordHandler]]:
+    def decode(self, encoded_event: Any) -> Dict[str, Union[BaseModel, BaseStoreRecord,
+                                                            BaseHandler, BaseStoreRecordHandler]]:
         try:
             reader = DataFileReader(BytesIO(encoded_event), DatumReader())
             schema = json.loads(reader.meta.get('avro.schema').decode('utf-8'))
@@ -137,4 +137,4 @@ class AvroSerializer(BaseSerializer):
             if e_name.match(schema_name):  # type: ignore
                 handler_class = handler
                 break
-        return event_class.from_data(event_data=event_data), handler_class
+        return {'event_class': event_class.from_data(event_data=event_data), 'handler_class': handler_class}
