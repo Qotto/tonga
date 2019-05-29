@@ -95,17 +95,20 @@ if __name__ == '__main__':
                                                               'examples/coffee_bar/avro_schemas'))
 
     # Creates & register KafkaProducer
-    bartender_app['producer'] = KafkaProducer(name=f'bartender-{cur_instance}', bootstrap_servers='localhost:9092',
-                                              client_id=f'bartender-{cur_instance}',
-                                              serializer=bartender_app['serializer'], loop=bartender_app['loop'],
-                                              partitioner=KeyPartitioner(), acks='all', transactional_id=f'bartender')
+    bartender_app['transactional_producer'] = KafkaProducer(name=f'bartender-{cur_instance}',
+                                                            bootstrap_servers='localhost:9092',
+                                                            client_id=f'bartender-{cur_instance}',
+                                                            serializer=bartender_app['serializer'],
+                                                            loop=bartender_app['loop'],
+                                                            partitioner=KeyPartitioner(), acks='all',
+                                                            transactional_id=f'bartender')
 
     # Initializes bartender handlers
     coffee_finished_handler = CoffeeFinishedHandler()
-    bill_created_handler = BillCreatedHandler(bartender_app['producer'])
+    bill_created_handler = BillCreatedHandler(bartender_app['transactional_producer'])
     bill_paid_handler = BillPaidHandler()
     make_coffee_handler = MakeCoffeeHandler()
-    make_coffee_result_handler = MakeCoffeeResultHandler(bartender_app['producer'])
+    make_coffee_result_handler = MakeCoffeeResultHandler(bartender_app['transactional_producer'])
 
     # Registers events / handlers in serializer
     bartender_app['serializer'].register_class('aioevent.coffeemaker.command.MakeCoffee', MakeCoffee,
