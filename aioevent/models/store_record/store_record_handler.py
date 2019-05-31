@@ -6,7 +6,9 @@ from aiokafka import TopicPartition
 
 from aioevent.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
 from aioevent.stores.store_builder.base import BaseStoreBuilder
-from aioevent.models.exceptions import KtableUnknownType
+
+# Import StoreRecordHandler exceptions
+from aioevent.models.store_record.errors import (UnknownStoreRecordType)
 
 __all__ = [
     'StoreRecordHandler'
@@ -32,7 +34,7 @@ class StoreRecordHandler(BaseStoreRecordHandler):
         elif store_record.ctype == 'del':
             await self._store_builder.delete_from_local_store_rebuild(store_record.key)
         else:
-            raise KtableUnknownType(f'Local state type: {store_record.ctype} is unknown', 500)
+            raise UnknownStoreRecordType
         # Update metadata from local store
         await self._store_builder.update_metadata_from_local_store(tp, offset)
 
@@ -44,6 +46,6 @@ class StoreRecordHandler(BaseStoreRecordHandler):
         elif store_record.ctype == 'del':
             await self._store_builder.delete_from_global_store(store_record.key)
         else:
-            raise KtableUnknownType(f'Global state type: {store_record.ctype} is unknown', 500)
+            raise UnknownStoreRecordType
         # Update metadata from global store
         await self._store_builder.update_metadata_from_global_store(tp, offset)
