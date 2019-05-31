@@ -36,8 +36,9 @@ from aioevent.services.producer.kafka_producer import KafkaProducer
 from aioevent.models.store_record.store_record import StoreRecord
 
 # Import store builder exceptions
-from aioevent.stores.store_builder.errors import (StoreKeyNotFound, UninitializedStore,
-                                                  CanNotInitializeStore, FailToSendStoreRecord)
+from aioevent.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
+# Import store exceptions
+from aioevent.stores.errors import StoreKeyNotFound
 # Import consumer exceptions
 from aioevent.services.consumer.errors import (OffsetError, TopicPartitionError, NoPartitionAssigned)
 # Import producer exceptions
