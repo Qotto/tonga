@@ -3,7 +3,7 @@
 # Copyright (c) Qotto, 2019
 
 from functools import wraps
-from aioevent.models.exceptions import UninitializedStore
+from aioevent.stores.store_builder.errors import UninitializedStore
 
 __all__ = [
     'check_initialized'
