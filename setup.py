@@ -2,35 +2,33 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-
 from setuptools import setup
 
 setup(
     name='aioevent',
     version='0.0.1',
-    packages=['tests', 'tests.misc', 'tests.misc.event_class', 'tests.misc.handler_class', 'aioevent', 'aioevent.utils',
-              'aioevent.models', 'aioevent.models.events', 'aioevent.models.events.event',
-              'aioevent.models.events.result', 'aioevent.models.events.command', 'aioevent.models.store_record',
-              'aioevent.stores', 'aioevent.stores.local', 'aioevent.stores.globall', 'aioevent.stores.store_builder',
-              'aioevent.services', 'aioevent.services.consumer', 'aioevent.services.producer',
-              'aioevent.services.serializer', 'aioevent.services.coordinator',
-              'aioevent.services.coordinator.assignors', 'aioevent.services.coordinator.partitioner', 'examples',
-              'examples.coffee_bar', 'examples.coffee_bar.waiter', 'examples.coffee_bar.waiter.models',
-              'examples.coffee_bar.waiter.models.events', 'examples.coffee_bar.waiter.models.handlers',
-              'examples.coffee_bar.waiter.interfaces', 'examples.coffee_bar.waiter.interfaces.rest',
-              'examples.coffee_bar.bartender', 'examples.coffee_bar.bartender.models',
-              'examples.coffee_bar.bartender.models.events', 'examples.coffee_bar.bartender.models.results',
-              'examples.coffee_bar.bartender.models.commands', 'examples.coffee_bar.bartender.models.handlers',
-              'examples.coffee_bar.coffeemaker', 'examples.coffee_bar.coffeemaker.models',
-              'examples.coffee_bar.coffeemaker.models.events', 'examples.coffee_bar.coffeemaker.models.results',
-              'examples.coffee_bar.coffeemaker.models.commands', 'examples.coffee_bar.coffeemaker.models.handlers',
-              'examples.coffee_bar.cash_register', 'examples.coffee_bar.cash_register.models',
-              'examples.coffee_bar.cash_register.models.events', 'examples.coffee_bar.cash_register.models.handlers',
-              'examples.coffee_bar.cash_register.interfaces', 'examples.coffee_bar.cash_register.interfaces.rest',
-              'migration', 'migration.app'],
-    url='',
-    license='',
-    author='qotto',
+    packages=['aioevent'],
+    url='https://github.com/qotto/aioevent',
+    license='MIT',
+    author='Qotto',
     author_email='contact@qotto.net',
-    description=''
+    description='Client for build event driven app with Apache Kafka distributed stream processing system with asyncio',
+    install_requires=[
+        'avro-python3==1.9.0',
+        'pyyaml==5.1',
+        'aiokafka==0.5.1',
+        'kafka-python==1.4.6'
+    ],
+    classifiers=[
+        'Intended Audience :: Developers',
+        'Intended Audience :: Information Technology',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Operating System :: OS Independent',
+        'Topic :: System :: Networking',
+        'Topic :: System :: Distributed Computing',
+        'Topic :: Database',
+        'Framework :: AsyncIO',
+        'Development Status :: 2 - Pre-Alpha',
+    ],
 )
