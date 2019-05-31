@@ -5,6 +5,9 @@
 # Import StoreRecord exceptions
 from aioevent.models.store_record.errors import UnknownStoreRecordType
 
+# Import BaseCommand exceptions
+from aioevent.models.events.command.errors import CommandEventMissingProcessGuarantee
+
 # Import KeyPartitioner & StatefulsetPartitioner exceptions
 from aioevent.services.coordinator.partitioner.errors import (BadKeyType, OutsideInstanceNumber)
 
@@ -30,7 +33,8 @@ from aioevent.services.serializer.errors import (AvroAlreadyRegister, AvroEncode
                                                  KeySerializerEncodeError)
 
 # Import LocalStore & GlobalStore exceptions
-from aioevent.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated)
+from aioevent.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated,
+                                    StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
 
 # Import StoreBuilder exceptions
 from aioevent.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
@@ -39,6 +43,8 @@ from aioevent.stores.store_builder.errors import (UninitializedStore, CanNotInit
 __all__ = [
     # StoreRecord exceptions
     'UnknownStoreRecordType',
+    # BaseCommand exceptions
+    'CommandEventMissingProcessGuarantee',
     # KeyPartitioner & StatefulsetPartitioner exceptions
     'BadKeyType',
     'OutsideInstanceNumber',
@@ -84,6 +90,8 @@ __all__ = [
     # LocalStore & GlobalStore exceptions
     'StoreKeyNotFound',
     'StoreMetadataCantNotUpdated',
+    'StorePartitionAlreadyAssigned',
+    'StorePartitionNotAssigned',
     # StoreBuilder exceptions
     'UninitializedStore',
     'CanNotInitializeStore',
