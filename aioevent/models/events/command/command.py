@@ -4,8 +4,9 @@
 
 from typing import Dict, Any, List
 
-from ..base import BaseModel
-from aioevent.models.exceptions import CommandEventMissingProcessGuarantee
+from aioevent.models.events.base import BaseModel
+from aioevent.models.events.command.errors import CommandEventMissingProcessGuarantee
+
 
 __all__ = [
     'BaseCommand'
@@ -22,7 +23,7 @@ class BaseCommand(BaseModel):
         if processing_guarantee in PROCESSING_GUARANTEE:
             self.processing_guarantee = processing_guarantee
         else:
-            raise CommandEventMissingProcessGuarantee(f"Result Event need processing guarantee", 500)
+            raise CommandEventMissingProcessGuarantee
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):
