@@ -89,7 +89,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
 
     @staticmethod
     def get_advanced_assignor_dict(all_topic_partitions: List[TopicPartition]) -> Dict[str, List[int]]:
-        result = dict()
+        result: Dict[str, List[int]] = dict()
         for tp in all_topic_partitions:
             if tp.topic not in result:
                 result[tp.topic] = list()
