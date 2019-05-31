@@ -1,0 +1,31 @@
+namespace: aioevent.store
+name: record
+doc: This event is dispatched when local state as been updated
+type: record
+fields:
+  - name: schema_version
+    doc: Version of the schema used for encoding this message (X.Y.Z)
+    type: string
+
+  - name: timestamp
+    doc: UNIX timestamp in milliseconds, when this record was generated
+    type:
+      type: long
+      logicalType: timestamp-millis
+
+  - name: datetime
+    doc: ISO 8601 date with timezone, when this record was generated
+    type: string
+
+  # specific fields
+  - name: ctype
+    doc: Record Type
+    type: string
+
+  - name: key
+    doc: Key for value
+    type: string
+
+  - name: value
+    doc: State value
+    type: bytes

@@ -6,9 +6,14 @@ verify_ssl = true
 [dev-packages]
 tox = "*"
 mypy = "*"
+aiohttp = "*"
+pytest = "*"
+coverage = "*"
+pytest-asyncio = "*"
+sanic = "*"
+colorlog = "*"
 
 [packages]
-sanic = "*"
 aiokafka = "*"
 avro-python3 = "*"
 pyyaml = "*"

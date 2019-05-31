@@ -1,0 +1,16 @@
+{{ if .Values.enabled }}
+# Headless service for stable DNS entries of StatefulSet members.
+apiVersion: v1
+kind: Service
+metadata:
+  name: waiter
+  labels:
+    app: waiter
+spec:
+  selector:
+    app: waiter
+  type: ClusterIP
+  ports:
+  - name: waiter
+    port: 8000
+{{ end }}

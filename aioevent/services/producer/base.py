@@ -2,11 +2,13 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+from aiokafka import TopicPartition
 from aiokafka.producer.message_accumulator import BatchBuilder
+from aiokafka.producer.producer import TransactionContext
 
-from typing import List
+from typing import Dict
 
-from aioevent.model import BaseModel
+from aioevent.models import BaseModel
 
 __all__ = [
     'BaseProducer',
@@ -23,6 +25,9 @@ class BaseProducer:
     async def stop_producer(self) -> None:
         raise NotImplementedError
 
+    def is_running(self) -> bool:
+        raise NotImplementedError
+
     async def send_and_await(self, event: BaseModel, topic: str) -> None:
         raise NotImplementedError
 
@@ -32,8 +37,9 @@ class BaseProducer:
     async def send_batch(self, batch: BatchBuilder, topic: str, partition: int = 0) -> None:
         raise NotImplementedError
 
-    async def partitions_by_topic(self, topic: str) -> List[str]:
+    def init_transaction(self) -> TransactionContext:
         raise NotImplementedError
 
-    async def get_transactional_producer(self, transactional_uuid: str):
+    async def end_transaction(self, committed_offsets: Dict[TopicPartition, int], group_id: str) -> None:
         raise NotImplementedError
+
