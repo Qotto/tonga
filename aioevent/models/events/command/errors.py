@@ -8,5 +8,5 @@ __all__ = [
 ]
 
 
-class CommandEventMissingProcessGuarantee:
+class CommandEventMissingProcessGuarantee(Exception):
     pass

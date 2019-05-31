@@ -7,5 +7,5 @@ __all__ = [
 ]
 
 
-class UnknownStoreRecordType:
+class UnknownStoreRecordType(Exception):
     pass
