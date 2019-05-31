@@ -7,7 +7,7 @@ import pytest
 from aiokafka import TopicPartition
 
 from aioevent.stores import BaseStoreMetaData
-from aioevent.models.exceptions import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore
+from aioevent.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore
 
 
 # Initialization test

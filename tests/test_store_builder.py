@@ -17,7 +17,7 @@ from aioevent.services.producer.kafka_producer import KafkaProducer
 from aioevent.services.consumer.kafka_consumer import KafkaConsumer
 
 # Import exceptions
-from aioevent.models.exceptions import UninitializedStore, StoreKeyNotFound
+from aioevent.errors import UninitializedStore, StoreKeyNotFound
 
 
 @pytest.mark.asyncio

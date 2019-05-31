@@ -26,7 +26,7 @@ from tests.misc.handler_class.test_command_handler import TestCommandHandler
 from tests.misc.event_class.test_result import TestResult
 from tests.misc.handler_class.test_result_handler import TestResultHandler
 
-from aioevent.models.exceptions import AvroAlreadyRegister, AvroDecodeError, AvroEncodeError
+from aioevent.errors import AvroAlreadyRegister, AvroDecodeError, AvroEncodeError
 
 
 def test_init_avro_serializer(get_avro_serializer):
