@@ -5,6 +5,7 @@
 import logging
 
 from aioevent.services.coordinator.partitioner.base import BasePartitioner
+from aioevent.services.coordinator.partitioner.errors import OutsideInstanceNumber
 
 logger = logging.getLogger(__name__)
 
@@ -20,4 +21,4 @@ class StatefulsetPartitioner(BasePartitioner):
         logger.debug('StatefulsetPartitioner')
         if self._instance <= len(all_partitions):
             return all_partitions[self._instance]
-        raise ValueError
+        raise OutsideInstanceNumber

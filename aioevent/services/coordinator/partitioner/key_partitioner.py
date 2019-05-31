@@ -8,6 +8,7 @@ import random
 from kafka.partitioner.hashed import murmur2
 
 from aioevent.services.coordinator.partitioner.base import BasePartitioner
+from aioevent.services.coordinator.partitioner.errors import BadKeyType
 
 logger = logging.getLogger(__name__)
 
@@ -26,4 +27,4 @@ class KeyPartitioner(BasePartitioner):
             idx &= 0x7fffffff
             idx %= len(all_partitions)
             return all_partitions[idx]
-        raise ValueError
+        raise BadKeyType
