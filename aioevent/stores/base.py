@@ -8,7 +8,7 @@ from aiokafka import TopicPartition
 
 from typing import Dict, Any, List
 
-from aioevent.models.exceptions import StorePartitionAlreadyAssigned, StorePartitionNotAssigned
+from aioevent.stores.errors import StorePartitionAlreadyAssigned, StorePartitionNotAssigned
 
 __all__ = [
     'BaseStores',
