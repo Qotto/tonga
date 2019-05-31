@@ -13,6 +13,8 @@ from kafka.coordinator.protocol import ConsumerProtocolMemberMetadata, ConsumerP
 
 from typing import Dict, DefaultDict, Any, Set, List
 
+from aioevent.services.coordinator.assignors.errors import BadAssignorPolicy
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,7 +70,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
                         if user_data['instance'] in partitions:
                             assignment[member_id][topic].append(partitions[user_data['instance']])
                     else:
-                        raise ValueError
+                        raise BadAssignorPolicy
 
                 else:
                     # Todo Add repartition
