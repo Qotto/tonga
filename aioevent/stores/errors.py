@@ -6,6 +6,8 @@
 __all__ = [
     'StoreKeyNotFound',
     'StoreMetadataCantNotUpdated',
+    'StorePartitionAlreadyAssigned',
+    'StorePartitionNotAssigned',
 ]
 
 
@@ -14,4 +16,12 @@ class StoreKeyNotFound(Exception):
 
 
 class StoreMetadataCantNotUpdated(Exception):
+    pass
+
+
+class StorePartitionAlreadyAssigned(Exception):
+    pass
+
+
+class StorePartitionNotAssigned(Exception):
     pass
