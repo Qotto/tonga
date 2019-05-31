@@ -9,8 +9,11 @@ from typing import Dict, Any, List, Union
 
 from aioevent.stores.globall.base import BaseGlobalStore
 from aioevent.stores.base import BaseStoreMetaData
-from aioevent.models.exceptions import StoreKeyNotFound, StoreMetadataCantNotUpdated
 from aioevent.utils.decorator import check_initialized
+
+# Import store exceptions
+from aioevent.services.coordinator.partitioner.errors import BadKeyType
+from aioevent.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated)
 
 
 class GlobalStoreMemory(BaseGlobalStore):
@@ -63,9 +66,9 @@ class GlobalStoreMemory(BaseGlobalStore):
     @check_initialized
     async def get(self, key: str) -> Any:
         if not isinstance(key, str):
-            raise ValueError
+            raise BadKeyType
         if key not in self._db:
-            raise StoreKeyNotFound(f'key: {key} was not found in GlobalStoreMemory', 500)
+            raise StoreKeyNotFound
         return self._db[key]
 
     @check_initialized
@@ -74,16 +77,16 @@ class GlobalStoreMemory(BaseGlobalStore):
 
     async def global_set(self, key: str, value: bytes) -> None:
         if not isinstance(key, str):
-            raise ValueError
+            raise BadKeyType
         if key == 'metadata':
-            raise StoreMetadataCantNotUpdated(f'Fail to update metadata with set function', 500)
+            raise StoreMetadataCantNotUpdated
         self._db[key] = value
 
     async def global_delete(self, key: str) -> None:
         if not isinstance(key, str):
-            raise ValueError
+            raise BadKeyType
         if key not in self._db:
-            raise StoreKeyNotFound(f'Fail to delete key: {key}, not found in GlobalStoreMemory', 500)
+            raise StoreKeyNotFound
         del self._db[key]
 
     async def set_metadata(self, metadata: BaseStoreMetaData) -> None:

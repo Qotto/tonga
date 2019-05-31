@@ -9,8 +9,11 @@ from typing import Dict, Any, List, Union
 
 from aioevent.stores.local.base import BaseLocalStore
 from aioevent.stores.base import BaseStoreMetaData
-from aioevent.models.exceptions import StoreKeyNotFound, StoreMetadataCantNotUpdated
 from aioevent.utils.decorator import check_initialized
+
+# Import store exceptions
+from aioevent.services.coordinator.partitioner.errors import BadKeyType
+from aioevent.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated)
 
 
 class LocalStoreMemory(BaseLocalStore):
@@ -61,39 +64,39 @@ class LocalStoreMemory(BaseLocalStore):
     @check_initialized
     async def get(self, key: str) -> Any:
         if not isinstance(key, str):
-            raise ValueError
+            raise BadKeyType
         if key not in self._db:
-            raise StoreKeyNotFound(f'key: {key} was not found in LocalStoreMemory', 500)
+            raise StoreKeyNotFound
         return self._db[key]
 
     @check_initialized
     async def set(self, key: str, value: bytes) -> None:
         if not isinstance(key, str) or not isinstance(value, bytes):
-            raise ValueError
+            raise BadKeyType
         if key == 'metadata':
-            raise StoreMetadataCantNotUpdated(f'Fail to update metadata with set function', 500)
+            raise StoreMetadataCantNotUpdated
         self._db[key] = value
 
     @check_initialized
     async def delete(self, key: str) -> None:
         if not isinstance(key, str):
-            raise ValueError
+            raise BadKeyType
         if key not in self._db:
-            raise StoreKeyNotFound(f'Fail to delete key: {key}, not found in LocalStoreMemory', 500)
+            raise StoreKeyNotFound
         del self._db[key]
 
     async def build_set(self, key: str, value: bytes) -> None:
         if not isinstance(key, str) or not isinstance(value, bytes):
-            raise ValueError
+            raise BadKeyType
         if key == 'metadata':
-            raise StoreMetadataCantNotUpdated(f'Fail to update metadata with set function', 500)
+            raise StoreMetadataCantNotUpdated
         self._db[key] = value
 
     async def build_delete(self, key: str) -> None:
         if not isinstance(key, str):
-            raise ValueError
+            raise BadKeyType
         if key not in self._db:
-            raise StoreKeyNotFound(f'Fail to delete key: {key}, not found in LocalStoreMemory', 500)
+            raise StoreKeyNotFound
         del self._db[key]
 
     @check_initialized
@@ -106,7 +109,7 @@ class LocalStoreMemory(BaseLocalStore):
 
     async def get_metadata(self) -> BaseStoreMetaData:
         if 'metadata' not in self._db:
-            raise StoreKeyNotFound(f'Metadata was not found in LocalStoreMemory', 500)
+            raise StoreKeyNotFound
         return BaseStoreMetaData.from_dict(ast.literal_eval(self._db['metadata'].decode('utf-8')))
 
     async def set_metadata(self, metadata: BaseStoreMetaData) -> None:
