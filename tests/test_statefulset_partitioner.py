@@ -6,6 +6,7 @@ import uuid
 import pytest
 
 from aioevent.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
+from aioevent.errors import OutsideInstanceNumber
 
 
 def test_statefulset_partitioner_with_str_uuid_key():
@@ -18,5 +19,5 @@ def test_statefulset_partitioner_with_str_uuid_key():
 def test_statefulset_partitioner_bad_instance():
     statefulset_partitioner = StatefulsetPartitioner(instance=100)
 
-    with pytest.raises(ValueError):
+    with pytest.raises(OutsideInstanceNumber):
         statefulset_partitioner.__call__(uuid.uuid4().hex, [0, 1, 2, 3], [0, 1, 2, 3])

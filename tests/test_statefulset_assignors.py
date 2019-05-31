@@ -14,8 +14,7 @@ def test_metadata_statefulset_assignors(get_assignor_cluster_metadata):
     assignors_data = {'instance': 0,
                       'nb_replica': 4,
                       'assignor_policy': 'all'}
-    statefulset_assignor = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor, 'assignors_data', bytes(json.dumps(assignors_data), 'utf-8'))
+    statefulset_assignor = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data), 'utf-8'))
 
     assignors_metadata = statefulset_assignor.metadata(['test-assignor'])
     assert assignors_metadata.__dict__['version'] == 0
@@ -30,8 +29,7 @@ def test_assign_statefulset_assignors_mode_full(get_assignor_cluster_metadata, g
     assignors_data = {'instance': 0,
                       'nb_replica': 4,
                       'assignor_policy': 'all'}
-    statefulset_assignor = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor, 'assignors_data', bytes(json.dumps(assignors_data), 'utf-8'))
+    statefulset_assignor = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data), 'utf-8'))
 
     response_metadata = client.poll(future=client.cluster.request_update())
     cluster_metadata.update_metadata(response_metadata[0])
@@ -57,8 +55,7 @@ def test_assign_statefulset_assignors_mode_only_own(get_assignor_cluster_metadat
     assignors_data = {'instance': 0,
                       'nb_replica': 4,
                       'assignor_policy': 'only_own'}
-    statefulset_assignor = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor, 'assignors_data', bytes(json.dumps(assignors_data), 'utf-8'))
+    statefulset_assignor = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data), 'utf-8'))
 
     response_metadata = client.poll(future=client.cluster.request_update())
     cluster_metadata.update_metadata(response_metadata[0])
@@ -86,26 +83,22 @@ def test_assign_statefulset_assignors_mode_full_4_client(get_assignor_cluster_me
 
     # Client 0
     assignors_data0 = {'instance': 0, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor0 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor0, 'assignors_data', bytes(json.dumps(assignors_data0), 'utf-8'))
+    statefulset_assignor0 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data0), 'utf-8'))
     assignors_metadata0 = statefulset_assignor0.metadata(['test-assignor'])
 
     # Client 1
     assignors_data1 = {'instance': 1, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor1 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor1, 'assignors_data', bytes(json.dumps(assignors_data1), 'utf-8'))
+    statefulset_assignor1 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data1), 'utf-8'))
     assignors_metadata1 = statefulset_assignor1.metadata(['test-assignor'])
 
     # Client 2
     assignors_data2 = {'instance': 2, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor2 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor2, 'assignors_data', bytes(json.dumps(assignors_data2), 'utf-8'))
+    statefulset_assignor2 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data2), 'utf-8'))
     assignors_metadata2 = statefulset_assignor2.metadata(['test-assignor'])
 
     # Client 3
     assignors_data3 = {'instance': 3, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor3 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor3, 'assignors_data', bytes(json.dumps(assignors_data3), 'utf-8'))
+    statefulset_assignor3 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data3), 'utf-8'))
     assignors_metadata3 = statefulset_assignor3.metadata(['test-assignor'])
 
     assignor_dict = {'client1': assignors_metadata0, 'client2': assignors_metadata1,
@@ -147,14 +140,12 @@ def test_assign_statefulset_assignors_mode_full_2_client(get_assignor_cluster_me
 
     # Client 0
     assignors_data0 = {'instance': 0, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor0 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor0, 'assignors_data', bytes(json.dumps(assignors_data0), 'utf-8'))
+    statefulset_assignor0 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data0), 'utf-8'))
     assignors_metadata0 = statefulset_assignor0.metadata(['test-assignor'])
 
     # Client 1
     assignors_data1 = {'instance': 1, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor1 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor1, 'assignors_data', bytes(json.dumps(assignors_data1), 'utf-8'))
+    statefulset_assignor1 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data1), 'utf-8'))
     assignors_metadata1 = statefulset_assignor1.metadata(['test-assignor'])
 
     assignor_dict = {'client1': assignors_metadata0, 'client2': assignors_metadata1}
@@ -184,14 +175,12 @@ def test_assign_statefulset_assignors_2_instance_4_partitions(get_assignor_clust
 
     # Client 0
     assignors_data0 = {'instance': 0, 'nb_replica': 2, 'assignor_policy': 'only_own'}
-    statefulset_assignor0 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor0, 'assignors_data', bytes(json.dumps(assignors_data0), 'utf-8'))
+    statefulset_assignor0 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data0), 'utf-8'))
     assignors_metadata0 = statefulset_assignor0.metadata(['test-assignor-i'])
 
     # Client 1
     assignors_data1 = {'instance': 1, 'nb_replica': 2, 'assignor_policy': 'only_own'}
-    statefulset_assignor1 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor1, 'assignors_data', bytes(json.dumps(assignors_data1), 'utf-8'))
+    statefulset_assignor1 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data1), 'utf-8'))
     assignors_metadata1 = statefulset_assignor1.metadata(['test-assignor-i'])
 
     assignor_dict = {'client1': assignors_metadata0, 'client2': assignors_metadata1}
@@ -221,26 +210,22 @@ def test_assign_statefulset_assignors_4_instance_2_partitions(get_assignor_clust
 
     # Client 0
     assignors_data0 = {'instance': 0, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor0 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor0, 'assignors_data', bytes(json.dumps(assignors_data0), 'utf-8'))
+    statefulset_assignor0 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data0), 'utf-8'))
     assignors_metadata0 = statefulset_assignor0.metadata(['test-assignor-j'])
 
     # Client 1
     assignors_data1 = {'instance': 1, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor1 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor1, 'assignors_data', bytes(json.dumps(assignors_data1), 'utf-8'))
+    statefulset_assignor1 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data1), 'utf-8'))
     assignors_metadata1 = statefulset_assignor1.metadata(['test-assignor-j'])
 
     # Client 2
     assignors_data2 = {'instance': 2, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor2 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor2, 'assignors_data', bytes(json.dumps(assignors_data2), 'utf-8'))
+    statefulset_assignor2 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data2), 'utf-8'))
     assignors_metadata2 = statefulset_assignor2.metadata(['test-assignor-j'])
 
     # Client 3
     assignors_data3 = {'instance': 3, 'nb_replica': 4, 'assignor_policy': 'only_own'}
-    statefulset_assignor3 = StatefulsetPartitionAssignor
-    setattr(statefulset_assignor3, 'assignors_data', bytes(json.dumps(assignors_data3), 'utf-8'))
+    statefulset_assignor3 = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data3), 'utf-8'))
     assignors_metadata3 = statefulset_assignor3.metadata(['test-assignor-j'])
 
     assignor_dict = {'client1': assignors_metadata0, 'client2': assignors_metadata1,

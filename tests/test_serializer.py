@@ -185,7 +185,9 @@ def test_encode_avro_serializer(get_avro_serializer):
     serializer = get_avro_serializer
 
     test_encode = TestEvent(test='LOL')
+
     encoded_test = serializer.encode(test_encode)
-    decoded_test, handler_test = serializer.decode(encoded_test)
-    assert test_encode.__dict__ == decoded_test.__dict__
-    assert handler_test.handler_name() == 'aioevent.test.event'
+
+    r_dict = serializer.decode(encoded_test)
+    assert r_dict['event_class'].__dict__ == test_encode.__dict__
+    assert r_dict['handler_class'].handler_name() == 'aioevent.test.event'

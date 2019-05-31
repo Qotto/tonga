@@ -7,7 +7,7 @@ import pytest
 from aiokafka import TopicPartition
 
 from aioevent.stores import BaseStoreMetaData
-from aioevent.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore
+from aioevent.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore, BadKeyType
 
 
 # Initialization test
@@ -70,7 +70,7 @@ async def test_global_memory_store__global_set(get_global_memory_store_connectio
 @pytest.mark.asyncio
 async def test_global_memory_store_set_bad_key(get_global_memory_store_connection):
     global_memory_store = get_global_memory_store_connection
-    with pytest.raises(ValueError):
+    with pytest.raises(BadKeyType):
         assert await global_memory_store.global_set(b'test', b'value')
 
 
@@ -99,7 +99,7 @@ async def test_global_memory_store_get_not_found(get_global_memory_store_connect
 @pytest.mark.asyncio
 async def test_global_memory_store_get_bad_key(get_global_memory_store_connection):
     global_memory_store = get_global_memory_store_connection
-    with pytest.raises(ValueError):
+    with pytest.raises(BadKeyType):
         await global_memory_store.get(b'toto')
 
 
@@ -114,7 +114,7 @@ async def test_global_memory_store_global_delete_not_found(get_global_memory_sto
 @pytest.mark.asyncio
 async def test_global_memory_store_global_delete_bad_key(get_global_memory_store_connection):
     global_memory_store = get_global_memory_store_connection
-    with pytest.raises(ValueError):
+    with pytest.raises(BadKeyType):
         await global_memory_store.global_delete(b'toto')
 
 

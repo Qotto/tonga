@@ -7,7 +7,7 @@ import pytest
 from aiokafka import TopicPartition
 
 from aioevent.stores import BaseStoreMetaData
-from aioevent.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore
+from aioevent.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore, BadKeyType
 
 
 # Initialization test
@@ -70,7 +70,7 @@ async def test_local_memory_store_set(get_local_memory_store_connection):
 @pytest.mark.asyncio
 async def test_local_memory_store_set_bad_key(get_local_memory_store_connection):
     local_memory_store = get_local_memory_store_connection
-    with pytest.raises(ValueError):
+    with pytest.raises(BadKeyType):
         assert await local_memory_store.set(b'test', b'value')
 
 
@@ -98,7 +98,7 @@ async def test_local_memory_store_get_not_found(get_local_memory_store_connectio
 @pytest.mark.asyncio
 async def test_local_memory_store_get_bad_key(get_local_memory_store_connection):
     local_memory_store = get_local_memory_store_connection
-    with pytest.raises(ValueError):
+    with pytest.raises(BadKeyType):
         await local_memory_store.get(b'toto')
 
 
@@ -113,7 +113,7 @@ async def test_local_memory_store_delete_not_found(get_local_memory_store_connec
 @pytest.mark.asyncio
 async def test_local_memory_store_delete_bad_key(get_local_memory_store_connection):
     local_memory_store = get_local_memory_store_connection
-    with pytest.raises(ValueError):
+    with pytest.raises(BadKeyType):
         await local_memory_store.delete(b'toto')
 
 

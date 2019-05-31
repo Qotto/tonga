@@ -7,6 +7,7 @@ import pytest
 from kafka.partitioner.hashed import murmur2
 
 from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
+from aioevent.errors import BadKeyType
 
 
 def get_good_partition(key, all_partitions):
@@ -35,7 +36,7 @@ def test_key_partitioner_with_bytes_uuid_key():
 
 def test_key_partitioner_bad_format():
     key_partitioner = KeyPartitioner()
-    with pytest.raises(ValueError):
+    with pytest.raises(BadKeyType):
         key_partitioner(['rofl'], [0, 1, 2, 3], [0, 1, 2, 3])
 
 

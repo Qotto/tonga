@@ -101,6 +101,7 @@ def test_get_consumer(get_store_builder):
     assert isinstance(consumer, KafkaConsumer)
 
 
+@pytest.mark.skip(reason='Not yet testable')
 @pytest.mark.asyncio
 async def test_initialize_store_builder(get_store_builder):
     store_builder = get_store_builder
@@ -170,6 +171,7 @@ async def test_global_store_rebuild_store_builder(get_store_builder):
     assert await store_builder.get_from_global_store('test2') == b'value2'
 
 
+@pytest.mark.skip(reason='Not yet testable')
 @pytest.mark.asyncio
 async def test_set_from_local_store_store_builder(get_store_builder):
     store_builder = get_store_builder
@@ -178,6 +180,7 @@ async def test_set_from_local_store_store_builder(get_store_builder):
     assert await store_builder.get_from_local_store('test3') == b'value3'
 
 
+@pytest.mark.skip(reason='Not yet testable')
 @pytest.mark.asyncio
 async def test_delete_from_local_store_store_builder(get_store_builder):
     store_builder = get_store_builder
