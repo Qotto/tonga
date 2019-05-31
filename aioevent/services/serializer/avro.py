@@ -14,14 +14,15 @@ from avro.io import DatumWriter, DatumReader, AvroTypeException
 from avro.schema import NamedSchema, Parse
 from io import BytesIO
 
-from typing import Dict, Any, Union, Tuple, Type
+from typing import Dict, Any, Union, Type
 
 from .base import BaseSerializer
 
 from aioevent.models.events.base import BaseModel
 from aioevent.models.handler.base import BaseHandler
 from aioevent.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
-from aioevent.models.exceptions import AvroEncodeError, AvroDecodeError, AvroAlreadyRegister
+from aioevent.services.serializer.errors import (AvroEncodeError, AvroDecodeError, AvroAlreadyRegister,
+                                                 NotMatchedName, MissingEventClass, MissingHandlerClass)
 
 __all__ = [
     'AvroSerializer',
@@ -66,7 +67,7 @@ class AvroSerializer(BaseSerializer):
                 avro_schema = Parse(avro_schema_data)
                 schema_name = avro_schema.namespace + '.' + avro_schema.name
                 if schema_name in self._schemas:
-                    raise AvroAlreadyRegister(f"Avro schema {schema_name} was defined more than once!", 500)
+                    raise AvroAlreadyRegister
                 self._schemas[schema_name] = avro_schema
 
     def register_event_handler_store_record(self, store_record_event: Type[BaseStoreRecord],
@@ -93,15 +94,16 @@ class AvroSerializer(BaseSerializer):
                 matched = True
                 break
         if not matched:
-            raise NameError(f"{event_name} does not match any schema")
+            raise NotMatchedName
         self._events[event_name_regex] = event_class
         self._handlers[event_name_regex] = handler_class
 
     def encode(self, event: BaseModel) -> bytes:
         try:
             schema = self._schemas[event.event_name()]
-        except KeyError:
-            raise NameError(f"No schema found to encode event with name {event.event_name()}")
+        except KeyError as err:
+            self.logger.exception(f'{err.__str__()}')
+            raise MissingEventClass
 
         try:
             output = BytesIO()
@@ -111,7 +113,8 @@ class AvroSerializer(BaseSerializer):
             encoded_event = output.getvalue()
             writer.close()
         except AvroTypeException as err:
-            raise AvroEncodeError(err, 500)
+            self.logger.exception(f'{err.__str__()}')
+            raise AvroEncodeError
         return encoded_event
 
     def decode(self, encoded_event: Any) -> Dict[str, Union[BaseModel, BaseStoreRecord,
@@ -122,19 +125,22 @@ class AvroSerializer(BaseSerializer):
             schema_name = schema['namespace'] + '.' + schema['name']
             event_data = next(reader)
         except AvroTypeException as err:
-            raise AvroDecodeError(err, 500)
+            self.logger.exception(f'{err.__str__()}')
+            raise AvroDecodeError
 
         # Finds a matching event name
-        event_class = None
         for e_name, event in self._events.items():
             if e_name.match(schema_name):  # type: ignore
                 event_class = event
                 break
+        else:
+            raise MissingEventClass
 
         # Finds a matching handler name
-        handler_class = None
         for e_name, handler in self._handlers.items():
             if e_name.match(schema_name):  # type: ignore
                 handler_class = handler
                 break
+        else:
+            raise MissingHandlerClass
         return {'event_class': event_class.from_data(event_data=event_data), 'handler_class': handler_class}

@@ -3,6 +3,7 @@
 # Copyright (c) Qotto, 2019
 
 from aioevent.services.serializer.base import BaseSerializer
+from aioevent.services.serializer.errors import KeySerializerDecodeError, KeySerializerEncodeError
 
 
 class KafkaKeySerializer(BaseSerializer):
@@ -12,7 +13,7 @@ class KafkaKeySerializer(BaseSerializer):
             return key.encode('utf-8')
         if isinstance(key, bytes):
             return key
-        raise ValueError
+        raise KeySerializerEncodeError
 
     @classmethod
     def decode(cls, key: bytes) -> str:
@@ -20,4 +21,4 @@ class KafkaKeySerializer(BaseSerializer):
             return key.decode('utf-8')
         if isinstance(key, str):
             return key
-        raise ValueError
+        raise KeySerializerDecodeError
