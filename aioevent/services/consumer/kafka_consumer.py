@@ -41,12 +41,14 @@ from aioevent.services.coordinator.assignors.statefulset_assignors import Statef
 from aioevent.stores.store_builder.base import BaseStoreBuilder
 
 # Exception import
-from aioevent.services.consumer.base import (ConsumerConnectionError, AioKafkaConsumerBadParams,
-                                             KafkaConsumerError, BadSerializer, ConsumerKafkaTimeoutError,
-                                             IllegalOperation, TopicPartitionError,
-                                             NoPartitionAssigned, OffsetError, UnknownStoreRecordHandler,
-                                             UnknownHandler, UnknownHandlerReturn,
-                                             HandlerException)
+from aioevent.services.errors import BadSerializer
+from aioevent.services.consumer.errors import (ConsumerConnectionError, AioKafkaConsumerBadParams,
+                                               KafkaConsumerError, ConsumerKafkaTimeoutError,
+                                               IllegalOperation, TopicPartitionError,
+                                               NoPartitionAssigned, OffsetError, UnknownStoreRecordHandler,
+                                               UnknownHandler, UnknownHandlerReturn,
+                                               HandlerException, KafkaConsumerAlreadyStartedError,
+                                               KafkaConsumerNotStartedError)
 
 __all__ = [
     'KafkaConsumer',
@@ -158,7 +160,7 @@ class KafkaConsumer(BaseConsumer):
         if isinstance(serializer, BaseSerializer):
             self.serializer = serializer
         else:
-            raise BadSerializer('Bad serializer', 500)
+            raise BadSerializer
 
         self._bootstrap_servers = bootstrap_servers
         self._client_id = client_id
@@ -209,7 +211,9 @@ class KafkaConsumer(BaseConsumer):
             ValueError: If KafkaError or KafkaTimoutError is raised, exception value is contain
                         in KafkaConsumerError.msg
         """
-        for retry in range(1):
+        if self._running:
+            raise KafkaConsumerAlreadyStartedError
+        for retry in range(2):
             try:
                 await self._kafka_consumer.start()
                 self._running = True
@@ -240,6 +244,8 @@ class KafkaConsumer(BaseConsumer):
             ValueError: If KafkaError is raised, exception value is contain
                         in KafkaConsumerError.msg
         """
+        if not self._running:
+            raise KafkaConsumerNotStartedError
         try:
             await self._kafka_consumer.stop()
             self._running = False
@@ -388,10 +394,7 @@ class KafkaConsumer(BaseConsumer):
             None
         """
         if not self._running:
-            try:
-                await self.load_offsets(mod)
-            except ConsumerConnectionError:
-                raise ConsumerConnectionError
+            await self.load_offsets(mod)
 
         self.pprint_consumer_offsets()
 
@@ -414,8 +417,8 @@ class KafkaConsumer(BaseConsumer):
             for retries in range(0, self._max_retries):
                 try:
                     decode_dict = msg.value
-                    event_class: BaseModel = decode_dict['event_class']
-                    handler_class: BaseHandler = decode_dict['handler_class']
+                    event_class = decode_dict['event_class']
+                    handler_class = decode_dict['handler_class']
 
                     logging.debug(f'Event name : {event_class.event_name()}  Event content :\n{event_class.__dict__}')
 
