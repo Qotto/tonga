@@ -7,12 +7,11 @@ import logging
 from logging import Logger
 from asyncio import AbstractEventLoop
 from aiokafka import TopicPartition
-from aiokafka.producer.producer import TransactionContext
 from aiokafka.producer.message_accumulator import RecordMetadata
 from kafka.cluster import ClusterMetadata
 from kafka.admin import KafkaAdminClient
 
-from typing import List, Dict
+from typing import List
 
 # Store Builder import
 from aioevent.stores.store_builder.base import BaseStoreBuilder
@@ -36,8 +35,14 @@ from aioevent.services.producer.kafka_producer import KafkaProducer
 # Storage Builder import
 from aioevent.models.store_record.store_record import StoreRecord
 
-# Exception import
-from aioevent.models.exceptions import StoreKeyNotFound, KafkaConsumerError, UninitializedStore
+# Import store builder exceptions
+from aioevent.stores.store_builder.errors import (StoreKeyNotFound, UninitializedStore,
+                                                  CanNotInitializeStore, FailToSendStoreRecord)
+# Import consumer exceptions
+from aioevent.services.consumer.errors import (OffsetError, TopicPartitionError, NoPartitionAssigned)
+# Import producer exceptions
+from aioevent.services.producer.errors import (KeyErrorSendEvent, ValueErrorSendEvent,
+                                               TypeErrorSendEvent, FailToSendEvent)
 
 __all__ = [
     'StoreBuilder'
@@ -142,7 +147,6 @@ class StoreBuilder(BaseStoreBuilder):
                                                              'nb_replica': self._nb_replica,
                                                              'assignor_policy': 'all'},
                                              store_builder=self)
-        asyncio.ensure_future(self._store_consumer.listen_store_records(self._rebuild), loop=self._loop)
 
         partitioner = StatefulsetPartitioner(instance=self._current_instance)
         self._store_producer = KafkaProducer(name=f'{self.name}_producer', bootstrap_servers=self._bootstrap_server,
@@ -151,6 +155,9 @@ class StoreBuilder(BaseStoreBuilder):
                                              loop=self._loop, serializer=self._serializer, acks='all')
 
         self._stores_partitions = list()
+
+    def return_consumer_task(self):
+        return asyncio.ensure_future(self._store_consumer.listen_store_records(self._rebuild), loop=self._loop)
 
     async def initialize_store_builder(self) -> None:
         """
@@ -171,7 +178,11 @@ class StoreBuilder(BaseStoreBuilder):
             last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
             await self._local_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
                                                        last_offsets)
-            await self._store_consumer.load_offsets('earliest')
+            try:
+                await self._store_consumer.load_offsets('earliest')
+            except (TopicPartitionError, NoPartitionAssigned) as err:
+                self._logger.exception(f'{err.__str__()}')
+                raise CanNotInitializeStore
         else:
             try:
                 # Try to get local_store_metadata, seek at last read offset
@@ -184,14 +195,20 @@ class StoreBuilder(BaseStoreBuilder):
                 last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
                 await self._local_store.set_store_position(self._current_instance, self._nb_replica,
                                                            assigned_partitions, last_offsets)
+                try:
+                    await self._store_consumer.load_offsets('earliest')
+                except (TopicPartitionError, NoPartitionAssigned) as err:
+                    self._logger.exception(f'{err.__str__()}')
+                    raise CanNotInitializeStore
             else:
                 # If metadata is exist in DB, , auto seek to last position
                 try:
                     last_offset = local_store_metadata.last_offsets[
                         TopicPartition(self._topic_store, self._current_instance)]
                     await self._store_consumer.seek_custom(self._topic_store, self._current_instance, last_offset)
-                except KafkaConsumerError:
-                    exit(-1)  # TODO remove exit and replace by an exception
+                except (OffsetError, TopicPartitionError, NoPartitionAssigned) as err:
+                    self._logger.exception(f'{err.__str__()}')
+                    raise CanNotInitializeStore
                 await self._local_store.set_store_position(self._current_instance, self._nb_replica,
                                                            local_store_metadata.assigned_partitions,
                                                            local_store_metadata.last_offsets)
@@ -208,7 +225,11 @@ class StoreBuilder(BaseStoreBuilder):
                 last_offsets[TopicPartition(self._topic_store, j)] = 0
             await self._global_store.set_store_position(self._current_instance, self._nb_replica, assigned_partitions,
                                                         last_offsets)
-            await self._store_consumer.load_offsets('earliest')
+            try:
+                await self._store_consumer.load_offsets('earliest')
+            except (TopicPartitionError, NoPartitionAssigned) as err:
+                self._logger.exception(f'{err.__str__()}')
+                raise CanNotInitializeStore
         else:
             try:
                 global_store_metadata = await self._global_store.get_metadata()
@@ -222,13 +243,19 @@ class StoreBuilder(BaseStoreBuilder):
                     last_offsets[TopicPartition(self._topic_store, self._current_instance)] = 0
                 await self._global_store.set_store_position(self._current_instance, self._nb_replica,
                                                             assigned_partitions, last_offsets)
+                try:
+                    await self._store_consumer.load_offsets('earliest')
+                except (TopicPartitionError, NoPartitionAssigned) as err:
+                    self._logger.exception(f'{err.__str__()}')
+                    raise CanNotInitializeStore
             else:
                 # If metadata is exist in DB
                 for tp, offset in global_store_metadata.last_offsets.items():
                     try:
                         await self._store_consumer.seek_custom(tp.topic, tp.partition, offset)
-                    except KafkaConsumerError:
-                        exit(-1)  # TODO remove exit and replace by an exception
+                    except (OffsetError, TopicPartitionError, NoPartitionAssigned) as err:
+                        self._logger.exception(f'{err.__str__()}')
+                        raise CanNotInitializeStore
                 await self._global_store.set_store_position(self._current_instance, self._nb_replica,
                                                             global_store_metadata.assigned_partitions,
                                                             global_store_metadata.last_offsets)
@@ -252,15 +279,18 @@ class StoreBuilder(BaseStoreBuilder):
         """
         if self._local_store.is_initialized():
             store_builder = StoreRecord(key=key, ctype='set', value=value)
-            record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
-                                                                                        self._topic_store)
+            try:
+                record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
+                                                                                            self._topic_store)
+            except (KeyErrorSendEvent, ValueErrorSendEvent, TypeErrorSendEvent, FailToSendEvent):
+                raise FailToSendStoreRecord
             await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
                                                                              record_metadata.partition),
                                                               record_metadata.offset)
             await self._local_store.set(key, value)
             return record_metadata
         else:
-            raise UninitializedStore('Uninitialized local store', 500)
+            raise UninitializedStore
 
     async def get_from_local_store(self, key: str) -> bytes:
         """
@@ -274,7 +304,7 @@ class StoreBuilder(BaseStoreBuilder):
         """
         if self._local_store.is_initialized():
             return await self._local_store.get(key)
-        raise UninitializedStore('Uninitialized local store', 500)
+        raise UninitializedStore
 
     async def delete_from_local_store(self, key: str) -> RecordMetadata:
         """
@@ -288,15 +318,18 @@ class StoreBuilder(BaseStoreBuilder):
         """
         if self._local_store.is_initialized():
             store_builder = StoreRecord(key=key, ctype='del', value=b'')
-            record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
-                                                                                        self._topic_store)
-            await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
-                                                                             record_metadata.partition),
-                                                              record_metadata.offset)
+            try:
+                record_metadata: RecordMetadata = await self._store_producer.send_and_await(store_builder,
+                                                                                            self._topic_store)
+                await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
+                                                                                 record_metadata.partition),
+                                                                  record_metadata.offset)
+            except (KeyErrorSendEvent, ValueErrorSendEvent, TypeErrorSendEvent, FailToSendEvent):
+                raise FailToSendStoreRecord
             await self._local_store.delete(key)
             return record_metadata
         else:
-            raise UninitializedStore('Uninitialized local store', 500)
+            raise UninitializedStore
 
     async def set_from_local_store_rebuild(self, key: str, value: bytes) -> None:
         await self._local_store.build_set(key, value)
@@ -433,26 +466,3 @@ class StoreBuilder(BaseStoreBuilder):
             AioeventConsumer: Aioevent Consumer
         """
         return self._store_consumer
-
-    # Transaction sugar function
-    def init_transaction(self) -> TransactionContext:
-        """
-        Sugar function, inits transaction
-
-        Returns:
-            TransactionContext: Aiokafka TransactionContext
-        """
-        return self._store_producer.get_kafka_producer().transaction()
-
-    async def end_transaction(self, committed_offsets: Dict[TopicPartition, int], group_id: str) -> None:
-        """
-        Sugar function, ends transaction
-
-        Args:
-            committed_offsets (Dict[TopicPartition, int]): Committed offsets during transaction
-            group_id (str): Group_id to commit
-
-        Returns:
-            None
-        """
-        await self._store_producer.get_kafka_producer().send_offsets_to_transaction(committed_offsets, group_id)
