@@ -19,7 +19,7 @@ from typing import Dict, Any, Union, Type
 from .base import BaseSerializer
 
 from aioevent.models.events.base import BaseModel
-from aioevent.models.handler.base import BaseHandler
+from aioevent.models.handlers.base import BaseHandler
 from aioevent.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
 from aioevent.services.serializer.errors import (AvroEncodeError, AvroDecodeError, AvroAlreadyRegister,
                                                  NotMatchedName, MissingEventClass, MissingHandlerClass)

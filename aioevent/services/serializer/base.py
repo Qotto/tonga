@@ -5,7 +5,7 @@
 from typing import Any, Tuple, Union, Type
 
 from aioevent.models.events.base import BaseModel
-from aioevent.models.handler.base import BaseHandler
+from aioevent.models.handlers.base import BaseHandler
 from aioevent.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
 
 __all__ = [
