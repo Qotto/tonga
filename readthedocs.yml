@@ -1,0 +1,9 @@
+python:
+   version: 3.7
+   install:
+      - requirements: Pipfile.lock
+      - method: pipenv
+        path: .
+        extra_requirements:
+            - docs
+   system_packages: true
