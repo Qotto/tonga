@@ -12,6 +12,7 @@ coverage = "*"
 pytest-asyncio = "*"
 sanic = "*"
 colorlog = "*"
+sphinx = "*"
 
 [packages]
 aiokafka = "*"

@@ -7,7 +7,7 @@ from aiokafka import TopicPartition
 from typing import Union
 
 from aioevent.models.events.result.result import BaseResult
-from aioevent.models.handler.result.result_handler import BaseResultHandler
+from aioevent.models.handlers.result.result_handler import BaseResultHandler
 
 
 class TestResultHandler(BaseResultHandler):

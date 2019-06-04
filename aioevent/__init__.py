@@ -20,9 +20,9 @@ from .models.events.command.command import BaseCommand
 from .models.events.result.result import BaseResult
 
 # Import BaseEventHandler / BaseCommandHandler / BaseResultHandler
-from .models.handler.event.event_handler import BaseEventHandler
-from .models.handler.command.command_handler import BaseCommandHandler
-from .models.handler.result.result_handler import BaseResultHandler
+from .models.handlers.event.event_handler import BaseEventHandler
+from .models.handlers.command.command_handler import BaseCommandHandler
+from .models.handlers.result.result_handler import BaseResultHandler
 
 # Import StoreRecord / StoreRecordHandler
 from .models.store_record.store_record import StoreRecord

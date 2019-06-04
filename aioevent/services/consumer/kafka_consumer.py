@@ -20,10 +20,10 @@ from typing import List, Dict, Any, Union
 
 # Model import
 from aioevent.models.events.base import BaseModel
-from aioevent.models.handler.base import BaseHandler
-from aioevent.models.handler.event.event_handler import BaseEventHandler
-from aioevent.models.handler.result.result_handler import BaseResultHandler
-from aioevent.models.handler.command.command_handler import BaseCommandHandler
+from aioevent.models.handlers.base import BaseHandler
+from aioevent.models.handlers.event.event_handler import BaseEventHandler
+from aioevent.models.handlers.result.result_handler import BaseResultHandler
+from aioevent.models.handlers.command.command_handler import BaseCommandHandler
 
 from aioevent.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
 

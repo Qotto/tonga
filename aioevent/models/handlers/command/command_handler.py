@@ -6,7 +6,7 @@ from aiokafka import TopicPartition
 
 from typing import Union
 
-from aioevent.models.handler.base import BaseHandler
+from aioevent.models.handlers.base import BaseHandler
 from aioevent.models.events.command.command import BaseCommand
 
 __all__ = [
