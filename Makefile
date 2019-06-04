@@ -1,4 +1,4 @@
-# Testing aioevent (UNIX only)
+# Testing tonga (UNIX only)
 
 setup:
 	pipenv install --system --dev

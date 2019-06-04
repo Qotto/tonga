@@ -1,4 +1,4 @@
-namespace: aioevent.coffeemaker.event
+namespace: tonga.coffeemaker.event
 name: CoffeeStarted
 doc: This event is dispatched when a coffee has been started
 type: record

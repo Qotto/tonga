@@ -5,7 +5,7 @@
 import json
 import pytest
 
-from aioevent.services.coordinator.assignors.statefulset_assignors import StatefulsetPartitionAssignor
+from tonga.services.coordinator.assignors.statefulset_assignors import StatefulsetPartitionAssignor
 
 
 def test_metadata_statefulset_assignors(get_assignor_cluster_metadata):

@@ -10,18 +10,18 @@ from kafka.client import KafkaClient
 from kafka.cluster import ClusterMetadata
 
 # Serializer
-from aioevent.services.serializer.avro import AvroSerializer
+from tonga.services.serializer.avro import AvroSerializer
 
 # Stores import
-from aioevent.stores.local.memory import LocalStoreMemory
-from aioevent.stores.globall.memory import GlobalStoreMemory
+from tonga.stores.local.memory import LocalStoreMemory
+from tonga.stores.globall.memory import GlobalStoreMemory
 
 # StoreBuilder import
-from aioevent.stores.store_builder.store_builder import StoreBuilder
+from tonga.stores.store_builder.store_builder import StoreBuilder
 
 # StoreRecord import
-from aioevent.models.store_record.store_record import StoreRecord
-from aioevent.models.store_record.store_record_handler import StoreRecordHandler
+from tonga.models.store_record.store_record import StoreRecord
+from tonga.models.store_record.store_record_handler import StoreRecordHandler
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

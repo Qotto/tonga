@@ -4,7 +4,7 @@
 
 from typing import Dict, Any
 
-from aioevent.models.events.event import BaseEvent
+from tonga.models.events.event import BaseEvent
 
 __all__ = [
     'CoffeeFinished'
@@ -28,4 +28,4 @@ class CoffeeFinished(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.bartender.event.CoffeeFinished'
+        return 'tonga.bartender.event.CoffeeFinished'

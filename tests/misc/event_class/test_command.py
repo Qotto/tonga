@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aioevent.models.events.command.command import BaseCommand
+from tonga.models.events.command.command import BaseCommand
 
 from typing import Dict, Any
 
@@ -24,4 +24,4 @@ class TestCommand(BaseCommand):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.test.command'
+        return 'tonga.test.command'

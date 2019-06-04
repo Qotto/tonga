@@ -13,12 +13,12 @@ from signal import signal, SIGINT
 
 
 # Import KafkaProducer / KafkaConsumer
-from aioevent.services.consumer.kafka_consumer import KafkaConsumer
-from aioevent.services.producer.kafka_producer import KafkaProducer
+from tonga.services.consumer.kafka_consumer import KafkaConsumer
+from tonga.services.producer.kafka_producer import KafkaProducer
 # Import serializer
-from aioevent.services.serializer.avro import AvroSerializer
+from tonga.services.serializer.avro import AvroSerializer
 # Import key partitioner
-from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
+from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
 # Import bartender events
 from examples.coffee_bar.bartender.models.events.coffee_finished import CoffeeFinished
@@ -50,7 +50,7 @@ def setup_logger():
         }
     )
 
-    logger = logging.getLogger('aioevent')
+    logger = logging.getLogger('tonga')
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -111,15 +111,15 @@ if __name__ == '__main__':
     make_coffee_result_handler = MakeCoffeeResultHandler(bartender_app['transactional_producer'])
 
     # Registers events / handlers in serializer
-    bartender_app['serializer'].register_class('aioevent.coffeemaker.command.MakeCoffee', MakeCoffee,
+    bartender_app['serializer'].register_class('tonga.coffeemaker.command.MakeCoffee', MakeCoffee,
                                                make_coffee_handler)
-    bartender_app['serializer'].register_class('aioevent.cashregister.event.BillPaid', BillPaid,
+    bartender_app['serializer'].register_class('tonga.cashregister.event.BillPaid', BillPaid,
                                                bill_paid_handler)
-    bartender_app['serializer'].register_class('aioevent.coffeemaker.result.MakeCoffeeResult', MakeCoffeeResult,
+    bartender_app['serializer'].register_class('tonga.coffeemaker.result.MakeCoffeeResult', MakeCoffeeResult,
                                                make_coffee_result_handler)
-    bartender_app['serializer'].register_class('aioevent.cashregister.event.BillCreated', BillCreated,
+    bartender_app['serializer'].register_class('tonga.cashregister.event.BillCreated', BillCreated,
                                                bill_created_handler)
-    bartender_app['serializer'].register_class('aioevent.bartender.event.CoffeeFinished', CoffeeFinished,
+    bartender_app['serializer'].register_class('tonga.bartender.event.CoffeeFinished', CoffeeFinished,
                                                coffee_finished_handler)
 
     # Creates & registers KafkaConsumer

@@ -5,7 +5,7 @@
 import pytest
 
 
-from aioevent.services.serializer.kafka_key import KafkaKeySerializer
+from tonga.services.serializer.kafka_key import KafkaKeySerializer
 
 
 def test_kafka_key_serializer_encode_string():

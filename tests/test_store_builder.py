@@ -6,18 +6,18 @@ import pytest
 from aiokafka import TopicPartition
 
 # Import BaseGlobal / BaseLocal Stores
-from aioevent.stores.local.base import BaseLocalStore
-from aioevent.stores.globall.base import BaseGlobalStore
+from tonga.stores.local.base import BaseLocalStore
+from tonga.stores.globall.base import BaseGlobalStore
 
 # Import BaseStoreMetaData
-from aioevent.stores.base import BaseStoreMetaData
+from tonga.stores.base import BaseStoreMetaData
 
 # Import kafka consumer & producer
-from aioevent.services.producer.kafka_producer import KafkaProducer
-from aioevent.services.consumer.kafka_consumer import KafkaConsumer
+from tonga.services.producer.kafka_producer import KafkaProducer
+from tonga.services.consumer.kafka_consumer import KafkaConsumer
 
 # Import exceptions
-from aioevent.errors import UninitializedStore, StoreKeyNotFound
+from tonga.errors import UninitializedStore, StoreKeyNotFound
 
 
 @pytest.mark.asyncio

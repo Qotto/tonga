@@ -1,4 +1,4 @@
-namespace: aioevent.bartender.event
+namespace: tonga.bartender.event
 name: CoffeeFinished
 doc: This event is dispatched when coffe has been finished
 type: record

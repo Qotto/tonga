@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aioevent.models.events.event.event import BaseEvent
+from tonga.models.events.event.event import BaseEvent
 
 from typing import Dict, Any
 
@@ -24,4 +24,4 @@ class CoffeeStarted(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.coffeemaker.event.CoffeeStarted'
+        return 'tonga.coffeemaker.event.CoffeeStarted'

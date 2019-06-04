@@ -8,11 +8,11 @@ from aiokafka import TopicPartition
 from typing import Optional
 
 # Import BaseEvent
-from aioevent.models.events.event import BaseEvent
+from tonga.models.events.event import BaseEvent
 # Import BaseEventHandler
-from aioevent.models.handlers.event.event_handler import BaseEventHandler
+from tonga.models.handlers.event.event_handler import BaseEventHandler
 # Import BaseProducer
-from aioevent.services.producer.base import BaseProducer
+from tonga.services.producer.base import BaseProducer
 
 # Import MakeCoffee command
 from examples.coffee_bar.bartender.models.commands.make_coffee import MakeCoffee
@@ -54,4 +54,4 @@ class BillCreatedHandler(BaseEventHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.cashregister.event.BillCreated'
+        return 'tonga.cashregister.event.BillCreated'

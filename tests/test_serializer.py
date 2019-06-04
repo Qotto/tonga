@@ -9,10 +9,10 @@ from avro.schema import NamedSchema
 from kafka import KafkaAdminClient
 from kafka.cluster import ClusterMetadata
 
-from aioevent.stores.store_builder.store_builder import StoreBuilder
-from aioevent.models.store_record.store_record import StoreRecord
-from aioevent.models.store_record.store_record_handler import StoreRecordHandler
-from aioevent.services.serializer.avro import AvroSerializer
+from tonga.stores.store_builder.store_builder import StoreBuilder
+from tonga.models.store_record.store_record import StoreRecord
+from tonga.models.store_record.store_record_handler import StoreRecordHandler
+from tonga.services.serializer.avro import AvroSerializer
 
 # TestEvent / TestEventHandler import
 from tests.misc.event_class.test_event import TestEvent
@@ -26,7 +26,7 @@ from tests.misc.handler_class.test_command_handler import TestCommandHandler
 from tests.misc.event_class.test_result import TestResult
 from tests.misc.handler_class.test_result_handler import TestResultHandler
 
-from aioevent.errors import AvroAlreadyRegister, AvroDecodeError, AvroEncodeError
+from tonga.errors import AvroAlreadyRegister, AvroDecodeError, AvroEncodeError
 
 
 def test_init_avro_serializer(get_avro_serializer):
@@ -34,8 +34,8 @@ def test_init_avro_serializer(get_avro_serializer):
 
     schemas = serializer.get_schemas()
 
-    assert isinstance(schemas['aioevent.store.record'], NamedSchema)
-    assert isinstance(schemas['aioevent.test.event'], NamedSchema)
+    assert isinstance(schemas['tonga.store.record'], NamedSchema)
+    assert isinstance(schemas['tonga.test.event'], NamedSchema)
 
 
 def test_register_event_handler_store_record_avro_serializer(get_avro_serializer, get_avro_serializer_store):
@@ -54,7 +54,7 @@ def test_register_event_handler_store_record_avro_serializer(get_avro_serializer
     events = serializer.get_events()
     found = False
     for e_name, event in events.items():
-        if e_name.match('aioevent.store.record'):
+        if e_name.match('tonga.store.record'):
             assert event == StoreRecord
             found = True
             break
@@ -63,7 +63,7 @@ def test_register_event_handler_store_record_avro_serializer(get_avro_serializer
     found = False
     handlers = serializer.get_handlers()
     for e_name, handler in handlers.items():
-        if e_name.match('aioevent.store.record'):
+        if e_name.match('tonga.store.record'):
             assert handler == store_record_handler
             found = True
             break
@@ -74,12 +74,12 @@ def test_register_event_class_avro_serializer(get_avro_serializer):
     serializer = get_avro_serializer
 
     test_event_handler = TestEventHandler()
-    serializer.register_class('aioevent.test.event', TestEvent, test_event_handler)
+    serializer.register_class('tonga.test.event', TestEvent, test_event_handler)
 
     events = serializer.get_events()
     found = False
     for e_name, event in events.items():
-        if e_name.match('aioevent.test.event'):
+        if e_name.match('tonga.test.event'):
             assert event == TestEvent
             found = True
             break
@@ -88,7 +88,7 @@ def test_register_event_class_avro_serializer(get_avro_serializer):
     found = False
     handlers = serializer.get_handlers()
     for e_name, handler in handlers.items():
-        if e_name.match('aioevent.test.event'):
+        if e_name.match('tonga.test.event'):
             assert handler == test_event_handler
             found = True
             break
@@ -99,12 +99,12 @@ def test_register_command_class_avro_serializer(get_avro_serializer):
     serializer = get_avro_serializer
 
     test_command_handler = TestCommandHandler()
-    serializer.register_class('aioevent.test.command', TestCommand, test_command_handler)
+    serializer.register_class('tonga.test.command', TestCommand, test_command_handler)
 
     events = serializer.get_events()
     found = False
     for e_name, event in events.items():
-        if e_name.match('aioevent.test.command'):
+        if e_name.match('tonga.test.command'):
             assert event == TestCommand
             found = True
             break
@@ -113,7 +113,7 @@ def test_register_command_class_avro_serializer(get_avro_serializer):
     found = False
     handlers = serializer.get_handlers()
     for e_name, handler in handlers.items():
-        if e_name.match('aioevent.test.command'):
+        if e_name.match('tonga.test.command'):
             assert handler == test_command_handler
             found = True
             break
@@ -124,12 +124,12 @@ def test_register_result_class_avro_serializer(get_avro_serializer):
     serializer = get_avro_serializer
 
     test_result_handler = TestResultHandler()
-    serializer.register_class('aioevent.test.result', TestResult, test_result_handler)
+    serializer.register_class('tonga.test.result', TestResult, test_result_handler)
 
     events = serializer.get_events()
     found = False
     for e_name, event in events.items():
-        if e_name.match('aioevent.test.result'):
+        if e_name.match('tonga.test.result'):
             assert event == TestResult
             found = True
             break
@@ -138,7 +138,7 @@ def test_register_result_class_avro_serializer(get_avro_serializer):
     found = False
     handlers = serializer.get_handlers()
     for e_name, handler in handlers.items():
-        if e_name.match('aioevent.test.result'):
+        if e_name.match('tonga.test.result'):
             assert handler == test_result_handler
             found = True
             break
@@ -155,7 +155,7 @@ def test_register_bad_event_name_avro_serializer(get_avro_serializer):
     serializer = get_avro_serializer
     test_event_handler = TestEventHandler()
     with pytest.raises(NameError):
-        serializer.register_class('aioevent.qlf', TestEvent, test_event_handler)
+        serializer.register_class('tonga.qlf', TestEvent, test_event_handler)
 
 
 def event_name():
@@ -190,4 +190,4 @@ def test_encode_avro_serializer(get_avro_serializer):
 
     r_dict = serializer.decode(encoded_test)
     assert r_dict['event_class'].__dict__ == test_encode.__dict__
-    assert r_dict['handler_class'].handler_name() == 'aioevent.test.event'
+    assert r_dict['handler_class'].handler_name() == 'tonga.test.event'

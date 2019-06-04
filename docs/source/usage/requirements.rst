@@ -35,7 +35,7 @@ For development:
    PyYAML==5.1
    kafka-python==1.4.6
 
-For aioevent testing:
+For tonga testing:
 
 .. code-block:: python
    :linenos:

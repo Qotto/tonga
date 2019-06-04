@@ -5,9 +5,9 @@
 from aiokafka import TopicPartition
 
 # Import BaseCommandHandler
-from aioevent.models.handlers.command.command_handler import BaseCommandHandler
+from tonga.models.handlers.command.command_handler import BaseCommandHandler
 # Import BaseCommand
-from aioevent.models.events.command.command import BaseCommand
+from tonga.models.events.command.command import BaseCommand
 
 from typing import Union
 
@@ -21,4 +21,4 @@ class MakeCoffeeHandler(BaseCommandHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.coffeemaker.command.MakeCoffee'
+        return 'tonga.coffeemaker.command.MakeCoffee'

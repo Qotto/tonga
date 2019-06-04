@@ -6,8 +6,8 @@ import uuid
 import pytest
 from kafka.partitioner.hashed import murmur2
 
-from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
-from aioevent.errors import BadKeyType
+from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
+from tonga.errors import BadKeyType
 
 
 def get_good_partition(key, all_partitions):

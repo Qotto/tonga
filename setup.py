@@ -5,10 +5,10 @@
 from setuptools import setup
 
 setup(
-    name='aioevent',
+    name='tonga',
     version='0.0.1',
-    packages=['aioevent'],
-    url='https://github.com/qotto/aioevent',
+    packages=['tonga'],
+    url='https://github.com/qotto/tonga',
     license='MIT',
     author='Qotto',
     author_email='contact@qotto.net',

@@ -1,4 +1,4 @@
-namespace: aioevent.waiter.event
+namespace: tonga.waiter.event
 name: CoffeeOrdered
 doc: This event is dispatched when coffe has been ordered
 type: record

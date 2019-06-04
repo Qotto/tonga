@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aioevent.models.events.event import BaseEvent
+from tonga.models.events.event import BaseEvent
 
 from typing import Dict, Any
 
@@ -30,4 +30,4 @@ class CoffeeServed(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.waiter.event.CoffeeServed'
+        return 'tonga.waiter.event.CoffeeServed'

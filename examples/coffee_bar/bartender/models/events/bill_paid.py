@@ -3,7 +3,7 @@
 # Copyright (c) Qotto, 2019
 
 # Import BaseEvent
-from aioevent.models.events.event import BaseEvent
+from tonga.models.events.event import BaseEvent
 
 from typing import Dict, Any
 
@@ -30,4 +30,4 @@ class BillPaid(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.cashregister.event.BillPaid'
+        return 'tonga.cashregister.event.BillPaid'

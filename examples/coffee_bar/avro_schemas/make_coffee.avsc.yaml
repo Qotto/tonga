@@ -1,4 +1,4 @@
-namespace: aioevent.coffeemaker.command
+namespace: tonga.coffeemaker.command
 name: MakeCoffee
 doc: This command is sended when coffe has been ordered
 type: record

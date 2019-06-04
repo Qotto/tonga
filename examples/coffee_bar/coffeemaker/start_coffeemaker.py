@@ -11,12 +11,12 @@ import asyncio
 from signal import signal, SIGINT
 
 # Import KafkaProducer / KafkaConsumer
-from aioevent.services.consumer.kafka_consumer import KafkaConsumer
-from aioevent.services.producer.kafka_producer import KafkaProducer
+from tonga.services.consumer.kafka_consumer import KafkaConsumer
+from tonga.services.producer.kafka_producer import KafkaProducer
 # Import serializer
-from aioevent.services.serializer.avro import AvroSerializer
+from tonga.services.serializer.avro import AvroSerializer
 # Import key partitioner
-from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
+from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
 # Import coffee-maker events
 from examples.coffee_bar.coffeemaker.models.results.make_coffee_result import MakeCoffeeResult
@@ -44,7 +44,7 @@ def setup_logger():
         }
     )
 
-    logger = logging.getLogger('aioevent')
+    logger = logging.getLogger('tonga')
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -104,11 +104,11 @@ if __name__ == '__main__':
     coffee_started_handler = CoffeeStartedHandler()
 
     # Registers events / handlers in serializer
-    coffee_maker_app['serializer'].register_class('aioevent.coffeemaker.command.MakeCoffee', MakeCoffee,
+    coffee_maker_app['serializer'].register_class('tonga.coffeemaker.command.MakeCoffee', MakeCoffee,
                                                   make_coffee_handler)
-    coffee_maker_app['serializer'].register_class('aioevent.coffeemaker.result.MakeCoffeeResult', MakeCoffeeResult,
+    coffee_maker_app['serializer'].register_class('tonga.coffeemaker.result.MakeCoffeeResult', MakeCoffeeResult,
                                                   make_coffee_result_handler)
-    coffee_maker_app['serializer'].register_class('aioevent.coffeemaker.event.CoffeeStarted', CoffeeStarted,
+    coffee_maker_app['serializer'].register_class('tonga.coffeemaker.event.CoffeeStarted', CoffeeStarted,
                                                   coffee_started_handler)
 
     # Creates & registers KafkaConsumer

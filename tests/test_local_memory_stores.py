@@ -6,8 +6,8 @@ import pytest
 
 from aiokafka import TopicPartition
 
-from aioevent.stores import BaseStoreMetaData
-from aioevent.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore, BadKeyType
+from tonga.stores import BaseStoreMetaData
+from tonga.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore, BadKeyType
 
 
 # Initialization test

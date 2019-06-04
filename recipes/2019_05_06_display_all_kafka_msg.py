@@ -6,7 +6,7 @@ import os
 import logging
 from logging.config import dictConfig
 
-from aioevent import AioEvent
+from tonga import tonga
 
 from examples.coffee_bar.bartender.models.events import CoffeeFinished
 from examples.coffee_bar.bartender.models.commands import MakeCoffee
@@ -31,7 +31,7 @@ if __name__ == '__main__':
             },
         },
         'loggers': {
-            'aioevent': {
+            'tonga': {
                 'level': 'DEBUG',
                 'handlers': ['console'],
                 'propagate': True,
@@ -44,16 +44,16 @@ if __name__ == '__main__':
     logger = logging.getLogger(__name__)
 
     # Initializes Aio Event
-    aio_event = AioEvent(avro_schemas_folder=os.path.join(BASE_DIR, 'tests/coffee_bar/avro_schemas'),
+    aio_event = tonga(avro_schemas_folder=os.path.join(BASE_DIR, 'tests/coffee_bar/avro_schemas'),
                          http_handler=False)
 
     # Registers events
     aio_event.serializer.register_event_class(CoffeeFinished,
-                                              'aioevent.bartender.event.CoffeeFinished')
+                                              'tonga.bartender.event.CoffeeFinished')
     aio_event.serializer.register_event_class(MakeCoffee,
-                                              'aioevent.coffeemaker.command.MakeCoffee')
+                                              'tonga.coffeemaker.command.MakeCoffee')
     aio_event.serializer.register_event_class(CoffeeStarted,
-                                              'aioevent.coffeemaker.event.CoffeeStarted')
+                                              'tonga.coffeemaker.event.CoffeeStarted')
 
     # Creates consumer
     aio_event.append_consumer('debug', mod='earliest', bootstrap_servers='localhost:9092',
