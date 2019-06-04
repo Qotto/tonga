@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aioevent.models.events.result.result import BaseResult
+from tonga.models.events.result.result import BaseResult
 
 from typing import Dict, Any
 
@@ -24,4 +24,4 @@ class TestResult(BaseResult):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.test.result'
+        return 'tonga.test.result'

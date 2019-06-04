@@ -15,20 +15,20 @@ from kafka import KafkaAdminClient
 from kafka.cluster import ClusterMetadata
 
 # Import KafkaProducer / KafkaConsumer
-from aioevent.services.consumer.kafka_consumer import KafkaConsumer
-from aioevent.services.producer.kafka_producer import KafkaProducer
+from tonga.services.consumer.kafka_consumer import KafkaConsumer
+from tonga.services.producer.kafka_producer import KafkaProducer
 # Import serializer
-from aioevent.services.serializer.avro import AvroSerializer
+from tonga.services.serializer.avro import AvroSerializer
 # Import local & global store memory
-from aioevent.stores.local.memory import LocalStoreMemory
-from aioevent.stores.globall.memory import GlobalStoreMemory
+from tonga.stores.local.memory import LocalStoreMemory
+from tonga.stores.globall.memory import GlobalStoreMemory
 # Import store builder
-from aioevent.stores.store_builder.store_builder import StoreBuilder
+from tonga.stores.store_builder.store_builder import StoreBuilder
 # Import StoreRecord & StoreRecordHandler
-from aioevent.models.store_record.store_record import StoreRecord
-from aioevent.models.store_record.store_record_handler import StoreRecordHandler
+from tonga.models.store_record.store_record import StoreRecord
+from tonga.models.store_record.store_record_handler import StoreRecordHandler
 # Import key partitioner
-from aioevent.services.coordinator.partitioner.key_partitioner import KeyPartitioner
+from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
 
 # Import cash register blueprint
@@ -62,7 +62,7 @@ def setup_logger():
         }
     )
 
-    logger = logging.getLogger('aioevent')
+    logger = logging.getLogger('tonga')
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
     logger.addHandler(handler)
@@ -152,13 +152,13 @@ if __name__ == '__main__':
 
     # Registers events / handlers in serializer
     cash_register_app['serializer'].register_event_handler_store_record(StoreRecord, store_record_handler)
-    cash_register_app['serializer'].register_class('aioevent.waiter.event.CoffeeOrdered', CoffeeOrdered,
+    cash_register_app['serializer'].register_class('tonga.waiter.event.CoffeeOrdered', CoffeeOrdered,
                                                    coffee_ordered_handler)
-    cash_register_app['serializer'].register_class('aioevent.waiter.event.CoffeeServed', CoffeeServed,
+    cash_register_app['serializer'].register_class('tonga.waiter.event.CoffeeServed', CoffeeServed,
                                                    coffee_served_handler)
-    cash_register_app['serializer'].register_class('aioevent.cashregister.event.BillCreated', BillCreated,
+    cash_register_app['serializer'].register_class('tonga.cashregister.event.BillCreated', BillCreated,
                                                    bill_created_handler)
-    cash_register_app['serializer'].register_class('aioevent.cashregister.event.BillPaid', BillPaid,
+    cash_register_app['serializer'].register_class('tonga.cashregister.event.BillPaid', BillPaid,
                                                    bill_paid_handler)
 
     # Creates & registers KafkaConsumer

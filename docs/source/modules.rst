@@ -1,7 +1,7 @@
-aioevent
+tonga
 ========
 
 .. toctree::
    :maxdepth: 4
 
-   aioevent
+   tonga

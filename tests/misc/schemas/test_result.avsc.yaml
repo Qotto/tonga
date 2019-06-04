@@ -1,4 +1,4 @@
-namespace: aioevent.test
+namespace: tonga.test
 name: result
 doc: Result test
 type: record

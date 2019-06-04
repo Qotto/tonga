@@ -17,7 +17,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 
 # -- Project information -----------------------------------------------------
 
-project = 'aioevent'
+project = 'tonga'
 copyright = '2019, Qotto'
 author = 'Qotto'
 

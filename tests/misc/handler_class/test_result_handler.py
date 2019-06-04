@@ -6,8 +6,8 @@ from aiokafka import TopicPartition
 
 from typing import Union
 
-from aioevent.models.events.result.result import BaseResult
-from aioevent.models.handlers.result.result_handler import BaseResultHandler
+from tonga.models.events.result.result import BaseResult
+from tonga.models.handlers.result.result_handler import BaseResultHandler
 
 
 class TestResultHandler(BaseResultHandler):
@@ -16,7 +16,7 @@ class TestResultHandler(BaseResultHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.test.result'
+        return 'tonga.test.result'
 
     def on_result(self, event: BaseResult, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
         raise NotImplementedError

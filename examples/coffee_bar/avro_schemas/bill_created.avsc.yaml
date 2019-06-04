@@ -1,4 +1,4 @@
-namespace: aioevent.cashregister.event
+namespace: tonga.cashregister.event
 name: BillCreated
 doc: This event is dispatched when coffe has been ordered
 type: record

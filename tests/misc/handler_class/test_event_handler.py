@@ -4,8 +4,8 @@
 
 from aiokafka import TopicPartition
 
-from aioevent.models.events.event.event import BaseEvent
-from aioevent.models.handlers.event.event_handler import BaseEventHandler
+from tonga.models.events.event.event import BaseEvent
+from tonga.models.handlers.event.event_handler import BaseEventHandler
 
 from typing import Union
 
@@ -20,7 +20,7 @@ class TestEventHandler(BaseEventHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.test.event'
+        return 'tonga.test.event'
 
     async def handle(self, event: BaseEvent, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
         raise NotImplementedError

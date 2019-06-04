@@ -5,8 +5,8 @@
 import uuid
 import pytest
 
-from aioevent.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
-from aioevent.errors import OutsideInstanceNumber
+from tonga.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
+from tonga.errors import OutsideInstanceNumber
 
 
 def test_statefulset_partitioner_with_str_uuid_key():

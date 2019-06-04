@@ -7,13 +7,13 @@ from aiokafka import TopicPartition
 from typing import Optional
 
 # Import BaseEvent
-from aioevent.models.events.event import BaseEvent
+from tonga.models.events.event import BaseEvent
 # Import BaseEventHandler
-from aioevent.models.handlers.event.event_handler import BaseEventHandler
+from tonga.models.handlers.event.event_handler import BaseEventHandler
 # Import StoreBuilderBase
-from aioevent.stores.store_builder.base import BaseStoreBuilder
+from tonga.stores.store_builder.base import BaseStoreBuilder
 # Import BaseProducer
-from aioevent.services.producer.base import BaseProducer
+from tonga.services.producer.base import BaseProducer
 
 # Import Coffee Model
 from examples.coffee_bar.cash_register.models.events.bill_paid import BillPaid
@@ -61,4 +61,4 @@ class CoffeeServedHandler(BaseEventHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.waiter.event.CoffeeServed'
+        return 'tonga.waiter.event.CoffeeServed'

@@ -6,11 +6,11 @@ from datetime import datetime, timezone
 from aiokafka import TopicPartition
 
 # Import BaseCommandHandler
-from aioevent.models.handlers.result.result_handler import BaseResultHandler
+from tonga.models.handlers.result.result_handler import BaseResultHandler
 # Import BaseCommand
-from aioevent.models.events.result.result import BaseResult
+from tonga.models.events.result.result import BaseResult
 # Import BaseProducer
-from aioevent.services.producer.base import BaseProducer
+from tonga.services.producer.base import BaseProducer
 
 from typing import Union
 
@@ -59,4 +59,4 @@ class MakeCoffeeResultHandler(BaseResultHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.coffeemaker.result.MakeCoffeeResult'
+        return 'tonga.coffeemaker.result.MakeCoffeeResult'

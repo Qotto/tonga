@@ -7,9 +7,9 @@ from aiokafka import TopicPartition
 from typing import Optional
 
 # Import BaseEvent
-from aioevent.models.events.event import BaseEvent
+from tonga.models.events.event import BaseEvent
 # Import BaseEventHandler
-from aioevent.models.handlers.event.event_handler import BaseEventHandler
+from tonga.models.handlers.event.event_handler import BaseEventHandler
 
 
 class CoffeeFinishedHandler(BaseEventHandler):
@@ -21,4 +21,4 @@ class CoffeeFinishedHandler(BaseEventHandler):
 
     @classmethod
     def handler_name(cls) -> str:
-        return 'aioevent.bartender.event.CoffeeFinished'
+        return 'tonga.bartender.event.CoffeeFinished'

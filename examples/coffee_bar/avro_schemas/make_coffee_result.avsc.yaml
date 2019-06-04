@@ -1,4 +1,4 @@
-namespace: aioevent.coffeemaker.result
+namespace: tonga.coffeemaker.result
 name: MakeCoffeeResult
 doc: This result is dispatched when coffe has been ready to serve to customer
 type: record

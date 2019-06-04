@@ -5,7 +5,7 @@
 
 from typing import Dict, Any
 
-from aioevent.models.events.event import BaseEvent
+from tonga.models.events.event import BaseEvent
 
 __all__ = [
     'BillPaid'
@@ -29,4 +29,4 @@ class BillPaid(BaseEvent):
 
     @classmethod
     def event_name(cls) -> str:
-        return 'aioevent.cashregister.event.BillPaid'
+        return 'tonga.cashregister.event.BillPaid'

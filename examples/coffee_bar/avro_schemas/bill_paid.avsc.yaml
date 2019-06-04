@@ -1,4 +1,4 @@
-namespace: aioevent.cashregister.event
+namespace: tonga.cashregister.event
 name: BillPaid
 doc: This event is dispatched when coffe has been served
 type: record
