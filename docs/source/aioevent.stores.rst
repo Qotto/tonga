@@ -10,4 +10,10 @@ Subpackages
     aioevent.stores.globall
     aioevent.stores.local
     aioevent.stores.store_builder
+
+Submodules
+-----------
+.. toctree::
+    :maxdepth: 3
+
     aioevent.stores.errors
