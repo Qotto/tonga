@@ -6,14 +6,19 @@
 Welcome to aioevent's documentation!
 ====================================
 
-==========
-Summarize
-==========
+.. image:: https://img.shields.io/github/license/Qotto/aioevent.svg
+   :alt: GitHub
 
+=========
+Summarize
+=========
+
+aioevent is a client for build distributed event driven app with Apache Kafka. It is based on the aiokafka.
+Can be used with 0.9+ Kafka brokers
 
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 5
    :caption: Contents:
 
    usage/installation
@@ -24,9 +29,11 @@ Summarize
 
 
 
+
 Indices and tables
 ==================
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
