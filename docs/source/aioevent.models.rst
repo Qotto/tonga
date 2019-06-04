@@ -1,8 +1,10 @@
 aioevent.models package
 =======================
 
+Subpackages
+-----------
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     aioevent.models.events
     aioevent.models.handlers

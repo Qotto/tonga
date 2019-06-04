@@ -3,7 +3,7 @@ aioevent API reference
 
 .. toctree::
     :caption: API Documentation
-    :maxdepth: 2
+    :maxdepth: 3
 
     aioevent.models
     aioevent.services

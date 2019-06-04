@@ -1,18 +1,10 @@
 aioevent.services.coordinator package
 =====================================
 
-Subpackages
+Submodules
 -----------
-
 .. toctree::
+    :maxdepth: 2
 
     aioevent.services.coordinator.assignors
     aioevent.services.coordinator.partitioner
-
-Module contents
----------------
-
-.. automodule:: aioevent.services.coordinator
-    :members:
-    :undoc-members:
-    :show-inheritance:
