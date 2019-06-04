@@ -1,4 +1,4 @@
-# **tonga**
+# **Tonga**
 
 ![GitHub](https://img.shields.io/github/license/Qotto/tonga.svg?style=for-the-badge)
 ![Kafka](https://img.shields.io/static/v1.svg?label=kafka&message=1.0,%200.11,%200.10,%200.9&color=green&style=for-the-badge&logo=appveyor)
