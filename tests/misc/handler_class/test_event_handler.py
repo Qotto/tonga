@@ -5,7 +5,7 @@
 from aiokafka import TopicPartition
 
 from aioevent.models.events.event.event import BaseEvent
-from aioevent.models.handler.event.event_handler import BaseEventHandler
+from aioevent.models.handlers.event.event_handler import BaseEventHandler
 
 from typing import Union
 

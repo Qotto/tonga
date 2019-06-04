@@ -9,7 +9,7 @@ from typing import Optional
 # Import BaseEvent
 from aioevent.models.events.event import BaseEvent
 # Import BaseEventHandler
-from aioevent.models.handler.event.event_handler import BaseEventHandler
+from aioevent.models.handlers.event.event_handler import BaseEventHandler
 
 __all__ = [
     'CoffeeOrderedHandler'

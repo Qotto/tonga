@@ -5,7 +5,7 @@
 from aiokafka import TopicPartition
 
 # Import BaseCommandHandler
-from aioevent.models.handler.command.command_handler import BaseCommandHandler
+from aioevent.models.handlers.command.command_handler import BaseCommandHandler
 # Import BaseCommand
 from aioevent.models.events.command.command import BaseCommand
 

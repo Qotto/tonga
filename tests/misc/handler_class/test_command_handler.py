@@ -7,7 +7,7 @@ from aiokafka import TopicPartition
 from typing import Union
 
 from aioevent.models.events.command.command import BaseCommand
-from aioevent.models.handler.command.command_handler import BaseCommandHandler
+from aioevent.models.handlers.command.command_handler import BaseCommandHandler
 
 
 class TestCommandHandler(BaseCommandHandler):
