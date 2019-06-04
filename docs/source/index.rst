@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to tonga's documentation!
+Welcome to Tonga's documentation!
 ====================================
 
 .. image:: https://img.shields.io/github/license/Qotto/tonga.svg?style=for-the-badge
