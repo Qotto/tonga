@@ -15,7 +15,7 @@ Can be used with 0.9+ Kafka brokers
 
 ## Overview: 
 
-tonga defines components to help building an event-driven app:
+Tonga defines components to help building an event-driven app:
 
 * Model events / commands / results
 * Serializer events / commands / results
