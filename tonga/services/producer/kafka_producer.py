@@ -2,40 +2,39 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import logging
 import asyncio
+import logging
 from asyncio import AbstractEventLoop
 from logging import Logger
+
+from typing import Union, List, Dict
+
 from aiokafka import TopicPartition
-from aiokafka.producer.message_accumulator import RecordMetadata
+from aiokafka.errors import KafkaError, KafkaTimeoutError
 from aiokafka.producer import AIOKafkaProducer
 from aiokafka.producer.message_accumulator import BatchBuilder
-from aiokafka.errors import KafkaError, KafkaTimeoutError
+from aiokafka.producer.message_accumulator import RecordMetadata
 from aiokafka.producer.producer import TransactionContext
 
-from typing import Union, List, Dict, Type
-
-# BaseSerializer / KafkaKeySerializer import
-from tonga.services.serializer.base import BaseSerializer
-from tonga.services.serializer.kafka_key import KafkaKeySerializer
-
-# BasePartitioner import
-from tonga.services.coordinator.partitioner.base import BasePartitioner
-
-# Base Producer import
-from tonga.services.producer.base import BaseProducer
-
-# Model import
 from tonga.models.events.base import BaseModel
 from tonga.models.store_record.base import BaseStoreRecord
-
-# Exception import
+from tonga.services.coordinator.partitioner.base import BasePartitioner
 from tonga.services.errors import BadSerializer
-from tonga.services.producer.errors import (ProducerConnectionError, AioKafkaProducerBadParams,
-                                               KafkaProducerError, KafkaProducerTimeoutError, KeyErrorSendEvent,
-                                               ValueErrorSendEvent, TypeErrorSendEvent, FailToSendEvent,
-                                               UnknownEventBase, FailToSendBatch, KafkaProducerNotStartedError,
-                                               KafkaProducerAlreadyStartedError)
+from tonga.services.producer.base import BaseProducer
+from tonga.services.producer.errors import AioKafkaProducerBadParams
+from tonga.services.producer.errors import FailToSendBatch
+from tonga.services.producer.errors import FailToSendEvent
+from tonga.services.producer.errors import KafkaProducerAlreadyStartedError
+from tonga.services.producer.errors import KafkaProducerError
+from tonga.services.producer.errors import KafkaProducerNotStartedError
+from tonga.services.producer.errors import KafkaProducerTimeoutError
+from tonga.services.producer.errors import KeyErrorSendEvent
+from tonga.services.producer.errors import ProducerConnectionError
+from tonga.services.producer.errors import TypeErrorSendEvent
+from tonga.services.producer.errors import UnknownEventBase
+from tonga.services.producer.errors import ValueErrorSendEvent
+from tonga.services.serializer.base import BaseSerializer
+from tonga.services.serializer.kafka_key import KafkaKeySerializer
 
 __all__ = [
     'KafkaProducer',
