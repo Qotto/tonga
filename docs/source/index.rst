@@ -13,29 +13,33 @@ Welcome to Tonga's documentation!
    :alt: Kafka version
    :target: https://kafka.apache.org
 .. image:: https://readthedocs.org/projects/tonga/badge/?version=latest&style=for-the-badge
-   :target: https://tonga.readthedocs.io/en/latest/?badge=latest&style=for-the-badge
+   :target: https://tonga.readthedocs.io/en/latest/
    :alt: Documentation Status
+.. image:: https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg?style=for-the-badge
+   :target: https://www.contributor-covenant.org/
+   :alt: Contributor Covenant
 
 =========
 Summarize
 =========
 
-tonga is a client for build distributed event driven app with Apache Kafka. It is based on the aiokafka.
+Tonga is a toolkit for building fault-tolerant, distributed, highly concurrent, event-driven applications.
 Can be used with 0.9+ Kafka brokers
 
 
 .. toctree::
    :maxdepth: 5
+   :titlesonly:
    :caption: Contents:
 
    usage/installation
    usage/requirements
+   usage/dependencies
    usage/quickstart
 
+   code_of_conduct
+
    modules
-
-
-
 
 Indices and tables
 ==================
@@ -43,4 +47,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
