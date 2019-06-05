@@ -138,7 +138,7 @@ services:
     hostname: kafka-ui
     container_name: kafka-ui
     environment:
-      KAFKA_REST_PROXY_URL: rest-proxy:8082"
+      KAFKA_REST_PROXY_URL: rest-proxy:8082
       PROXY: "true"
 
 volumes:
