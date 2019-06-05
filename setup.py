@@ -14,7 +14,7 @@ setup(
     url='https://github.com/qotto/tonga',
     license='MIT',
     author='Qotto',
-    author_email='contact@qotto.net',
+    author_email='dev@qotto.net',
     include_package_data=True,
     description='Tonga is a toolkit for building fault-tolerant, distributed, highly concurrent, '
                 'event-driven applications',
