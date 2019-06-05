@@ -2,8 +2,11 @@
 
 ![GitHub](https://img.shields.io/github/license/Qotto/tonga.svg?style=for-the-badge)
 ![Kafka](https://img.shields.io/static/v1.svg?label=kafka&message=1.0,%200.11,%200.10,%200.9&color=green&style=for-the-badge&logo=appveyor)
+[![Documentation Status](https://readthedocs.org/projects/tonga/badge/?version=latest&style=for-the-badge)](https://tonga.readthedocs.io/en/latest/?badge=latest&style=for-the-badge)
 
 Asyncio client for event driven app
+
+Documentation: https://tonga.readthedocs.io
 
 ## Summarize:
 

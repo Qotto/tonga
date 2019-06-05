@@ -12,6 +12,9 @@ Welcome to Tonga's documentation!
 .. image:: https://img.shields.io/static/v1.svg?label=kafka&message=1.0,%200.11,%200.10,%200.9&color=green&style=for-the-badge&logo=appveyor
    :alt: Kafka version
    :target: https://kafka.apache.org
+.. image:: https://readthedocs.org/projects/tonga/badge/?version=latest&style=for-the-badge
+   :target: https://tonga.readthedocs.io/en/latest/?badge=latest&style=for-the-badge
+   :alt: Documentation Status
 
 =========
 Summarize
