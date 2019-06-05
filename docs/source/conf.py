@@ -24,6 +24,8 @@ author = 'Qotto'
 # The full version, including alpha/beta/rc tags
 release = '0.0.1'
 
+# Master doc
+master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------
 
