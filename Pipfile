@@ -13,6 +13,7 @@ pytest-asyncio = "*"
 sanic = "*"
 colorlog = "*"
 sphinx = "*"
+pylint = "*"
 
 [packages]
 aiokafka = "*"
