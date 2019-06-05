@@ -12,6 +12,7 @@ setup(
     license='MIT',
     author='Qotto',
     author_email='contact@qotto.net',
+    include_package_data=True,
     description='Client for build event driven app with Apache Kafka distributed stream processing system with asyncio',
     install_requires=[
         'avro-python3==1.9.0',
