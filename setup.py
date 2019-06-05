@@ -4,16 +4,22 @@
 
 from setuptools import setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
     name='tonga',
-    version='0.0.1',
+    version='0.0.2',
     packages=['tonga'],
     url='https://github.com/qotto/tonga',
     license='MIT',
     author='Qotto',
     author_email='contact@qotto.net',
     include_package_data=True,
-    description='Client for build event driven app with Apache Kafka distributed stream processing system with asyncio',
+    description='Tonga is a toolkit for building fault-tolerant, distributed, highly concurrent, '
+                'event-driven applications',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     install_requires=[
         'avro-python3==1.9.0',
         'pyyaml==5.1',
