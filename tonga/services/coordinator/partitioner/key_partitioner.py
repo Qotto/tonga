@@ -7,6 +7,8 @@ import random
 
 from kafka.partitioner.hashed import murmur2
 
+from typing import Union, List, Optional
+
 from tonga.services.coordinator.partitioner.base import BasePartitioner
 from tonga.services.coordinator.partitioner.errors import BadKeyType
 
@@ -14,7 +16,27 @@ logger = logging.getLogger(__name__)
 
 
 class KeyPartitioner(BasePartitioner):
-    def __call__(self, key, all_partitions, available):
+    """KeyPartitioner
+
+    Send event in topic partition with murmur2 algo
+    """
+
+    def __call__(self, key: Union[str, bytes], all_partitions: List[int], available_partitions: Optional[List[int]]) \
+            -> int:
+        """
+        Returns a partition to be used for the message
+
+        Args:
+            key (Union[str, bytes]): the key to use for partitioning.
+            all_partitions (List[int]): a list of the topic's partitions.
+            available_partitions (Optional[List[int]]): a list of the broker's currently available partitions(optional).
+
+        Raises:
+            BadKeyType: If key is not bytes serializable
+
+        Returns:
+            int: Partition number
+        """
         logger.debug('KeyPartitioner')
 
         if key is None:

@@ -8,18 +8,18 @@ __all__ = [
     'OutsideInstanceNumber'
 ]
 
-# ---------- Start KeyPartitioner Exceptions ----------
-
 
 class BadKeyType(TypeError):
+    """BadKeyType
+
+    This error was raised in KeyPartitioner when key was not bytes
+    """
     pass
-
-# ---------- End KeyPartitioner Exceptions ----------
-
-# ---------- Start StatefulsetPartitioner Exceptions ----------
 
 
 class OutsideInstanceNumber(SystemError):
-    pass
+    """OutsideInstanceNumber
 
-# ---------- End StatefulsetPartitioner Exceptions ----------
+    This error was raised in StateFulSetPartitioner when instance number is out of range
+    """
+    pass
