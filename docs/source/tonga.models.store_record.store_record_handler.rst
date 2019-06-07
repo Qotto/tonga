@@ -1,5 +1,5 @@
-tonga.models.store_record.store_record_handler module
-===========================================================
+StoreRecordHandler
+==================
 
 .. automodule:: tonga.models.store_record.store_record_handler
     :members:
@@ -7,8 +7,8 @@ tonga.models.store_record.store_record_handler module
     :show-inheritance:
 
 
-tonga.models.store_record.errors module
--------------------------------------------
+Errors
+------
 
 .. automodule:: tonga.models.store_record.errors
     :members:

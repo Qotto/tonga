@@ -1,5 +1,5 @@
-tonga.models.store_record package
-=====================================
+StoreRecord
+===========
 
 Subpackages
 -----------

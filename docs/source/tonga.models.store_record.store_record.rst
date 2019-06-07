@@ -1,5 +1,5 @@
-tonga.models.store_record.store_record module
-==================================================
+StoreRecord
+===========
 
 .. automodule:: tonga.models.store_record.store_record
     :members:

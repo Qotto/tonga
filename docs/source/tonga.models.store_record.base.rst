@@ -1,5 +1,5 @@
-tonga.models.store_record.base module
-========================================
+StoreRecordBase
+===============
 
 .. automodule:: tonga.models.store_record.base
     :members:
