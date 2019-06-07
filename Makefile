@@ -17,6 +17,14 @@ test:
 down-dev-env:
 	docker-compose stop
 
+dev-quickstart:
+	# This only needs to be launched once. When the volumes are created and
+	# configured you can use up-dev-env
+	make dev-repo
+	make up-dev-env
+	./recipes/2019_06_06_setup_test_docker.sh
+	make test
+
 clean-dev-env:
 	docker-compose rm -f
 	docker volume rm dev_env_kafka_data_1
