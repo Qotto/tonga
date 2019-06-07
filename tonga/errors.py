@@ -16,25 +16,25 @@ from tonga.services.coordinator.assignors.errors import BadAssignorPolicy
 
 # Import Producer exceptions
 from tonga.services.producer.errors import (ProducerConnectionError, AioKafkaProducerBadParams, KafkaProducerError,
-                                               KafkaProducerNotStartedError, KafkaProducerAlreadyStartedError,
-                                               KafkaProducerTimeoutError, KeyErrorSendEvent, ValueErrorSendEvent,
-                                               TypeErrorSendEvent, FailToSendEvent, UnknownEventBase, FailToSendBatch)
+                                            KafkaProducerNotStartedError, KafkaProducerAlreadyStartedError,
+                                            KafkaProducerTimeoutError, KeyErrorSendEvent, ValueErrorSendEvent,
+                                            TypeErrorSendEvent, FailToSendEvent, UnknownEventBase, FailToSendBatch)
 
 # Import Consumer exceptions
 from tonga.services.consumer.errors import (ConsumerConnectionError, AioKafkaConsumerBadParams, KafkaConsumerError,
-                                               KafkaConsumerNotStartedError, KafkaConsumerAlreadyStartedError,
-                                               ConsumerKafkaTimeoutError, IllegalOperation, TopicPartitionError,
-                                               NoPartitionAssigned, OffsetError, UnknownHandler,
-                                               UnknownStoreRecordHandler, UnknownHandlerReturn, HandlerException)
+                                            KafkaConsumerNotStartedError, KafkaConsumerAlreadyStartedError,
+                                            ConsumerKafkaTimeoutError, IllegalOperation, TopicPartitionError,
+                                            NoPartitionAssigned, OffsetError, UnknownHandler,
+                                            UnknownStoreRecordHandler, UnknownHandlerReturn, HandlerException)
 
 # Import AvroSerializer & KeySerializer exceptions
 from tonga.services.serializer.errors import (AvroAlreadyRegister, AvroEncodeError, AvroDecodeError, NotMatchedName,
-                                                 MissingEventClass, MissingHandlerClass, KeySerializerDecodeError,
-                                                 KeySerializerEncodeError)
+                                              MissingEventClass, MissingHandlerClass, KeySerializerDecodeError,
+                                              KeySerializerEncodeError)
 
 # Import LocalStore & GlobalStore exceptions
 from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated,
-                                    StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
+                                 StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
 
 # Import StoreBuilder exceptions
 from tonga.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
