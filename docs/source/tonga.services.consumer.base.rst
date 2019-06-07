@@ -1,5 +1,5 @@
-tonga.services.consumer.base module
---------------------------------------
+BaseConsumer
+------------
 
 .. automodule:: tonga.services.consumer.base
     :members:

@@ -1,5 +1,5 @@
-tonga.services.consumer.errors module
-----------------------------------------
+Errors
+------
 
 .. automodule:: tonga.services.consumer.errors
     :members:

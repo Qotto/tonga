@@ -1,5 +1,5 @@
-tonga.services.consumer package
-==================================
+Consumer
+========
 
 Submodules
 -----------
