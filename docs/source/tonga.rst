@@ -9,4 +9,3 @@ Tonga API reference
     tonga.services
     tonga.stores
     tonga.utils
-    tonga.errors
