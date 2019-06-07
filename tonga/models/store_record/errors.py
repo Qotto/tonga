@@ -8,4 +8,8 @@ __all__ = [
 
 
 class UnknownStoreRecordType(Exception):
+    """UnknownStoreRecordType
+
+    This error was raised when store record type as been unknown
+    """
     pass
