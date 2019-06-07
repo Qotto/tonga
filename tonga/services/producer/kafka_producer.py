@@ -88,6 +88,10 @@ class KafkaProducer(BaseProducer):
                                  received before considering a request complete. Possible value (0 / 1 / all)
             transactional_id: Id for make transactional process
 
+        Raises:
+            AioKafkaProducerBadParams: raised when producer was call with bad params
+            KafkaProducerError: raised when some generic error was raised form Aiokafka
+
         Returns:
             None
         """
@@ -125,6 +129,11 @@ class KafkaProducer(BaseProducer):
         """
         Start producer
 
+        Raises:
+            KafkaProducerAlreadyStartedError: raised when producer was already started
+            ProducerConnectionError: raised when producer can't connect to broker
+            KafkaError: raised when catch KafkaError
+
         Returns:
             None
         """
@@ -153,6 +162,11 @@ class KafkaProducer(BaseProducer):
         """
         Stop producer
 
+        Raises:
+            KafkaProducerNotStartedError: raised when producer was not started
+            KafkaProducerTimeoutError: raised when producer timeout on broker
+            KafkaError: raised when catch KafkaError
+
         Returns:
             None
         """
@@ -170,6 +184,12 @@ class KafkaProducer(BaseProducer):
             raise err
 
     def is_running(self) -> bool:
+        """
+        Get is running
+
+        Returns:
+            bool: running
+        """
         return self._running
 
     # Transaction sugar function
@@ -197,15 +217,18 @@ class KafkaProducer(BaseProducer):
 
     async def send_and_await(self, event: Union[BaseModel, BaseStoreRecord], topic: str) -> Union[RecordMetadata, None]:
         """
-        This function send a massage and await an acknowledgments
+        Send a message and await an acknowledgments
 
         Args:
             event (BaseModel): Event to send in Kafka, inherit form BaseModel
             topic (str): Topic name to send massage
 
         Raises:
-            ...
-            # TODO write missing raises docstring
+            KeyErrorSendEvent: raised when KeyError was raised
+            ValueErrorSendEvent:  raised when ValueError was raised
+            TypeErrorSendEvent: raised when TypeError was raised
+            KafkaError: raised when catch KafkaError
+            FailToSendEvent: raised when producer fail to send event
 
         Returns:
             None
@@ -247,6 +270,23 @@ class KafkaProducer(BaseProducer):
         return record_metadata
 
     async def send(self, event: BaseModel, topic: str) -> Union[RecordMetadata, None]:
+        """
+        Send a message and await an acknowledgments
+
+        Args:
+            event (BaseModel): Event to send in Kafka, inherit form BaseModel
+            topic (str): Topic name to send massage
+
+        Raises:
+            KeyErrorSendEvent: raised when KeyError was raised
+            ValueErrorSendEvent:  raised when ValueError was raised
+            TypeErrorSendEvent: raised when TypeError was raised
+            KafkaError: raised when catch KafkaError
+            FailToSendEvent: raised when producer fail to send event
+
+        Returns:
+            None
+        """
         if not self._running:
             await self.start_producer()
 
@@ -284,12 +324,38 @@ class KafkaProducer(BaseProducer):
         return record_metadata
 
     async def create_batch(self) -> BatchBuilder:
+        """
+        Creates an empty batch
+
+        Returns:
+            BatchBuilder: Empty batch
+        """
+
         if not self._running:
             await self.start_producer()
         self.logger.debug(f'Create batch')
         return self._kafka_producer.create_batch()
 
     async def send_batch(self, batch: BatchBuilder, topic: str, partition: int = 0) -> None:
+        """
+        Sends batch
+
+        Args:
+            batch (BatchBuilder): BatchBuilder
+            topic (str): Topic name
+            partition (int): Partition number
+
+        Raises:
+            KeyErrorSendEvent: raised when KeyError was raised
+            ValueErrorSendEvent: raised when ValueError was raised
+            TypeErrorSendEvent: raised when TypeError was raised
+            KafkaError: raised when catch KafkaError
+            FailToSendBatch: raised when producer fail to send batch
+
+        Returns:
+            None
+        """
+
         if not self._running:
             await self.start_producer()
 
@@ -317,7 +383,17 @@ class KafkaProducer(BaseProducer):
         else:
             raise FailToSendBatch
 
-    async def partitions_by_topic(self, topic: str) -> List[str]:
+    async def partitions_by_topic(self, topic: str) -> List[int]:
+        """
+        Get partitions by topic name
+
+        Args:
+            topic (str): topic name
+
+        Returns:
+            List[int]: list of partitions
+        """
+
         if not self._running:
             await self.start_producer()
         try:
@@ -332,4 +408,10 @@ class KafkaProducer(BaseProducer):
         return partitions
 
     def get_kafka_producer(self) -> AIOKafkaProducer:
+        """
+        Get kafka producer
+
+        Returns:
+            AIOKafkaProducer: AioKafkaProducer instance
+        """
         return self._kafka_producer
