@@ -1,5 +1,5 @@
-tonga.services.producer.base module
---------------------------------------
+BaseProducer
+------------
 
 .. automodule:: tonga.services.producer.base
     :members:
