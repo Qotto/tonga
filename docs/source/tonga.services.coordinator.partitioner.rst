@@ -1,5 +1,5 @@
-tonga.services.coordinator.partitioner package
-=================================================
+Partitioner
+===========
 
 Submodules
 ----------

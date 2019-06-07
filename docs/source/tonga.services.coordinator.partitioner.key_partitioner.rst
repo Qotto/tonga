@@ -1,5 +1,5 @@
-tonga.services.coordinator.partitioner.key_partitioner module
------------------------------------------------------------------
+KeyPartitioner
+--------------
 
 .. automodule:: tonga.services.coordinator.partitioner.key_partitioner
     :members:
