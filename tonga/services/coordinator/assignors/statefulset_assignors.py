@@ -19,15 +19,45 @@ logger = logging.getLogger(__name__)
 
 
 class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
+    """ Assigns consumer, two mod are available in assignor data (only_own, all).
+
+        - *only_own* : assign consumer on same partition as its instance number
+        - *all* : Assign consumer on all topic partitions
+
+    Attributes:
+        name (str): Assignor name
+        version (int): Assignor version
+        assignors_data (bytes): Bytes dict which contains all information for assign consumer
+    """
     name = 'StatefulsetPartitionAssignor'
     version = 0
     assignors_data: bytes = b''
 
-    def __init__(self, assignors_data):
+    def __init__(self, assignors_data: bytes) -> None:
+        """StatefulsetPartitionAssignor constructor
+
+        Args:
+            assignors_data (bytes): Bytes dict which contains all information for assign consumer
+
+        Returns:
+            None
+        """
         self.assignors_data = assignors_data
 
     def assign(self, cluster: ClusterMetadata, members: Dict[str, ConsumerProtocolMemberMetadata]) \
             -> Dict[str, ConsumerProtocolMemberAssignment]:
+        """Assign function was call by aiokafka for assign consumer on right topic partition.
+
+        Args:
+            cluster (ClusterMetadata):  Kafka-python cluster metadata (more detail in kafka-python documentation)
+            members (Dict[str, ConsumerProtocolMemberMetadata]): members dict which contains
+                                                                ConsumerProtocolMemberMetadata
+                                                                (more detail in kafka-python documentation)
+
+        Returns:
+            Dict[str, ConsumerProtocolMemberAssignment]: dict which contain members and assignment protocol (more detail
+                                                         in kafka-python documentation)
+        """
         logger.info('Statefulset Partition Assignor')
         logger.debug(f'Cluster = {cluster}\nMembers = {members}')
 
@@ -89,6 +119,15 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
 
     @staticmethod
     def get_advanced_assignor_dict(all_topic_partitions: List[TopicPartition]) -> Dict[str, List[int]]:
+        """ Transform List[TopicPartition] to Dict[str, List[int]]
+
+
+        Args:
+            all_topic_partitions (List[TopicPartition]): List of TopicPartition
+
+        Returns:
+            Dict[str, List[int]]: dict contain topics and partitions in list
+        """
         result: Dict[str, List[int]] = dict()
         for tp in all_topic_partitions:
             if tp.topic not in result:
@@ -97,8 +136,25 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         return result
 
     def metadata(self, topics):
+        """
+
+
+        Args:
+            topics:
+
+        Returns:
+
+        """
         return ConsumerProtocolMemberMetadata(self.version, list(topics), self.assignors_data)
 
     @classmethod
-    def on_assignment(cls, assignment):
+    def on_assignment(cls, assignment: ConsumerProtocolMemberAssignment) -> None:
+        """This method was call by kafka-python after topic/partitions assignment
+
+        Args:
+            assignment (ConsumerProtocolMemberAssignment): more detail in kafka-python documentation
+
+        Returns:
+            None
+        """
         pass

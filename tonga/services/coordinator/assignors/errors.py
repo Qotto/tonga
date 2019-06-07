@@ -9,5 +9,9 @@ __all__ = [
 
 
 class BadAssignorPolicy(ValueError):
+    """BadAssignorPolicy
+
+    This error was raised when assignor policy not matched
+    """
     pass
 
