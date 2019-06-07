@@ -1,5 +1,5 @@
-tonga.models package
-=======================
+Models
+======
 
 Subpackages
 -----------

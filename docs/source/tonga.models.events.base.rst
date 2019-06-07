@@ -1,5 +1,5 @@
-tonga.models.events.base module
-===================================
+Base
+====
 
 .. automodule:: tonga.models.events.base
     :members:

@@ -1,5 +1,5 @@
-tonga.models.events package
-==============================
+Events
+======
 
 Subpackages
 -----------
