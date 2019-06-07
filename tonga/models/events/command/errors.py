@@ -9,4 +9,8 @@ __all__ = [
 
 
 class CommandEventMissingProcessGuarantee(Exception):
+    """CommandEventMissingProcessGuarantee
+
+    This error was raised if process_guarantee is not set on BaseCommand instantiation
+    """
     pass
