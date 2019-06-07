@@ -15,9 +15,35 @@ __all__ = [
 
 
 class BaseResultHandler(BaseHandler):
+    """ Base of all result handler
+    """
+
     @classmethod
     def handler_name(cls) -> str:
+        """ Return handler name, used by serializer
+
+        Raises:
+            NotImplementedError: Abstract def
+
+        Returns:
+            None
+        """
         raise NotImplementedError
 
     async def on_result(self, event: BaseResult, tp: TopicPartition, group_id: str, offset: int) -> Union[str, None]:
+        """ This function is automatically call by Tonga when an result with same name was receive by consumer
+
+        Args:
+            event (BaseResult): Result event receive by consumer
+            tp (TopicPartition): NamedTuple with topic name & partition number (more information in kafka-python
+                                 or aiokafka
+            group_id (str): Consumer group id, useful for make transaction in handler
+            offset (int): Offset of receive message (used for commit transaction)
+
+        Raises:
+            NotImplementedError: Abstract def
+
+        Returns:
+            None
+        """
         raise NotImplementedError
