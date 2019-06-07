@@ -28,7 +28,7 @@ Can be used with 0.9+ Kafka brokers
 
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 6
    :titlesonly:
    :caption: Contents:
 
