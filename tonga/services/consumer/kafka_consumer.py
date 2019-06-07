@@ -56,8 +56,7 @@ __all__ = [
 
 
 class KafkaConsumer(BaseConsumer):
-    """
-    KafkaConsumer Class
+    """KafkaConsumer Class
 
     Attributes:
         serializer (BaseSerializer): Serializer encode & decode event
