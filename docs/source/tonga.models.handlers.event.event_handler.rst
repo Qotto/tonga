@@ -1,5 +1,5 @@
-tonga.models.handlers.event.event_handler module
-===================================================
+EventHandler
+============
 
 .. automodule:: tonga.models.handlers.event.event_handler
     :members:

@@ -1,5 +1,5 @@
-Event
-=====
+BaseEvent
+=========
 
 A *event* is a record to describes what happened in the system.
 

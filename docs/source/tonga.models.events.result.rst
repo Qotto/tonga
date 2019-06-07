@@ -1,5 +1,5 @@
-Result
-======
+BaseResult
+==========
 
 A *result* is a record containing results of the processing of a command.
 

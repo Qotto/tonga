@@ -1,5 +1,5 @@
-tonga.models.handlers.command.command_handler module
-=======================================================
+CommandHandler
+==============
 
 .. automodule:: tonga.models.handlers.command.command_handler
     :members:

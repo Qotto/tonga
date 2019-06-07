@@ -1,5 +1,5 @@
-tonga.models.handlers package
-================================
+Handlers
+========
 
 Subpackages
 -----------

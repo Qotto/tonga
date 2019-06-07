@@ -1,5 +1,5 @@
-Command
-=======
+BaseCommand
+===========
 
 
 A *command* is a record containing instructions to be processed by a service. The result of this processing is notified in a *result* record.
@@ -20,15 +20,12 @@ processing_guarantee: one of
 .. _idempotent:
    https://en.wikipedia.org/wiki/Idempotence
 
-Command class
------------------------------------------
-
 .. automodule:: tonga.models.events.command.command
     :members:
     :undoc-members:
 
-Command errors
-----------------------------------
+Errors
+------
 
 .. automodule:: tonga.models.events.command.errors
     :members:
