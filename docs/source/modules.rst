@@ -1,5 +1,5 @@
-tonga
-========
+Tonga
+=====
 
 .. toctree::
    :maxdepth: 4

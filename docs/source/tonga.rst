@@ -1,5 +1,5 @@
-tonga API reference
-======================
+Tonga API reference
+===================
 
 .. toctree::
     :caption: API Documentation
