@@ -8,4 +8,8 @@ __all__ = [
 
 
 class BadSerializer(TypeError):
+    """BadSerializer
+
+    This error was raised when consumer or producer receive a bad serializer instance
+    """
     pass

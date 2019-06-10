@@ -14,11 +14,37 @@ __all__ = [
 
 
 class BaseSerializer:
+    """ Serializer base, all serializer must be inherit form this class
+    """
     def __init__(self) -> None:
+        """ BaseSerializer constructor
+        """
         pass
 
     def encode(self, event: Any) -> Any:
+        """Encode function, abstract method
+
+        Args:
+            event (Any):
+
+        Raises:
+            NotImplementedError: Abstract method
+
+        Returns:
+            Any
+        """
         raise NotImplementedError
 
     def decode(self, encoded_event: Any) -> Any:
+        """Decode function, abstract method
+
+        Args:
+            encoded_event (Any):
+
+        Raises:
+            NotImplementedError: Abstract method
+
+        Returns:
+            Any
+        """
         raise NotImplementedError
