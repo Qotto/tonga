@@ -62,8 +62,7 @@ class BaseStoreMetaData(object):
             None
         """
         if tp not in self.last_offsets:
-            # TODO Refactor exception
-            raise StorePartitionNotAssigned(f'TopicPartition: {tp} is not assigned', 500)
+            raise StorePartitionNotAssigned
         self.last_offsets[tp] = offset
 
     def assign_partition(self, tp: TopicPartition) -> None:
@@ -82,8 +81,7 @@ class BaseStoreMetaData(object):
             self.assigned_partitions.append(tp)
             self.last_offsets[tp] = 0
         else:
-            # TODO Refactor exception
-            raise StorePartitionAlreadyAssigned(f'TopicPartition: {tp} is already assigned', 500)
+            raise StorePartitionAlreadyAssigned
 
     def unassign_partition(self, tp: TopicPartition) -> None:
         """Unassing partition by TopicPartition
@@ -98,8 +96,7 @@ class BaseStoreMetaData(object):
             None
         """
         if tp not in self.assigned_partitions:
-            # TODO Refactor exception
-            raise StorePartitionNotAssigned(f'TopicPartition: {tp} is not assigned', 500)
+            raise StorePartitionNotAssigned
         else:
             self.assigned_partitions.remove(tp)
             del self.last_offsets[tp]
