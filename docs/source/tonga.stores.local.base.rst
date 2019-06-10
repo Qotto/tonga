@@ -1,5 +1,5 @@
-tonga.stores.local.base module
----------------------------------
+BaseLocalStore
+--------------
 
 .. automodule:: tonga.stores.local.base
     :members:

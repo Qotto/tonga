@@ -1,5 +1,5 @@
-tonga.stores.globall.memory module
--------------------------------------
+GlobalStoreMemory
+-----------------
 
 .. automodule:: tonga.stores.globall.memory
     :members:

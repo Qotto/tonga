@@ -1,5 +1,5 @@
-tonga.stores.store_builder.base module
-------------------------------------------
+BaseStoreBuilder
+----------------
 
 .. automodule:: tonga.stores.store_builder.base
     :members:

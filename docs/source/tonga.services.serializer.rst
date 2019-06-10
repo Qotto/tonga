@@ -1,5 +1,5 @@
-tonga.services.serializer package
-====================================
+Serializer
+==========
 
 Submodules
 -----------

@@ -1,5 +1,5 @@
-tonga.stores.store_builder package
-======================================
+StoreBuilder
+============
 
 Submodules
 ----------

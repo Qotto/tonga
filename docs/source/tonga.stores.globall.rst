@@ -1,5 +1,5 @@
-tonga.stores.globall package
-===============================
+Global Store
+============
 
 Submodules
 ----------

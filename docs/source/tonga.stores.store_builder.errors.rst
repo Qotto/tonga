@@ -1,5 +1,5 @@
-tonga.stores.store_builder.errors module
---------------------------------------------
+Errors
+------
 
 .. automodule:: tonga.stores.store_builder.errors
     :members:

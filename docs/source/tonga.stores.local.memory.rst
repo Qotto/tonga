@@ -1,5 +1,5 @@
-tonga.stores.local.memory module
------------------------------------
+LocalStoreMemory
+-----------------
 
 .. automodule:: tonga.stores.local.memory
     :members:
