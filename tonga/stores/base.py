@@ -178,7 +178,7 @@ class BaseStores(object):
         raise NotImplementedError
 
     def is_initialized(self) -> bool:
-        """ Return stores states
+        """ Return store state
 
         Abstract method
 
@@ -186,17 +186,17 @@ class BaseStores(object):
             NotImplementedError: Abstract method
 
         Returns:
-            bool: true if stores is initialize, otherwise false
+            bool: true if store is initialize, otherwise false
         """
         raise NotImplementedError
 
     def set_initialized(self, initialized: bool) -> None:
-        """Set stores states
+        """Set store state
 
         Abstract method
 
         Args:
-            initialized (bool): true for initialize stores, otherwise false
+            initialized (bool): true for initialize store, otherwise false
 
         Raises:
             NotImplementedError: Abstract method
