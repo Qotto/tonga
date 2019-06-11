@@ -242,4 +242,3 @@ class BaseLocalStore(BaseStores):
             None
         """
         raise NotImplementedError
-

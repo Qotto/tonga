@@ -19,8 +19,7 @@ from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated)
 class LocalStoreMemory(BaseLocalStore):
     """ Local memory store
 
-    Very fast db, but no persistence. At each start, it will have to rebuild own local & global store before being
-    available
+    Very fast db, but no persistence. At each start, it will have to rebuild own local store before being available
 
     Attributes:
         _db (Dict[str, bytes]): Dict will contain all keys & values
