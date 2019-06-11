@@ -38,7 +38,7 @@ Can be used with 0.9+ Kafka brokers
 
    code_of_conduct
 
-   modules
+   tonga
 
 Indices and tables
 ==================
