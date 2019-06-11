@@ -11,12 +11,24 @@ __all__ = [
 
 
 class UninitializedStore(RuntimeError):
+    """UninitializedStore
+
+    This error was raised when store is not initialized
+    """
     pass
 
 
 class CanNotInitializeStore(RuntimeError):
+    """CanNotInitializeStore
+
+    This error was raised when StoreBuilder can't initialize store
+    """
     pass
 
 
 class FailToSendStoreRecord(Exception):
+    """FailToSendStoreRecord
+
+    This error was raised when StoreBuilder fail to send StoreRecord
+    """
     pass
