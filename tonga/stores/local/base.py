@@ -2,13 +2,13 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from aiokafka import TopicPartition
-
 from typing import Dict, List
+
+from aiokafka import TopicPartition
 
 from tonga.stores import BaseStores, BaseStoreMetaData
 
-__all_ = [
+__all__ = [
     'BaseLocalStore',
 ]
 
@@ -16,15 +16,6 @@ __all_ = [
 class BaseLocalStore(BaseStores):
     """ Base of all local stores
     """
-
-    def __init__(self, **kwargs):
-        """ BaseLocalStore constructor
-
-        Args:
-            **kwargs (dict[str, Any]): Args for base store (name)
-        """
-        super().__init__(**kwargs)
-
     async def set_store_position(self, current_instance: int, nb_replica: int,
                                  assigned_partitions: List[TopicPartition],
                                  last_offsets: Dict[TopicPartition, int]) -> None:

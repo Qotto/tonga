@@ -2,17 +2,13 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import logging
 import random
+from typing import Union, List, Optional
 
 from kafka.partitioner.hashed import murmur2
 
-from typing import Union, List, Optional
-
 from tonga.services.coordinator.partitioner.base import BasePartitioner
 from tonga.services.coordinator.partitioner.errors import BadKeyType
-
-logger = logging.getLogger(__name__)
 
 
 class KeyPartitioner(BasePartitioner):
@@ -37,8 +33,6 @@ class KeyPartitioner(BasePartitioner):
         Returns:
             int: Partition number
         """
-        logger.debug('KeyPartitioner')
-
         if key is None:
             return random.choice(all_partitions)
 

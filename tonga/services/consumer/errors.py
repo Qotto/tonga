@@ -25,7 +25,6 @@ class ConsumerConnectionError(ConnectionError):
 
     This error was raised when consumer can't connect to Kafka broker
     """
-    pass
 
 
 class AioKafkaConsumerBadParams(ValueError):
@@ -33,7 +32,6 @@ class AioKafkaConsumerBadParams(ValueError):
 
     This error was raised when consumer was call with bad params
     """
-    pass
 
 
 class KafkaConsumerError(RuntimeError):
@@ -41,7 +39,6 @@ class KafkaConsumerError(RuntimeError):
 
     This error was raised when an generic error from aiokafka was raised
     """
-    pass
 
 
 class KafkaConsumerNotStartedError(RuntimeError):
@@ -49,7 +46,6 @@ class KafkaConsumerNotStartedError(RuntimeError):
 
     This error was raised when consumer was not started
     """
-    pass
 
 
 class KafkaConsumerAlreadyStartedError(RuntimeError):
@@ -57,7 +53,6 @@ class KafkaConsumerAlreadyStartedError(RuntimeError):
 
     This error was raised when consumer was already started
     """
-    pass
 
 
 class ConsumerKafkaTimeoutError(TimeoutError):
@@ -65,7 +60,6 @@ class ConsumerKafkaTimeoutError(TimeoutError):
 
     This error was raised when Tonga timeout on Kafka broker
     """
-    pass
 
 
 class IllegalOperation(TimeoutError):
@@ -73,7 +67,6 @@ class IllegalOperation(TimeoutError):
 
     This error was raised when topics / partition doesn't exist
     """
-    pass
 
 
 class TopicPartitionError(TypeError):
@@ -81,7 +74,6 @@ class TopicPartitionError(TypeError):
 
     This error was raised topics exist but not desired partition
     """
-    pass
 
 
 class OffsetError(TypeError):
@@ -89,7 +81,6 @@ class OffsetError(TypeError):
 
     This error was raised when offset was out of range
     """
-    pass
 
 
 class NoPartitionAssigned(TypeError):
@@ -97,7 +88,6 @@ class NoPartitionAssigned(TypeError):
 
     This error was raised when no partition was assigned to consumer
     """
-    pass
 
 
 class UnknownHandler(TypeError):
@@ -105,7 +95,6 @@ class UnknownHandler(TypeError):
 
     This error was raised when consumer as an event but not handler was found
     """
-    pass
 
 
 class UnknownHandlerReturn(TypeError):
@@ -113,7 +102,6 @@ class UnknownHandlerReturn(TypeError):
 
     This error was raised when handler return an unknown value
     """
-    pass
 
 
 class UnknownStoreRecordHandler(TypeError):
@@ -121,7 +109,6 @@ class UnknownStoreRecordHandler(TypeError):
 
     This error was raised when store record handler was unknown
     """
-    pass
 
 
 class HandlerException(Exception):
@@ -130,4 +117,3 @@ class HandlerException(Exception):
     This error was raised when in an handler, consumer doesn't commit this message and retries with same handler,
     if 5 errors as been raised consumer stop listen event.
     """
-    pass

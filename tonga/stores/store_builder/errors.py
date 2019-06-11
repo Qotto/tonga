@@ -15,7 +15,6 @@ class UninitializedStore(RuntimeError):
 
     This error was raised when store is not initialized
     """
-    pass
 
 
 class CanNotInitializeStore(RuntimeError):
@@ -23,7 +22,6 @@ class CanNotInitializeStore(RuntimeError):
 
     This error was raised when StoreBuilder can't initialize store
     """
-    pass
 
 
 class FailToSendStoreRecord(Exception):
@@ -31,4 +29,3 @@ class FailToSendStoreRecord(Exception):
 
     This error was raised when StoreBuilder fail to send StoreRecord
     """
-    pass

@@ -14,7 +14,6 @@ class BadKeyType(TypeError):
 
     This error was raised in KeyPartitioner when key was not bytes
     """
-    pass
 
 
 class OutsideInstanceNumber(SystemError):
@@ -22,4 +21,3 @@ class OutsideInstanceNumber(SystemError):
 
     This error was raised in StateFulSetPartitioner when instance number is out of range
     """
-    pass

@@ -2,14 +2,10 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import logging
-
 from typing import Union, List, Optional
 
 from tonga.services.coordinator.partitioner.base import BasePartitioner
 from tonga.services.coordinator.partitioner.errors import OutsideInstanceNumber
-
-logger = logging.getLogger(__name__)
 
 
 class StatefulsetPartitioner(BasePartitioner):
@@ -48,7 +44,6 @@ class StatefulsetPartitioner(BasePartitioner):
         Returns:
             int: Partition number
         """
-        logger.debug('StatefulsetPartitioner')
         if self._instance <= len(all_partitions):
             return all_partitions[self._instance]
         raise OutsideInstanceNumber

@@ -16,7 +16,6 @@ class StoreKeyNotFound(Exception):
 
     This error was raised when store not found value by key
     """
-    pass
 
 
 class StoreMetadataCantNotUpdated(Exception):
@@ -24,7 +23,6 @@ class StoreMetadataCantNotUpdated(Exception):
 
     This error was raised when store can't update StoreMetadata
     """
-    pass
 
 
 class StorePartitionAlreadyAssigned(Exception):
@@ -32,7 +30,6 @@ class StorePartitionAlreadyAssigned(Exception):
 
     This error was raised when store is already assigned on topic
     """
-    pass
 
 
 class StorePartitionNotAssigned(Exception):
@@ -40,4 +37,3 @@ class StorePartitionNotAssigned(Exception):
 
     This error was raised when store have not assigned partition
     """
-    pass

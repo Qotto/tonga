@@ -5,7 +5,7 @@
 from typing import List, Optional, Union
 
 
-class BasePartitioner(object):
+class BasePartitioner:
     """
     Base class for a partitioner
     """

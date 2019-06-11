@@ -24,7 +24,6 @@ class ProducerConnectionError(ConnectionError):
 
     This error was raised when producer can't connect to broker
     """
-    pass
 
 
 class AioKafkaProducerBadParams(ValueError):
@@ -32,7 +31,6 @@ class AioKafkaProducerBadParams(ValueError):
 
     This error was raised when producer was call with bad params
     """
-    pass
 
 
 class KafkaProducerError(RuntimeError):
@@ -40,7 +38,6 @@ class KafkaProducerError(RuntimeError):
 
     This error was raised when some generic error was raised form Aiokafka
     """
-    pass
 
 
 class KafkaProducerNotStartedError(RuntimeError):
@@ -48,7 +45,6 @@ class KafkaProducerNotStartedError(RuntimeError):
 
     This error was raised when producer was not started
     """
-    pass
 
 
 class KafkaProducerAlreadyStartedError(RuntimeError):
@@ -56,7 +52,6 @@ class KafkaProducerAlreadyStartedError(RuntimeError):
 
     This error was raised when producer was already started
     """
-    pass
 
 
 class KafkaProducerTimeoutError(TimeoutError):
@@ -64,7 +59,6 @@ class KafkaProducerTimeoutError(TimeoutError):
 
     This error was raised when producer timeout on broker
     """
-    pass
 
 
 class KeyErrorSendEvent(KeyError):
@@ -72,7 +66,6 @@ class KeyErrorSendEvent(KeyError):
 
     This error was raised when KeyError was raised
     """
-    pass
 
 
 class ValueErrorSendEvent(ValueError):
@@ -80,7 +73,6 @@ class ValueErrorSendEvent(ValueError):
 
     This error was raised when ValueError was raised
     """
-    pass
 
 
 class TypeErrorSendEvent(TypeError):
@@ -88,7 +80,6 @@ class TypeErrorSendEvent(TypeError):
 
     This error was raised when TypeError was raised
     """
-    pass
 
 
 class FailToSendEvent(Exception):
@@ -96,7 +87,6 @@ class FailToSendEvent(Exception):
 
     This error was raised when producer fail to send event
     """
-    pass
 
 
 class FailToSendBatch(Exception):
@@ -104,7 +94,6 @@ class FailToSendBatch(Exception):
 
     This error was raised when producer fail to send batch
     """
-    pass
 
 
 class UnknownEventBase(TypeError):
@@ -112,4 +101,3 @@ class UnknownEventBase(TypeError):
 
     This error was raised when producer receive an unknown BaseEvent
     """
-    pass

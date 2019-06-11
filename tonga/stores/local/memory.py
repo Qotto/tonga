@@ -3,17 +3,15 @@
 # Copyright (c) Qotto, 2019
 
 import ast
-from aiokafka import TopicPartition
-
 from typing import Dict, Any, List, Union
 
-from tonga.stores.local.base import BaseLocalStore
-from tonga.stores.base import BaseStoreMetaData
-from tonga.utils.decorator import check_initialized
+from aiokafka import TopicPartition
 
-# Import store exceptions
 from tonga.services.coordinator.partitioner.errors import BadKeyType
+from tonga.stores.base import BaseStoreMetaData
 from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated)
+from tonga.stores.local.base import BaseLocalStore
+from tonga.utils.decorator import check_initialized
 
 
 class LocalStoreMemory(BaseLocalStore):
@@ -95,7 +93,7 @@ class LocalStoreMemory(BaseLocalStore):
         Returns:
             None
         """
-        self._logger.info(f'LocalStoreMemory initialized: {initialized}')
+        self._logger.info('LocalStoreMemory initialized: %s', initialized)
         self._initialized = initialized
 
     def is_initialized(self) -> bool:

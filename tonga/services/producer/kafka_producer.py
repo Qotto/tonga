@@ -118,10 +118,10 @@ class KafkaProducer(BaseProducer):
                                                     key_serializer=KafkaKeySerializer.encode,
                                                     partitioner=partitioner)
         except ValueError as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise AioKafkaProducerBadParams
         except KafkaError as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise KafkaProducerError
         self.logger.debug(f'Create new producer {client_id}')
 
@@ -145,13 +145,13 @@ class KafkaProducer(BaseProducer):
                 self._running = True
                 self.logger.debug(f'Start producer : {self._client_id}')
             except KafkaTimeoutError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 await asyncio.sleep(1)
             except ConnectionError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 await asyncio.sleep(1)
             except KafkaError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise err
             else:
                 break
@@ -177,10 +177,10 @@ class KafkaProducer(BaseProducer):
             self._running = False
             self.logger.debug(f'Stop producer : {self._client_id}')
         except KafkaTimeoutError as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise KafkaProducerTimeoutError
         except KafkaError as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise err
 
     def is_running(self) -> bool:
@@ -249,19 +249,19 @@ class KafkaProducer(BaseProducer):
                 else:
                     raise UnknownEventBase
             except KafkaTimeoutError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 await asyncio.sleep(1)
             except KeyError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise KeyErrorSendEvent
             except ValueError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise ValueErrorSendEvent
             except TypeError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise TypeErrorSendEvent
             except KafkaError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise err
             else:
                 break
@@ -303,19 +303,19 @@ class KafkaProducer(BaseProducer):
                 else:
                     raise UnknownEventBase
             except KafkaTimeoutError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 await asyncio.sleep(1)
             except KeyError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise KeyErrorSendEvent
             except ValueError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise ValueErrorSendEvent
             except TypeError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise TypeErrorSendEvent
             except KafkaError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise err
             else:
                 break
@@ -364,19 +364,19 @@ class KafkaProducer(BaseProducer):
                 self.logger.debug(f'Send batch')
                 await self._kafka_producer.send_batch(batch=batch, topic=topic, partition=partition)
             except KafkaTimeoutError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 await asyncio.sleep(1)
             except KeyError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise KeyErrorSendEvent
             except ValueError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise ValueErrorSendEvent
             except TypeError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise TypeErrorSendEvent
             except KafkaError as err:
-                self.logger.exception(f'{err.__str__()}')
+                self.logger.exception('%s', err.__str__())
                 raise err
             else:
                 break
@@ -400,10 +400,10 @@ class KafkaProducer(BaseProducer):
             self.logger.debug(f'Get partitions by topic')
             partitions = await self._kafka_producer.partitions_for(topic)
         except KafkaTimeoutError as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise KafkaProducerTimeoutError
         except KafkaError as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise err
         return partitions
 

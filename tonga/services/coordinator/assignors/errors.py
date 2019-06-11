@@ -13,5 +13,3 @@ class BadAssignorPolicy(ValueError):
 
     This error was raised when assignor policy not matched
     """
-    pass
-

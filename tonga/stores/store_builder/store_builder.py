@@ -3,47 +3,30 @@
 # Copyright (c) Qotto, 2019
 
 import asyncio
-import logging
-from logging import Logger
-from asyncio import AbstractEventLoop, Future
-from aiokafka import TopicPartition
-from aiokafka.producer.message_accumulator import RecordMetadata
-from kafka.cluster import ClusterMetadata
-from kafka.admin import KafkaAdminClient
-
+from asyncio import (AbstractEventLoop, Future)
+from logging import (Logger, getLogger)
 from typing import List
 
-# Store Builder import
-from tonga.stores.store_builder.base import BaseStoreBuilder
+from aiokafka import TopicPartition
+from aiokafka.producer.message_accumulator import RecordMetadata
+from kafka.admin import KafkaAdminClient
+from kafka.cluster import ClusterMetadata
 
-# Serializer import
-from tonga.services.serializer.base import BaseSerializer
-
-# StatefulsetPartitioner import
+from tonga.models.store_record.store_record import StoreRecord
+from tonga.services.consumer.errors import (OffsetError, TopicPartitionError, NoPartitionAssigned)
+from tonga.services.consumer.kafka_consumer import KafkaConsumer
 from tonga.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
-
-# Stores import
-from tonga.stores.local.base import BaseLocalStore
-from tonga.stores.local.memory import LocalStoreMemory
+from tonga.services.producer.errors import (KeyErrorSendEvent, ValueErrorSendEvent,
+                                            TypeErrorSendEvent, FailToSendEvent)
+from tonga.services.producer.kafka_producer import KafkaProducer
+from tonga.services.serializer.base import BaseSerializer
+from tonga.stores.errors import StoreKeyNotFound
 from tonga.stores.globall.base import BaseGlobalStore
 from tonga.stores.globall.memory import GlobalStoreMemory
-
-# Consumer & Producer import
-from tonga.services.consumer.kafka_consumer import KafkaConsumer
-from tonga.services.producer.kafka_producer import KafkaProducer
-
-# Storage Builder import
-from tonga.models.store_record.store_record import StoreRecord
-
-# Import store builder exceptions
+from tonga.stores.local.base import BaseLocalStore
+from tonga.stores.local.memory import LocalStoreMemory
+from tonga.stores.store_builder.base import BaseStoreBuilder
 from tonga.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
-# Import store exceptions
-from tonga.stores.errors import StoreKeyNotFound
-# Import consumer exceptions
-from tonga.services.consumer.errors import (OffsetError, TopicPartitionError, NoPartitionAssigned)
-# Import producer exceptions
-from tonga.services.producer.errors import (KeyErrorSendEvent, ValueErrorSendEvent,
-                                               TypeErrorSendEvent, FailToSendEvent)
 
 __all__ = [
     'StoreBuilder'
@@ -138,7 +121,7 @@ class StoreBuilder(BaseStoreBuilder):
         self._cluster_metadata = cluster_metadata
         self._cluster_admin = cluster_admin
 
-        self._logger = logging.getLogger('tonga')
+        self._logger = getLogger('tonga')
         self._loop = loop
 
         self._store_consumer = KafkaConsumer(name=f'{self.name}_consumer', serializer=self._serializer,
@@ -191,7 +174,7 @@ class StoreBuilder(BaseStoreBuilder):
             try:
                 await self._store_consumer.load_offsets('earliest')
             except (TopicPartitionError, NoPartitionAssigned) as err:
-                self._logger.exception(f'{err.__str__()}')
+                self._logger.exception('%s', err.__str__())
                 raise CanNotInitializeStore
         else:
             try:
@@ -208,7 +191,7 @@ class StoreBuilder(BaseStoreBuilder):
                 try:
                     await self._store_consumer.load_offsets('earliest')
                 except (TopicPartitionError, NoPartitionAssigned) as err:
-                    self._logger.exception(f'{err.__str__()}')
+                    self._logger.exception('%s', err.__str__())
                     raise CanNotInitializeStore
             else:
                 # If metadata is exist in DB, , auto seek to last position
@@ -217,7 +200,7 @@ class StoreBuilder(BaseStoreBuilder):
                         TopicPartition(self._topic_store, self._current_instance)]
                     await self._store_consumer.seek_custom(self._topic_store, self._current_instance, last_offset)
                 except (OffsetError, TopicPartitionError, NoPartitionAssigned) as err:
-                    self._logger.exception(f'{err.__str__()}')
+                    self._logger.exception('%s', err.__str__())
                     raise CanNotInitializeStore
                 await self._local_store.set_store_position(self._current_instance, self._nb_replica,
                                                            local_store_metadata.assigned_partitions,
@@ -238,7 +221,7 @@ class StoreBuilder(BaseStoreBuilder):
             try:
                 await self._store_consumer.load_offsets('earliest')
             except (TopicPartitionError, NoPartitionAssigned) as err:
-                self._logger.exception(f'{err.__str__()}')
+                self._logger.exception('%s', err.__str__())
                 raise CanNotInitializeStore
         else:
             try:
@@ -256,7 +239,7 @@ class StoreBuilder(BaseStoreBuilder):
                 try:
                     await self._store_consumer.load_offsets('earliest')
                 except (TopicPartitionError, NoPartitionAssigned) as err:
-                    self._logger.exception(f'{err.__str__()}')
+                    self._logger.exception('%s', err.__str__())
                     raise CanNotInitializeStore
             else:
                 # If metadata is exist in DB
@@ -264,7 +247,7 @@ class StoreBuilder(BaseStoreBuilder):
                     try:
                         await self._store_consumer.seek_custom(tp.topic, tp.partition, offset)
                     except (OffsetError, TopicPartitionError, NoPartitionAssigned) as err:
-                        self._logger.exception(f'{err.__str__()}')
+                        self._logger.exception('%s', err.__str__())
                         raise CanNotInitializeStore
                 await self._global_store.set_store_position(self._current_instance, self._nb_replica,
                                                             global_store_metadata.assigned_partitions,
@@ -319,8 +302,7 @@ class StoreBuilder(BaseStoreBuilder):
                                                               record_metadata.offset)
             await self._local_store.set(key, value)
             return record_metadata
-        else:
-            raise UninitializedStore
+        raise UninitializedStore
 
     async def get_from_local_store(self, key: str) -> bytes:
         """Get from local store
@@ -363,8 +345,7 @@ class StoreBuilder(BaseStoreBuilder):
                 raise FailToSendStoreRecord
             await self._local_store.delete(key)
             return record_metadata
-        else:
-            raise UninitializedStore
+        raise UninitializedStore
 
     async def set_from_local_store_rebuild(self, key: str, value: bytes) -> None:
         """ Set key & value in local store in rebuild mod

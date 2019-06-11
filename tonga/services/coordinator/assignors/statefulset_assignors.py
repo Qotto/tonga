@@ -2,20 +2,17 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import logging
-import json
 import collections
+import json
+import logging
+from typing import Dict, DefaultDict, Any, Set, List
 
 from kafka import TopicPartition
 from kafka.cluster import ClusterMetadata
 from kafka.coordinator.assignors.abstract import AbstractPartitionAssignor
 from kafka.coordinator.protocol import ConsumerProtocolMemberMetadata, ConsumerProtocolMemberAssignment
 
-from typing import Dict, DefaultDict, Any, Set, List
-
 from tonga.services.coordinator.assignors.errors import BadAssignorPolicy
-
-logger = logging.getLogger(__name__)
 
 
 class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
@@ -28,10 +25,12 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         name (str): Assignor name
         version (int): Assignor version
         assignors_data (bytes): Bytes dict which contains all information for assign consumer
+        logger (Logger): StatefulsetPartitionAssignor logger
     """
     name = 'StatefulsetPartitionAssignor'
     version = 0
     assignors_data: bytes = b''
+    logger = logging.getLogger('tonga')
 
     def __init__(self, assignors_data: bytes) -> None:
         """StatefulsetPartitionAssignor constructor
@@ -58,12 +57,13 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
             Dict[str, ConsumerProtocolMemberAssignment]: dict which contain members and assignment protocol (more detail
                                                          in kafka-python documentation)
         """
-        logger.info('Statefulset Partition Assignor')
-        logger.debug(f'Cluster = {cluster}\nMembers = {members}')
+        self.logger.info('Statefulset Partition Assignor')
+        self.logger.debug('Cluster = %s\nMembers = %s', cluster, members)
 
         # Get all topic
         all_topics: Set = set()
         for key, metadata in members.items():
+            self.logger.debug('Key = %s\nMetadata = %s', key, metadata)
             all_topics.update(metadata.subscription)
 
         # Get all partitions by topic name
@@ -71,7 +71,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         for topic in all_topics:
             partitions = cluster.partitions_for_topic(topic)
             if partitions is None:
-                logger.warning('No partition metadata for topic %s', topic)
+                self.logger.warning('No partition metadata for topic %s', topic)
                 continue
             for partition in partitions:
                 all_topic_partitions.append(TopicPartition(topic, partition))
@@ -106,7 +106,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
                     # Todo Add repartition
                     raise NotImplementedError
 
-        logger.debug(f'Assignment = {assignment}')
+        self.logger.debug('Assignment = %s', assignment)
 
         protocol_assignment = {}
         for member_id in members:
@@ -114,7 +114,7 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
                                                                               sorted(assignment[member_id].items()),
                                                                               members[member_id].user_data)
 
-        logger.debug(f'Protocol Assignment = {protocol_assignment}')
+        self.logger.debug('Protocol Assignment = %s', protocol_assignment)
         return protocol_assignment
 
     @staticmethod
@@ -157,4 +157,3 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         Returns:
             None
         """
-        pass

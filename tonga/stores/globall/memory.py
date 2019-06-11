@@ -3,17 +3,15 @@
 # Copyright (c) Qotto, 2019
 
 import ast
-from aiokafka import TopicPartition
-
 from typing import Dict, Any, List, Union
 
-from tonga.stores.globall.base import BaseGlobalStore
-from tonga.stores.base import BaseStoreMetaData
-from tonga.utils.decorator import check_initialized
+from aiokafka import TopicPartition
 
-# Import store exceptions
 from tonga.services.coordinator.partitioner.errors import BadKeyType
+from tonga.stores.base import BaseStoreMetaData
 from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated)
+from tonga.stores.globall.base import BaseGlobalStore
+from tonga.utils.decorator import check_initialized
 
 
 class GlobalStoreMemory(BaseGlobalStore):
@@ -54,8 +52,8 @@ class GlobalStoreMemory(BaseGlobalStore):
         self._db = dict()
 
         # Default param
-        self._current_instance = 0
         self._nb_replica = 1
+        self._current_instance = 0
         self._initialized = False
         self._store_metadata = None
 
@@ -95,7 +93,7 @@ class GlobalStoreMemory(BaseGlobalStore):
         Returns:
             None
         """
-        self._logger.info(f'GlobalStoreMemory initialized: {initialized}')
+        self._logger.info('GlobalStoreMemory initialized: %s', initialized)
         self._initialized = initialized
 
     def is_initialized(self) -> bool:

@@ -12,4 +12,3 @@ class BadSerializer(TypeError):
 
     This error was raised when consumer or producer receive a bad serializer instance
     """
-    pass

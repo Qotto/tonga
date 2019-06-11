@@ -4,9 +4,9 @@
 
 import logging
 from logging import Logger
-from aiokafka import TopicPartition
-
 from typing import Dict, Any, List
+
+from aiokafka import TopicPartition
 
 from tonga.stores.errors import StorePartitionAlreadyAssigned, StorePartitionNotAssigned
 
@@ -16,7 +16,7 @@ __all__ = [
 ]
 
 
-class BaseStoreMetaData(object):
+class BaseStoreMetaData:
     """ Store positioning class
 
     Attributes:
@@ -95,11 +95,10 @@ class BaseStoreMetaData(object):
         Returns:
             None
         """
-        if tp not in self.assigned_partitions:
-            raise StorePartitionNotAssigned
-        else:
+        if tp in self.assigned_partitions:
             self.assigned_partitions.remove(tp)
             del self.last_offsets[tp]
+        raise StorePartitionNotAssigned
 
     def to_dict(self) -> Dict[str, Any]:
         """ Return class as dict
@@ -134,7 +133,7 @@ class BaseStoreMetaData(object):
                    current_instance=meta_dict['current_instance'], nb_replica=meta_dict['nb_replica'])
 
 
-class BaseStores(object):
+class BaseStores:
     """ Base of all stores
 
     Attributes:

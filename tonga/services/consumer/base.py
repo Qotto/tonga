@@ -18,7 +18,6 @@ class BaseConsumer:
     def __init__(self) -> None:
         """BaseConsumer constructor
         """
-        pass
 
     async def start_consumer(self) -> None:
         """Start consumer
