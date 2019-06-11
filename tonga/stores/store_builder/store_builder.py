@@ -5,7 +5,7 @@
 import asyncio
 import logging
 from logging import Logger
-from asyncio import AbstractEventLoop
+from asyncio import AbstractEventLoop, Future
 from aiokafka import TopicPartition
 from aiokafka.producer.message_accumulator import RecordMetadata
 from kafka.cluster import ClusterMetadata
@@ -51,8 +51,10 @@ __all__ = [
 
 
 class StoreBuilder(BaseStoreBuilder):
-    """
-    StoreBuilder Class
+    """Store builder
+
+    This class manage one local & global store. He builds stores on start of services.
+    He has own KafkaProducer & KafkaConsumer
 
     Attributes:
         name (str): StoreBuilder name
@@ -157,13 +159,20 @@ class StoreBuilder(BaseStoreBuilder):
 
         self._stores_partitions = list()
 
-    def return_consumer_task(self):
+    def return_consumer_task(self) -> Future:
+        """ Return consumer task to ensure_future
+
+        Returns:
+            Future: return consumer future task
+        """
         return asyncio.ensure_future(self._store_consumer.listen_store_records(self._rebuild), loop=self._loop)
 
     async def initialize_store_builder(self) -> None:
-        """
-        Initializes store builder, connect local & global store with tonga consumer.
-        This function seek to last committed offset if store_metadata exist.
+        """Initializes store builder, this function was call by consumer for init store builder and set StoreMetaData,
+        seek to last committed offset if store_metadata exist.
+
+        Raises:
+            CanNotInitializeStore: raised was TopicPartitionError or NoPartitionAssigned was raised
 
         Returns:
             None
@@ -262,21 +271,41 @@ class StoreBuilder(BaseStoreBuilder):
                                                             global_store_metadata.last_offsets)
 
     def set_local_store_initialize(self, initialized: bool) -> None:
+        """Set local store initialized flag
+
+        Args:
+            initialized (bool): true for set local store initialized, otherwise false
+
+        Returns:
+            None
+        """
         self._local_store.set_initialized(initialized)
 
     def set_global_store_initialize(self, initialized: bool) -> None:
+        """Set global store initialized flag
+
+        Args:
+            initialized (bool): true for set global store initialized, otherwise false
+
+        Returns:
+            None
+        """
         self._global_store.set_initialized(initialized)
 
     # Sugar functions for local store management
     async def set_from_local_store(self, key: str, value: bytes) -> RecordMetadata:
-        """
-        Set from local store
+        """Set from local store
 
         Args:
             key (str): Object key as string
             value (bytes): Object value as bytes
+
+        Raises:
+            FailToSendStoreRecord: Raised when store builder fail to send StoreRecord
+            UninitializedStore: Raised when initialize store flag is not true
+
         Returns:
-            None
+            RecordMetadata: Kafka record metadata (see kafka-python for more details)
         """
         if self._local_store.is_initialized():
             store_builder = StoreRecord(key=key, ctype='set', value=value)
@@ -294,11 +323,13 @@ class StoreBuilder(BaseStoreBuilder):
             raise UninitializedStore
 
     async def get_from_local_store(self, key: str) -> bytes:
-        """
-        Get from local store
+        """Get from local store
 
         Args:
             key (str): Object key as string
+
+        Raises:
+            UninitializedStore: Raised when initialize store flag is not true
 
         Returns:
             bytes: Object value as bytes
@@ -308,14 +339,17 @@ class StoreBuilder(BaseStoreBuilder):
         raise UninitializedStore
 
     async def delete_from_local_store(self, key: str) -> RecordMetadata:
-        """
-        Delete from local store
+        """Delete from local store
 
         Args:
             key (str): Object key as string
 
+        Raises:
+            FailToSendStoreRecord: Raised when store builder fail to send StoreRecord
+            UninitializedStore: Raised when initialize store flag is not true
+
         Returns:
-            None
+            RecordMetadata: Kafka record metadata (see kafka-python for more details)
         """
         if self._local_store.is_initialized():
             store_builder = StoreRecord(key=key, ctype='del', value=b'')
@@ -333,17 +367,33 @@ class StoreBuilder(BaseStoreBuilder):
             raise UninitializedStore
 
     async def set_from_local_store_rebuild(self, key: str, value: bytes) -> None:
+        """ Set key & value in local store in rebuild mod
+
+        Args:
+            key (str): Key value as string
+            value (bytes): Value as bytes
+
+        Returns:
+            None
+        """
         await self._local_store.build_set(key, value)
 
     async def delete_from_local_store_rebuild(self, key: str) -> None:
+        """ Delete value by key in local store in rebuild mod
+
+        Args:
+            key (str): Key value as string
+
+        Returns:
+            None
+        """
         await self._local_store.build_delete(key)
 
     async def update_metadata_from_local_store(self, tp: TopicPartition, offset: int) -> None:
-        """
-        Sugar function, update local store metadata
+        """ Update local store metadata
 
         Args:
-            tp (TopicPartition): Topic and partition
+            tp (TopicPartition): Topic and partition (see kafka-python for more details))
             offset (int): offset
 
         Returns:
@@ -353,24 +403,25 @@ class StoreBuilder(BaseStoreBuilder):
 
     # Sugar function for global store management
     async def get_from_global_store(self, key: str) -> bytes:
-        """
-        Sugar function, get from global store
+        """ Get value by key in global store
 
         Args:
-            key (str): Object key as string
+            key (str): Key value as string
 
         Returns:
-            None
+            bytes: return value as bytes
         """
         return await self._global_store.get(key)
 
     async def set_from_global_store(self, key: str, value: bytes) -> None:
-        """
-        Sugar function, set from global store
+        """ Set key & value in global store
+
+        Warnings:
+            DO NOT USE THIS FUNCTION, IT ONLY CALLED BY CONSUMER FOR GLOBAL STORE CONSTRUCTION
 
         Args:
-            key (str): Object key as string
-            value (bytes): Object values as bytes
+            key (str): Key value as string
+            value (bytes): Value as bytes
 
         Returns:
             None
@@ -378,11 +429,13 @@ class StoreBuilder(BaseStoreBuilder):
         await self._global_store.global_set(key, value)
 
     async def delete_from_global_store(self, key: str) -> None:
-        """
-        Sugar function, delete from global store
+        """ Delete key & value in global store
+
+        Warnings:
+            DO NOT USE THIS FUNCTION, IT ONLY CALLED BY CONSUMER FOR GLOBAL STORE CONSTRUCTION
 
         Args:
-            key (str): Object key as string
+            key (str): Key value as string
 
         Returns:
             None
@@ -390,12 +443,11 @@ class StoreBuilder(BaseStoreBuilder):
         await self._global_store.global_delete(key)
 
     async def update_metadata_from_global_store(self, tp: TopicPartition, offset: int) -> None:
-        """
-        Sugar function, update global store metadata
+        """ Update global store metadata
 
         Args:
-            tp (TopicPartition): Topic and partition
-            offset (int): offset
+            tp (TopicPartition): Topic / Partition (see kafka-python for more details)
+            offset (int): Current offset
 
         Returns:
             None
@@ -404,8 +456,7 @@ class StoreBuilder(BaseStoreBuilder):
 
     # Get stores
     def get_local_store(self) -> BaseLocalStore:
-        """
-        Returns local store instance
+        """Returns local store instance
 
         Returns:
             BaseLocalStore: Local store instance
@@ -413,8 +464,7 @@ class StoreBuilder(BaseStoreBuilder):
         return self._local_store
 
     def get_global_store(self) -> BaseGlobalStore:
-        """
-        Return global store instance
+        """Return global store instance
 
         Returns:
             BaseGlobalStore: Global store instance
@@ -423,8 +473,7 @@ class StoreBuilder(BaseStoreBuilder):
 
     # Get info
     def get_current_instance(self) -> int:
-        """
-        Returns current instance
+        """ Returns current instance
 
         Returns:
             int: current instance as integer
@@ -432,8 +481,7 @@ class StoreBuilder(BaseStoreBuilder):
         return self._current_instance
 
     def get_nb_replica(self) -> int:
-        """
-        Returns nb replica
+        """ Returns nb replica
 
         Returns:
             int: current instance as integer
@@ -441,8 +489,7 @@ class StoreBuilder(BaseStoreBuilder):
         return self._nb_replica
 
     def is_event_sourcing(self) -> bool:
-        """
-        Returns if StoreBuilder as in event_sourcing mod
+        """ Returns if StoreBuilder as in event_sourcing mod
 
         Returns:
             bool: event_sourcing
@@ -451,8 +498,7 @@ class StoreBuilder(BaseStoreBuilder):
 
     # Get producer & consumer
     def get_producer(self) -> KafkaProducer:
-        """
-        Returns StoreBuilder tongaProducer
+        """ Returns StoreBuilder tongaProducer
 
         Returns:
             tongaProducer: tonga Producer
@@ -460,8 +506,7 @@ class StoreBuilder(BaseStoreBuilder):
         return self._store_producer
 
     def get_consumer(self) -> KafkaConsumer:
-        """
-        Returns StoreBuilder tongaConsumer
+        """ Returns StoreBuilder tongaConsumer
 
         Returns:
             tongaConsumer: tonga Consumer
