@@ -2,11 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from typing import Any, Tuple, Union, Type
-
-from tonga.models.events.base import BaseModel
-from tonga.models.handlers.base import BaseHandler
-from tonga.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
+from typing import Any
 
 __all__ = [
     'BaseSerializer',
@@ -19,13 +15,12 @@ class BaseSerializer:
     def __init__(self) -> None:
         """ BaseSerializer constructor
         """
-        pass
 
-    def encode(self, event: Any) -> Any:
+    def encode(self, obj: Any) -> Any:
         """Encode function, abstract method
 
         Args:
-            event (Any):
+            obj (Any):
 
         Raises:
             NotImplementedError: Abstract method
@@ -35,11 +30,11 @@ class BaseSerializer:
         """
         raise NotImplementedError
 
-    def decode(self, encoded_event: Any) -> Any:
+    def decode(self, encoded_obj: Any) -> Any:
         """Decode function, abstract method
 
         Args:
-            encoded_event (Any):
+            encoded_obj (Any):
 
         Raises:
             NotImplementedError: Abstract method

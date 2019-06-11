@@ -2,27 +2,24 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import re
-import os
-import logging
-import yaml
 import json
-from yaml import FullLoader  # type: ignore
-from logging import Logger
+import os
+import re
+from io import BytesIO
+from logging import Logger, getLogger
+from typing import Dict, Any, Union, Type
+
 from avro.datafile import DataFileWriter, DataFileReader
 from avro.io import DatumWriter, DatumReader, AvroTypeException
 from avro.schema import NamedSchema, Parse
-from io import BytesIO
-
-from typing import Dict, Any, Union, Type
-
-from .base import BaseSerializer
+from yaml import FullLoader, load_all  # type: ignore
 
 from tonga.models.events.base import BaseModel
 from tonga.models.handlers.base import BaseHandler
 from tonga.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
 from tonga.services.serializer.errors import (AvroEncodeError, AvroDecodeError, AvroAlreadyRegister,
                                               NotMatchedName, MissingEventClass, MissingHandlerClass)
+from .base import BaseSerializer
 
 __all__ = [
     'AvroSerializer',
@@ -63,7 +60,7 @@ class AvroSerializer(BaseSerializer):
         self.schemas_folder = schemas_folder
         # TODO Remove workaround
         self.schemas_folder_lib = os.path.dirname(os.path.abspath(__file__)) + '/../../models/store_record/avro_schema'
-        self.logger = logging.getLogger('tonga')
+        self.logger = getLogger('tonga')
         self._schemas = dict()
         self._events = dict()
         self._handlers = dict()
@@ -102,7 +99,7 @@ class AvroSerializer(BaseSerializer):
             None
         """
         with open(file_path, 'r') as fd:
-            for s in yaml.load_all(fd, Loader=FullLoader):
+            for s in load_all(fd, Loader=FullLoader):
                 avro_schema_data = json.dumps(s)
                 avro_schema = Parse(avro_schema_data)
                 schema_name = avro_schema.namespace + '.' + avro_schema.name
@@ -232,13 +229,13 @@ class AvroSerializer(BaseSerializer):
         """
         return self._handlers
 
-    def encode(self, event: BaseModel) -> bytes:
+    def encode(self, obj: BaseModel) -> bytes:
         """ Encode *BaseHandlerEvent / BaseHandlerCommand / BaseHandlerResult* to bytes format
 
         This function is used by kafka-python
 
         Args:
-            event (BaseModel): *BaseHandlerEvent / BaseHandlerCommand / BaseHandlerResult*
+            obj (BaseModel): *BaseHandlerEvent / BaseHandlerCommand / BaseHandlerResult*
 
         Raises:
             MissingEventClass: can’t find BaseModel in own registered BaseModel list (self._schema)
@@ -248,31 +245,31 @@ class AvroSerializer(BaseSerializer):
             bytes: BaseModel in bytes
         """
         try:
-            schema = self._schemas[event.event_name()]
+            schema = self._schemas[obj.event_name()]
         except KeyError as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise MissingEventClass
 
         try:
             output = BytesIO()
             writer = DataFileWriter(output, DatumWriter(), schema)
-            writer.append(event.__dict__)
+            writer.append(obj.__dict__)
             writer.flush()
             encoded_event = output.getvalue()
             writer.close()
         except AvroTypeException as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise AvroEncodeError
         return encoded_event
 
-    def decode(self, encoded_event: Any) -> Dict[str, Union[BaseModel, BaseStoreRecord,
-                                                            BaseHandler, BaseStoreRecordHandler]]:
+    def decode(self, encoded_obj: Any) -> Dict[str, Union[BaseModel, BaseStoreRecord,
+                                                          BaseHandler, BaseStoreRecordHandler]]:
         """ Decode bytes format to BaseModel and return dict which contains decoded *BaseModel / BaseStoreRecord*
 
         This function is used by kafka-python / internal call
 
         Args:
-            encoded_event (Any): Bytes encode BaseModel / BaseStoreRecord
+            encoded_obj (Any): Bytes encode BaseModel / BaseStoreRecord
 
         Raises:
             AvroDecodeError: fail to decode bytes in BaseModel
@@ -284,12 +281,12 @@ class AvroSerializer(BaseSerializer):
                                                                     example: {'event_class': ..., 'handler_class': ...}
         """
         try:
-            reader = DataFileReader(BytesIO(encoded_event), DatumReader())
+            reader = DataFileReader(BytesIO(encoded_obj), DatumReader())
             schema = json.loads(reader.meta.get('avro.schema').decode('utf-8'))
             schema_name = schema['namespace'] + '.' + schema['name']
             event_data = next(reader)
         except AvroTypeException as err:
-            self.logger.exception(f'{err.__str__()}')
+            self.logger.exception('%s', err.__str__())
             raise AvroDecodeError
 
         # Finds a matching event name

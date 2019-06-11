@@ -21,7 +21,6 @@ class AvroAlreadyRegister(Exception):
 
     This error was raised when AvroSerializer as already register the Avro schema
     """
-    pass
 
 
 class AvroEncodeError(Exception):
@@ -29,7 +28,6 @@ class AvroEncodeError(Exception):
 
     This error was raised when AvroSerializer try to encode an BaseModel class and fail
     """
-    pass
 
 
 class AvroDecodeError(Exception):
@@ -37,7 +35,6 @@ class AvroDecodeError(Exception):
 
     This error was raised when AvroSerializer try to decode an BaseModel class and fail
     """
-    pass
 
 
 class NotMatchedName(NameError):
@@ -45,7 +42,6 @@ class NotMatchedName(NameError):
 
     This error was raised when AvroSerializer can't find same name in registered schema
     """
-    pass
 
 
 class MissingEventClass(NameError):
@@ -53,7 +49,6 @@ class MissingEventClass(NameError):
 
     This error was raised when AvroSerializer can't find BaseModel in own registered BaseModel list
     """
-    pass
 
 
 class MissingHandlerClass(NameError):
@@ -61,7 +56,6 @@ class MissingHandlerClass(NameError):
 
     This error was raised when AvroSerializer can't find BaseHandlerModel in own registered BaseHandlerModel list
     """
-    pass
 
 # ----------- End Avro Exceptions -----------
 
@@ -73,7 +67,6 @@ class KeySerializerDecodeError(ValueError):
 
     This error was raised when KafkaKeySerializer can't decode key
     """
-    pass
 
 
 class KeySerializerEncodeError(ValueError):
@@ -81,6 +74,5 @@ class KeySerializerEncodeError(ValueError):
 
     This error was raised when KafkaKeySerializer can't encode key
     """
-    pass
 
 # ----------- End KafkaKey Exceptions -----------

@@ -11,11 +11,11 @@ class KafkaKeySerializer(BaseSerializer):
     """
 
     @classmethod
-    def encode(cls, key: str) -> bytes:
+    def encode(cls, obj: str) -> bytes:
         """ Encode key to bytes for kafka
 
         Args:
-            key (str): Key in string or bytes format
+            obj (str): Key in string or bytes format
 
         Raises:
             KeySerializerEncodeError: this error was raised when KafkaKeySerializer can't serialize key
@@ -23,18 +23,18 @@ class KafkaKeySerializer(BaseSerializer):
         Returns:
             bytes: Kafka key as bytes
         """
-        if isinstance(key, str) and key is not None:
-            return key.encode('utf-8')
-        if isinstance(key, bytes):
-            return key
+        if isinstance(obj, str) and obj is not None:
+            return obj.encode('utf-8')
+        if isinstance(obj, bytes):
+            return obj
         raise KeySerializerEncodeError
 
     @classmethod
-    def decode(cls, key: bytes) -> str:
+    def decode(cls, encoded_obj: bytes) -> str:
         """ Decode kafka key to str
 
         Args:
-            key (bytes): Kafka key in bytes
+            encoded_obj (bytes): Kafka key in bytes
 
         Raises:
             KeySerializerDecodeError: this error was raised when KafkaKeySerializer can't deserialize key
@@ -42,8 +42,8 @@ class KafkaKeySerializer(BaseSerializer):
         Returns:
             str: Key as string
         """
-        if isinstance(key, bytes) and key is not None:
-            return key.decode('utf-8')
-        if isinstance(key, str):
-            return key
+        if isinstance(encoded_obj, bytes) and encoded_obj is not None:
+            return encoded_obj.decode('utf-8')
+        if isinstance(encoded_obj, str):
+            return encoded_obj
         raise KeySerializerDecodeError
