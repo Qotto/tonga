@@ -14,6 +14,7 @@ sanic = "*"
 colorlog = "*"
 sphinx = "*"
 pylint = "*"
+sphinx-rtd-theme = "*"
 
 [packages]
 aiokafka = "*"
