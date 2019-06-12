@@ -4,7 +4,6 @@
 
 """ Regular packages
 
-Import BaseResult
 """
 
 from .result import BaseResult

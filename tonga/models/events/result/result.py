@@ -34,7 +34,7 @@ class BaseResult(BaseModel):
 
     Attributes:
         error (Dict[str, Any]): If event command fail, all information was store in error dict (see module docstring
-        for more details)
+            for more details)
     """
     error: Dict[str, Any]
 
@@ -43,7 +43,7 @@ class BaseResult(BaseModel):
 
         Args:
             error (Dict[str, Any]): If event command fail, all information was store in error dict (see module docstring
-        for more details)
+                                    for more details)
             **kwargs (Dict[str, Any]): variable for BaseModel (see BaseModel for more details)
         """
         super().__init__(**kwargs)
