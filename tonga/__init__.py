@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Regular packages
+
+Import tonga component
+"""
+
 __version__ = '0.0.1'
 
 # Import KafkaConsumer / KafkaProducer
@@ -15,6 +20,7 @@ from .services.serializer.avro import AvroSerializer
 from .services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
 # Import BaseEvent / BaseCommand / BaseResult
+from .models.events.base import BaseModel
 from .models.events.event.event import BaseEvent
 from .models.events.command.command import BaseCommand
 from .models.events.result.result import BaseResult
@@ -45,6 +51,7 @@ __all__ = [
     # KeyPartitioner
     'KeyPartitioner',
     # BaseEvent / BaseCommand / BaseResult
+    'BaseModel',
     'BaseEvent',
     'BaseCommand',
     'BaseResult',

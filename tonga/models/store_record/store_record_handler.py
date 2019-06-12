@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" StoreRecordHandler class
+
+This class was call when store consumer receive an new StoreRecord event and store msg in local & global store
+"""
+
 from aiokafka import TopicPartition
 
 from tonga.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord

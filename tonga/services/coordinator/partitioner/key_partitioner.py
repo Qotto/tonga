@@ -2,6 +2,12 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" KeyPartitioner class
+
+Each message produce by KafkaProducer call this class for send event on right partitions.
+Each message with same *key* go in the same partitions
+"""
+
 import random
 from typing import Union, List, Optional
 

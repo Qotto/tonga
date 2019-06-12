@@ -2,13 +2,18 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseProducer class
+
+All producer must be inherit form this class
+"""
+
 from typing import Dict
 
 from aiokafka import TopicPartition
 from aiokafka.producer.message_accumulator import BatchBuilder
 from aiokafka.producer.producer import TransactionContext
 
-from tonga.models import BaseModel
+from tonga.models.events.base import BaseModel
 
 __all__ = [
     'BaseProducer',

@@ -2,6 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contain all StoreBuilder errors
+"""
 
 __all__ = [
     'UninitializedStore',

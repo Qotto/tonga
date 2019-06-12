@@ -2,6 +2,13 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseModel
+
+All event / command / result must be inherit form this base class.
+
+This class contain some base attribute for more details read class docstring
+"""
+
 import uuid
 from datetime import datetime as py_datetime
 from datetime import timezone

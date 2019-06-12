@@ -2,6 +2,14 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" KafkaConsumer class
+
+This class consume event / command / result in Kafka topics.
+
+Todo:
+    * In function listen_store_records, add commit store (later V2)
+"""
+
 import asyncio
 import json
 from logging import Logger, getLogger
@@ -567,7 +575,6 @@ class KafkaConsumer(BaseConsumer):
 
                     # If result is none (no transactional process), check if consumer has an
                     # group_id (mandatory to commit in Kafka)
-                    # TODO Add commit store later V2
                     # if result is None and self._group_id is not None:
                     #     # Check if next commit was possible (Kafka offset)
                     #     if self.__last_committed_offsets[tp] is None or \

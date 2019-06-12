@@ -2,6 +2,17 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" StatefulsetPartitioner class
+
+For each StoreRecord event produce, this class was call.Message will go in the same partitions number as their
+instance number.
+
+Examples:
+    waiter-1 -> StoreRecord -> Topic waiter-store -> Partition 1
+    waiter-3 -> StoreRecord -> Topic waiter-store -> Partition 3
+    etc ...
+"""
+
 from typing import Union, List, Optional
 
 from tonga.services.coordinator.partitioner.base import BasePartitioner

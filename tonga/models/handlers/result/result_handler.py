@@ -2,6 +2,13 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+"""BaseResultHandler
+
+All result handler must be inherit from this class. On_result function was called by consumer on each received result.
+
+For make an transaction in handle function return 'transaction' as string after end transaction otherwise return none.
+"""
+
 from aiokafka import TopicPartition
 
 from typing import Union

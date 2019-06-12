@@ -2,6 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contains common used by producer & consumer
+"""
+
 __all__ = [
     'BadSerializer'
 ]

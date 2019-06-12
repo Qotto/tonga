@@ -2,6 +2,14 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contain BaseStores / BaseStoreMetaData
+
+All store must be inherit form BaseStore
+
+BaseStoreMetaData is used for store positioning (Assigned topics partitions / kafka offset), each store contain
+an BaseStoreMetaData but this one was never send in Kafka. Used by store or developer purpose
+"""
+
 import logging
 from logging import Logger
 from typing import Dict, Any, List

@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" StoreBuilder class
+
+This class manage one local & global store.
+"""
+
 import asyncio
 from asyncio import (AbstractEventLoop, Future)
 from logging import (Logger, getLogger)

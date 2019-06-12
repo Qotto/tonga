@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseStoreBuilder
+
+All store builder must be inherit form this class
+"""
+
 from aiokafka import TopicPartition
 
 from tonga.services.consumer.base import BaseConsumer

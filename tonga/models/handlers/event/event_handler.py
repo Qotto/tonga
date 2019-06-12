@@ -2,6 +2,13 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+"""BaseEventHandler
+
+All event handler must be inherit from this class. Handle function was called by consumer on each received events.
+
+For make an transaction in handle function return 'transaction' as string after end transaction otherwise return none.
+"""
+
 from aiokafka import TopicPartition
 
 from typing import Union
@@ -39,6 +46,9 @@ class BaseEventHandler(BaseHandler):
                                  or aiokafka
             group_id (str): Consumer group id, useful for make transaction in handler
             offset (int): Offset of receive message (used for commit transaction)
+
+        Notes:
+            If handle make an transaction return 'transaction' as string at transaction end
 
         Raises:
             NotImplementedError: Abstract def

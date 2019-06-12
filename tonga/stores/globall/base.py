@@ -2,11 +2,16 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseGlobalStore
+
+All global store must be inherit form this class
+"""
+
 from typing import Dict, Any, List
 
 from aiokafka import TopicPartition
 
-from tonga.stores import BaseStores, BaseStoreMetaData
+from tonga.stores.base import BaseStores, BaseStoreMetaData
 
 __all__ = [
     'BaseGlobalStore',

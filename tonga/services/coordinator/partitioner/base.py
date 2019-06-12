@@ -2,6 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Base of partitioner class
+"""
+
 from typing import List, Optional, Union
 
 

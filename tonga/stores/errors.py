@@ -2,6 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contains all store errors
+"""
 
 __all__ = [
     'StoreKeyNotFound',

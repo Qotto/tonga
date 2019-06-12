@@ -2,6 +2,10 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseEvent module
+
+A *event* is a record to describes what happened in the system.
+"""
 
 from typing import Dict, Any
 

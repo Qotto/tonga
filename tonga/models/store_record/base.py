@@ -2,6 +2,12 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Store record base module
+
+For construct local & global store Tonga send StoreRecord in a Kafka topics.
+An store record can have two type (ctype) *set* or *del*
+"""
+
 from datetime import datetime as py_datetime
 from datetime import timezone
 from typing import Dict, Any
@@ -25,7 +31,7 @@ class BaseStoreRecord:
         key (str): Should be a key determining to which partition your record will be assigned.
                    Records with the same *key* value are guaranteed to be written to the same partition and by used for
                    Kafka compaction. Use an UUID for store value
-        ctype (str): Record type (possible value set/del)
+        ctype (str): Record type (possible value *set* / *del*)
         value (bytes): Record value as bytes format
     """
     schema_version: str

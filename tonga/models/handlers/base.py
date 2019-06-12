@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseHandler Class
+
+All handlers must be inherit form this class
+"""
+
 
 class BaseHandler:
     """ Base of all handler class

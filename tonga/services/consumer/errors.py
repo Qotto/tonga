@@ -2,6 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contain all consumer errors
+"""
+
 __all__ = [
     'ConsumerConnectionError',
     'AioKafkaConsumerBadParams',

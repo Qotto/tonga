@@ -2,6 +2,10 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseConsumer Class
+
+Base of all consumer class
+"""
 
 from typing import List
 

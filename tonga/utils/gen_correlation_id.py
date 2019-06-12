@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Gen correlation id
+
+Utils function
+"""
+
 from base64 import b64encode
 from datetime import datetime, timezone
 from secrets import token_urlsafe

@@ -2,6 +2,25 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" StatefulsetPartitionAssignor
+
+This class assign consumer on right partition. But if you have more partition then instance some partition was not
+assigned on consumer, if you have more consumer then partition an errors was raised (this feature will be write later
+don't worry)
+
+Examples:
+    I want 4 instance of waiter coffee, StatefulsetPartitionAssignor assign each waiter instance on Kafka partition
+    by instance numbers
+
+    waiter 1 -------> Topic coffee-ordered | partition 1
+    waiter 2 -------> Topic coffee-ordered | partition 2
+    waiter 3 -------> Topic coffee-ordered | partition 3
+    waiter 4 -------> Topic coffee-ordered | partition 4
+
+Todo:
+    * Add repartition
+"""
+
 import collections
 import json
 import logging
@@ -103,7 +122,6 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
                         raise BadAssignorPolicy
 
                 else:
-                    # Todo Add repartition
                     raise NotImplementedError
 
         self.logger.debug('Assignment = %s', assignment)

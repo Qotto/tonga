@@ -2,6 +2,13 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" GlobalStoreMemory
+
+Global Store in memory save key / value in a dict. Fast DB, but no persistence, At each start, it will have to rebuild
+own global store before being available
+
+"""
+
 import ast
 from typing import Dict, Any, List, Union
 

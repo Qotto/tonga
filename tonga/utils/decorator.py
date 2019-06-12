@@ -2,6 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" File contain all Tonga decorator
+"""
+
 from functools import wraps
 from typing import Any, Callable
 from tonga.stores.store_builder.errors import UninitializedStore

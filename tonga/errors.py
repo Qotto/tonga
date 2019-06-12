@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Regular packages
+
+Import all tonga exceptions
+"""
+
 # Import StoreRecord exceptions
 from tonga.models.store_record.errors import UnknownStoreRecordType
 

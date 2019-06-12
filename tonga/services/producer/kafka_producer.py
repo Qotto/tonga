@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+"""KafkaProducer class
+
+Produce messages and send them in a Kafka topic.
+"""
+
 import asyncio
 from logging import (getLogger, Logger)
 from typing import Union, List, Dict

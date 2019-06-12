@@ -2,6 +2,12 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" StoreRecord class
+
+More detail in BaseStoreRecord
+
+"""
+
 from typing import Dict, Any
 
 from tonga.models.store_record.base import BaseStoreRecord

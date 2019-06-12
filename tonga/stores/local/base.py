@@ -2,11 +2,16 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseLocalStore
+
+All local store must be inherit form this class
+"""
+
 from typing import Dict, List
 
 from aiokafka import TopicPartition
 
-from tonga.stores import BaseStores, BaseStoreMetaData
+from tonga.stores.base import BaseStores, BaseStoreMetaData
 
 __all__ = [
     'BaseLocalStore',

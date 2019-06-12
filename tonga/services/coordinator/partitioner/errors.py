@@ -2,6 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contains all partitioner errors
+"""
 
 __all__ = [
     'BadKeyType',
