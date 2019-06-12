@@ -1,5 +1,5 @@
-tonga.utils.decorator module
--------------------------------
+Decorator
+---------
 
 .. automodule:: tonga.utils.decorator
     :members:

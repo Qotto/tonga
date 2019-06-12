@@ -1,5 +1,5 @@
-tonga.utils package
-======================
+Utils
+=====
 
 Submodules
 ----------
