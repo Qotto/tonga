@@ -3,10 +3,7 @@
 # Copyright (c) Qotto, 2019
 
 import asyncio
-import logging
-from asyncio import AbstractEventLoop
-from logging import Logger
-
+from logging import (getLogger, Logger)
 from typing import Union, List, Dict
 
 from aiokafka import TopicPartition
@@ -69,10 +66,10 @@ class KafkaProducer(BaseProducer):
     _running: bool
     _transactional_id: str
     _kafka_producer: AIOKafkaProducer
-    _loop: AbstractEventLoop
+    _loop: asyncio.AbstractEventLoop
 
     def __init__(self, name: str, bootstrap_servers: Union[str, List[str]], client_id: str, serializer: BaseSerializer,
-                 loop: AbstractEventLoop, partitioner: BasePartitioner, acks: Union[int, str] = 1,
+                 loop: asyncio.AbstractEventLoop, partitioner: BasePartitioner, acks: Union[int, str] = 1,
                  transactional_id: str = None) -> None:
         """
         KafkaProducer constructor
@@ -97,7 +94,7 @@ class KafkaProducer(BaseProducer):
         """
         super().__init__()
         self.name = name
-        self.logger = logging.getLogger('tonga')
+        self.logger = getLogger('tonga')
 
         self._bootstrap_servers = bootstrap_servers
         self._client_id = client_id
@@ -123,7 +120,7 @@ class KafkaProducer(BaseProducer):
         except KafkaError as err:
             self.logger.exception('%s', err.__str__())
             raise KafkaProducerError
-        self.logger.debug(f'Create new producer {client_id}')
+        self.logger.debug('Create new producer %s', client_id)
 
     async def start_producer(self) -> None:
         """
@@ -143,15 +140,15 @@ class KafkaProducer(BaseProducer):
             try:
                 await self._kafka_producer.start()
                 self._running = True
-                self.logger.debug(f'Start producer : {self._client_id}')
+                self.logger.debug('Start producer : %s', self._client_id)
             except KafkaTimeoutError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err:  %s', retry, err.__str__())
                 await asyncio.sleep(1)
             except ConnectionError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err:  %s', retry, err.__str__())
                 await asyncio.sleep(1)
             except KafkaError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err:  %s', retry, err.__str__())
                 raise err
             else:
                 break
@@ -175,7 +172,7 @@ class KafkaProducer(BaseProducer):
         try:
             await self._kafka_producer.stop()
             self._running = False
-            self.logger.debug(f'Stop producer : {self._client_id}')
+            self.logger.debug('Stop producer : %s', self._client_id)
         except KafkaTimeoutError as err:
             self.logger.exception('%s', err.__str__())
             raise KafkaProducerTimeoutError
@@ -239,7 +236,7 @@ class KafkaProducer(BaseProducer):
         record_metadata = None
         for retry in range(4):
             try:
-                self.logger.debug(f'Send event {event.event_name()}')
+                self.logger.debug('Send event %s', event.event_name())
                 if isinstance(event, BaseModel):
                     record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
                                                                                key=event.partition_key)
@@ -249,19 +246,19 @@ class KafkaProducer(BaseProducer):
                 else:
                     raise UnknownEventBase
             except KafkaTimeoutError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 await asyncio.sleep(1)
             except KeyError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise KeyErrorSendEvent
             except ValueError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise ValueErrorSendEvent
             except TypeError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise TypeErrorSendEvent
             except KafkaError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise err
             else:
                 break
@@ -293,7 +290,7 @@ class KafkaProducer(BaseProducer):
         record_metadata = None
         for retry in range(4):
             try:
-                self.logger.debug(f'Send event {event.event_name()}')
+                self.logger.debug('Send event %s', event.event_name())
                 if isinstance(event, BaseModel):
                     record_metadata = await self._kafka_producer.send(topic=topic, value=event,
                                                                       key=event.partition_key)
@@ -303,19 +300,19 @@ class KafkaProducer(BaseProducer):
                 else:
                     raise UnknownEventBase
             except KafkaTimeoutError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 await asyncio.sleep(1)
             except KeyError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise KeyErrorSendEvent
             except ValueError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise ValueErrorSendEvent
             except TypeError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise TypeErrorSendEvent
             except KafkaError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise err
             else:
                 break
@@ -333,7 +330,7 @@ class KafkaProducer(BaseProducer):
 
         if not self._running:
             await self.start_producer()
-        self.logger.debug(f'Create batch')
+        self.logger.debug('Create batch')
         return self._kafka_producer.create_batch()
 
     async def send_batch(self, batch: BatchBuilder, topic: str, partition: int = 0) -> None:
@@ -361,22 +358,22 @@ class KafkaProducer(BaseProducer):
 
         for retry in range(4):
             try:
-                self.logger.debug(f'Send batch')
+                self.logger.debug('Send batch')
                 await self._kafka_producer.send_batch(batch=batch, topic=topic, partition=partition)
             except KafkaTimeoutError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 await asyncio.sleep(1)
             except KeyError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise KeyErrorSendEvent
             except ValueError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise ValueErrorSendEvent
             except TypeError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise TypeErrorSendEvent
             except KafkaError as err:
-                self.logger.exception('%s', err.__str__())
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise err
             else:
                 break
@@ -397,7 +394,7 @@ class KafkaProducer(BaseProducer):
         if not self._running:
             await self.start_producer()
         try:
-            self.logger.debug(f'Get partitions by topic')
+            self.logger.debug('Get partitions by topic')
             partitions = await self._kafka_producer.partitions_for(topic)
         except KafkaTimeoutError as err:
             self.logger.exception('%s', err.__str__())

@@ -12,4 +12,3 @@ class UnknownStoreRecordType(Exception):
 
     This error was raised when store record type as been unknown
     """
-    pass

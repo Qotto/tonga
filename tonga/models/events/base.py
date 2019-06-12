@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-class BaseModel(object):
+class BaseModel:
     """ BaseModel Class, is root class of all events
 
     Attributes:

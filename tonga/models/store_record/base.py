@@ -4,9 +4,9 @@
 
 from datetime import datetime as py_datetime
 from datetime import timezone
-from aiokafka import TopicPartition
-
 from typing import Dict, Any
+
+from aiokafka import TopicPartition
 
 __all__ = [
     'BaseStoreRecord',
@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 
-class BaseStoreRecord(object):
+class BaseStoreRecord:
     """ Base of all StoreRecord
 
     Attributes:
@@ -106,7 +106,6 @@ class BaseStoreRecordHandler:
     def __init__(self):
         """ BaseStoreRecordHandler constructor
         """
-        pass
 
     @classmethod
     def handler_name(cls) -> str:

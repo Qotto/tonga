@@ -563,6 +563,8 @@ class KafkaConsumer(BaseConsumer):
                         else:
                             raise UnknownStoreRecordHandler
 
+                    self.logger.info('result: %s', result)
+
                     # If result is none (no transactional process), check if consumer has an
                     # group_id (mandatory to commit in Kafka)
                     # TODO Add commit store later V2

@@ -10,6 +10,9 @@ __all__ = [
     'gen_correlation_id',
 ]
 
+CORRELATION_ID_PREFIX_LENGTH = 6
+CORRELATION_ID_TOKEN_LENGTH = 3
+
 
 def gen_correlation_id(prefix: str = None) -> str:
     """
@@ -19,8 +22,6 @@ def gen_correlation_id(prefix: str = None) -> str:
     - `random` is a random part  (4 characters)
     `date` and `random` are encoded as `[a-zA-Z0-9_-]`.
     """
-    CORRELATION_ID_PREFIX_LENGTH = 6
-    CORRELATION_ID_TOKEN_LENGTH = 3
 
     def ts2000res65536() -> bytes:
         """

@@ -2,11 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+from typing import Dict
+
 from aiokafka import TopicPartition
 from aiokafka.producer.message_accumulator import BatchBuilder
 from aiokafka.producer.producer import TransactionContext
-
-from typing import Dict
 
 from tonga.models import BaseModel
 
@@ -16,10 +16,11 @@ __all__ = [
 
 
 class BaseProducer:
+    """ BaseProducer all producer must be inherit form this class
+    """
     def __init__(self) -> None:
         """ BaseProducer constructor
         """
-        pass
 
     async def start_producer(self) -> None:
         """
@@ -129,4 +130,3 @@ class BaseProducer:
             None
         """
         raise NotImplementedError
-

@@ -13,4 +13,3 @@ class CommandEventMissingProcessGuarantee(Exception):
 
     This error was raised if process_guarantee is not set on BaseCommand instantiation
     """
-    pass
