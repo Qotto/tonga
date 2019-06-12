@@ -463,7 +463,7 @@ class KafkaConsumer(BaseConsumer):
                         self.logger.error('Max retries, close consumer and exit')
                         exit(1)
 
-    def check_if_store_is_ready(self) -> None:
+    async def check_if_store_is_ready(self) -> None:
         """ If store is ready consumer set store initialize flag to true
 
         Returns:
@@ -517,7 +517,7 @@ class KafkaConsumer(BaseConsumer):
             raise KafkaConsumerError('Fail to start tongaConsumer', 500)
 
         # Check if store is ready
-        self.check_if_store_is_ready()
+        await self.check_if_store_is_ready()
         self.pprint_consumer_offsets()
 
         async for msg in self._kafka_consumer:
@@ -530,7 +530,7 @@ class KafkaConsumer(BaseConsumer):
             self.logger.debug("---------------------------------------------------------------------------------")
 
             # Check if store is ready
-            self.check_if_store_is_ready()
+            await self.check_if_store_is_ready()
 
             tp = TopicPartition(msg.topic, msg.partition)
             self.__current_offsets[tp] = msg.offset
