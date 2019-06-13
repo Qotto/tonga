@@ -1,5 +1,5 @@
-tonga.services.serializer.errors module
-------------------------------------------
+Errors
+------
 
 .. automodule:: tonga.services.serializer.errors
     :members:

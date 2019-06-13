@@ -1,5 +1,5 @@
-tonga.services.serializer.base module
-----------------------------------------
+BaseSerializer
+--------------
 
 .. automodule:: tonga.services.serializer.base
     :members:

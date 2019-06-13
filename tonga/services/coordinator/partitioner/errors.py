@@ -2,24 +2,24 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contains all partitioner errors
+"""
 
 __all__ = [
     'BadKeyType',
     'OutsideInstanceNumber'
 ]
 
-# ---------- Start KeyPartitioner Exceptions ----------
-
 
 class BadKeyType(TypeError):
-    pass
+    """BadKeyType
 
-# ---------- End KeyPartitioner Exceptions ----------
-
-# ---------- Start StatefulsetPartitioner Exceptions ----------
+    This error was raised in KeyPartitioner when key was not bytes
+    """
 
 
 class OutsideInstanceNumber(SystemError):
-    pass
+    """OutsideInstanceNumber
 
-# ---------- End StatefulsetPartitioner Exceptions ----------
+    This error was raised in StateFulSetPartitioner when instance number is out of range
+    """

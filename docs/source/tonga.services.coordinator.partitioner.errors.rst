@@ -1,5 +1,5 @@
-tonga.services.coordinator.partitioner.errors module
--------------------------------------------------------
+Errors
+------
 
 .. automodule:: tonga.services.coordinator.partitioner.errors
     :members:

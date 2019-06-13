@@ -1,5 +1,5 @@
-tonga.services.serializer.kafka_key module
-----------------------------------------------
+KafkaKeySerializer
+------------------
 
 .. automodule:: tonga.services.serializer.kafka_key
     :members:

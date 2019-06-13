@@ -1,5 +1,5 @@
-tonga.services.coordinator.assignors.errors module
------------------------------------------------------
+Errors
+------
 
 .. automodule:: tonga.services.coordinator.assignors.errors
     :members:

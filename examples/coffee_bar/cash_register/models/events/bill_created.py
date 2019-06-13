@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from tonga.models.events.event import BaseEvent
+from tonga.models.records.event import BaseEvent
 
 from typing import Dict, Any
 

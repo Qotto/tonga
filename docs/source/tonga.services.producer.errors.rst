@@ -1,5 +1,5 @@
-tonga.services.producer.errors module
-----------------------------------------
+Errors
+------
 
 .. automodule:: tonga.services.producer.errors
     :members:

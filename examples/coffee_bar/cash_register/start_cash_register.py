@@ -26,7 +26,7 @@ from tonga.stores.globall.memory import GlobalStoreMemory
 from tonga.stores.store_builder.store_builder import StoreBuilder
 # Import StoreRecord & StoreRecordHandler
 from tonga.models.store_record.store_record import StoreRecord
-from tonga.models.store_record.store_record_handler import StoreRecordHandler
+from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
 # Import key partitioner
 from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 

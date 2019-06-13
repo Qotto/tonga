@@ -2,7 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" File contain all Tonga decorator
+"""
+
 from functools import wraps
+from typing import Any, Callable
 from tonga.stores.store_builder.errors import UninitializedStore
 
 __all__ = [
@@ -10,12 +14,22 @@ __all__ = [
 ]
 
 
-def check_initialized(func):
+def check_initialized(func: Callable) -> Any:
+    """ Check decorator, check is store is initialized
+
+    Args:
+        func (Callable): Function to wraps
+
+    Raises:
+        UninitializedStore: Raised when store is not initialized
+
+    Returns:
+        Any: Return func result
+    """
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if args[0].is_initialized():
             response = await func(*args, **kwargs)
             return response
-        else:
-            raise UninitializedStore('Uninitialized store', 500)
+        raise UninitializedStore('Uninitialized store', 500)
     return wrapper

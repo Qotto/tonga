@@ -1,5 +1,5 @@
-tonga.stores.globall.base module
------------------------------------
+BaseGlobalStore
+---------------
 
 .. automodule:: tonga.stores.globall.base
     :members:

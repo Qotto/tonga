@@ -2,13 +2,18 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from tonga.models.events.base import BaseModel
-from tonga.models.events.event.event import BaseEvent
-from tonga.models.events.command.command import BaseCommand
-from tonga.models.events.result.result import BaseResult
+""" Regular packages
+
+Import all events
+"""
+
+from tonga.models.records.base import BaseRecord
+from tonga.models.records.event.event import BaseEvent
+from tonga.models.records.command.command import BaseCommand
+from tonga.models.records.result.result import BaseResult
 
 __all__ = [
-    'BaseModel',
+    'BaseRecord',
     'BaseEvent',
     'BaseCommand',
     'BaseResult'

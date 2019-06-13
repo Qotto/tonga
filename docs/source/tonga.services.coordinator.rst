@@ -1,5 +1,5 @@
-tonga.services.coordinator package
-=====================================
+Coordinator
+===========
 
 Submodules
 -----------

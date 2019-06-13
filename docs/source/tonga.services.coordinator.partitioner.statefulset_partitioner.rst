@@ -1,5 +1,5 @@
-tonga.services.coordinator.partitioner.statefulset\_partitioner module
--------------------------------------------------------------------------
+StatefulsetPartitioner
+----------------------
 
 .. automodule:: tonga.services.coordinator.partitioner.statefulset_partitioner
     :members:

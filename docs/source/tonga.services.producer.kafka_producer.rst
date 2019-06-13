@@ -1,5 +1,5 @@
-tonga.services.producer.kafka_producer module
--------------------------------------------------
+KafkaProducer
+-------------
 
 .. automodule:: tonga.services.producer.kafka_producer
     :members:

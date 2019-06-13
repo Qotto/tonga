@@ -1,5 +1,5 @@
-tonga.services.coordinator.partitioner.base module
------------------------------------------------------
+BasePartitioner
+---------------
 
 .. automodule:: tonga.services.coordinator.partitioner.base
     :members:

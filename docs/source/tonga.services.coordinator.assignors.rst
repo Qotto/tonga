@@ -1,5 +1,5 @@
-tonga.services.coordinator.assignors package
-===============================================
+Assignors
+=========
 
 Submodules
 ----------

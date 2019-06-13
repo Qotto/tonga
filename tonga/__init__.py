@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Regular packages
+
+Import tonga component
+"""
+
 __version__ = '0.0.1'
 
 # Import KafkaConsumer / KafkaProducer
@@ -15,9 +20,10 @@ from .services.serializer.avro import AvroSerializer
 from .services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
 # Import BaseEvent / BaseCommand / BaseResult
-from .models.events.event.event import BaseEvent
-from .models.events.command.command import BaseCommand
-from .models.events.result.result import BaseResult
+from .models.records.base import BaseRecord
+from .models.records.event.event import BaseEvent
+from .models.records.command.command import BaseCommand
+from .models.records.result.result import BaseResult
 
 # Import BaseEventHandler / BaseCommandHandler / BaseResultHandler
 from .models.handlers.event.event_handler import BaseEventHandler
@@ -25,8 +31,8 @@ from .models.handlers.command.command_handler import BaseCommandHandler
 from .models.handlers.result.result_handler import BaseResultHandler
 
 # Import StoreRecord / StoreRecordHandler
-from .models.store_record.store_record import StoreRecord
-from .models.store_record.store_record_handler import StoreRecordHandler
+from .models.records.store.store_record import StoreRecord
+from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
 
 # Import StoreBuilder
 from .stores.store_builder.store_builder import StoreBuilder
@@ -45,6 +51,7 @@ __all__ = [
     # KeyPartitioner
     'KeyPartitioner',
     # BaseEvent / BaseCommand / BaseResult
+    'BaseRecord',
     'BaseEvent',
     'BaseCommand',
     'BaseResult',

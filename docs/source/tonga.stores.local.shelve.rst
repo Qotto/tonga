@@ -1,5 +1,5 @@
-tonga.stores.local.shelve module
------------------------------------
+LocalStoreShelve
+----------------
 
 .. automodule:: tonga.stores.local.shelve
     :members:

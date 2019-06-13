@@ -28,18 +28,19 @@ Can be used with 0.9+ Kafka brokers
 
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 3
    :titlesonly:
    :caption: Contents:
 
    usage/installation
    usage/requirements
-   usage/dependencies
    usage/quickstart
 
+   changes
    code_of_conduct
+   contributing
 
-   modules
+   tonga
 
 Indices and tables
 ==================

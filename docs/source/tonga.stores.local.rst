@@ -1,5 +1,5 @@
-tonga.stores.local package
-=============================
+Local Store
+===========
 
 Submodules
 ----------

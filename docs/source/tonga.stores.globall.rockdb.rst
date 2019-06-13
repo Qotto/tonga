@@ -1,5 +1,5 @@
-tonga.stores.globall.rockdb module
--------------------------------------
+GlobalStoreRockDB
+-----------------
 
 .. automodule:: tonga.stores.globall.rockdb
     :members:

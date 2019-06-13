@@ -1,5 +1,5 @@
-tonga API reference
-======================
+Tonga API reference
+===================
 
 .. toctree::
     :caption: API Documentation
@@ -9,4 +9,3 @@ tonga API reference
     tonga.services
     tonga.stores
     tonga.utils
-    tonga.errors

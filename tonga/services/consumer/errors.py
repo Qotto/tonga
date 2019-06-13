@@ -2,6 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contain all consumer errors
+"""
+
 __all__ = [
     'ConsumerConnectionError',
     'AioKafkaConsumerBadParams',
@@ -21,56 +24,99 @@ __all__ = [
 
 
 class ConsumerConnectionError(ConnectionError):
-    pass
+    """ConsumerConnectionError
+
+    This error was raised when consumer can't connect to Kafka broker
+    """
 
 
 class AioKafkaConsumerBadParams(ValueError):
-    pass
+    """AioKafkaConsumerBadParams
+
+    This error was raised when consumer was call with bad params
+    """
 
 
 class KafkaConsumerError(RuntimeError):
-    pass
+    """KafkaConsumerError
+
+    This error was raised when an generic error from aiokafka was raised
+    """
 
 
 class KafkaConsumerNotStartedError(RuntimeError):
-    pass
+    """KafkaConsumerNotStartedError
+
+    This error was raised when consumer was not started
+    """
 
 
 class KafkaConsumerAlreadyStartedError(RuntimeError):
-    pass
+    """KafkaConsumerAlreadyStartedError
+
+    This error was raised when consumer was already started
+    """
 
 
 class ConsumerKafkaTimeoutError(TimeoutError):
-    pass
+    """ConsumerKafkaTimeoutError
+
+    This error was raised when Tonga timeout on Kafka broker
+    """
 
 
 class IllegalOperation(TimeoutError):
-    pass
+    """IllegalOperation
+
+    This error was raised when topics / partition doesn't exist
+    """
 
 
 class TopicPartitionError(TypeError):
-    pass
+    """TopicPartitionError
+
+    This error was raised topics exist but not desired partition
+    """
 
 
 class OffsetError(TypeError):
-    pass
+    """OffsetError
+
+    This error was raised when offset was out of range
+    """
 
 
 class NoPartitionAssigned(TypeError):
-    pass
+    """NoPartitionAssigned
+
+    This error was raised when no partition was assigned to consumer
+    """
 
 
 class UnknownHandler(TypeError):
-    pass
+    """UnknownHandler
+
+    This error was raised when consumer as an event but not handler was found
+    """
 
 
 class UnknownHandlerReturn(TypeError):
-    pass
+    """UnknownHandlerReturn
+
+    This error was raised when handler return an unknown value
+    """
 
 
 class UnknownStoreRecordHandler(TypeError):
-    pass
+    """UnknownStoreRecordType
+
+    This error was raised when store record handler was unknown
+    """
 
 
 class HandlerException(Exception):
-    pass
+    """HandlerException
+
+    This error was raised when in an handler, consumer doesn't commit this message and retries with same handler,
+    if 5 errors as been raised consumer stop listen event.
+    """

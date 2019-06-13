@@ -2,6 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contain all StoreBuilder errors
+"""
 
 __all__ = [
     'UninitializedStore',
@@ -11,12 +13,21 @@ __all__ = [
 
 
 class UninitializedStore(RuntimeError):
-    pass
+    """UninitializedStore
+
+    This error was raised when store is not initialized
+    """
 
 
 class CanNotInitializeStore(RuntimeError):
-    pass
+    """CanNotInitializeStore
+
+    This error was raised when StoreBuilder can't initialize store
+    """
 
 
 class FailToSendStoreRecord(Exception):
-    pass
+    """FailToSendStoreRecord
+
+    This error was raised when StoreBuilder fail to send StoreRecord
+    """

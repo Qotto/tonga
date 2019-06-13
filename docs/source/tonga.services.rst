@@ -1,5 +1,5 @@
-tonga.services package
-=========================
+Services
+========
 
 Subpackages
 -----------
@@ -10,10 +10,4 @@ Subpackages
     tonga.services.coordinator
     tonga.services.producer
     tonga.services.serializer
-
-Submodules
------------
-.. toctree::
-    :maxdepth: 3
-
     tonga.services.errors

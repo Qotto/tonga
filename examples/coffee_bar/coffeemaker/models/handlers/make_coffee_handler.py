@@ -8,7 +8,7 @@ from aiokafka import TopicPartition
 # Import BaseCommandHandler
 from tonga.models.handlers.command.command_handler import BaseCommandHandler
 # Import BaseCommand
-from tonga.models.events.command.command import BaseCommand
+from tonga.models.records.command.command import BaseCommand
 # Import BaseProducer
 from tonga.services.producer.base import BaseProducer
 

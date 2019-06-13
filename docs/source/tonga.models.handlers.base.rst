@@ -1,5 +1,5 @@
-tonga.models.handlers.base module
-====================================
+BaseHandler
+===========
 
 .. automodule:: tonga.models.handlers.base
     :members:

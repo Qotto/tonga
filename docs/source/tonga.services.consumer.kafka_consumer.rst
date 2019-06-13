@@ -1,5 +1,5 @@
-tonga.services.consumer.kafka_consumer module
--------------------------------------------------
+KafkaConsumer
+-------------
 
 .. automodule:: tonga.services.consumer.kafka_consumer
     :members:

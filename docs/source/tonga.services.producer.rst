@@ -1,5 +1,5 @@
-tonga.services.producer package
-==================================
+Producer
+========
 
 Submodules
 -----------

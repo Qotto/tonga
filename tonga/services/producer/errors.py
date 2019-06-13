@@ -2,6 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contains all producer errors
+"""
 
 __all__ = [
     'ProducerConnectionError',
@@ -20,48 +22,84 @@ __all__ = [
 
 
 class ProducerConnectionError(ConnectionError):
-    pass
+    """ProducerConnectionError
+
+    This error was raised when producer can't connect to broker
+    """
 
 
 class AioKafkaProducerBadParams(ValueError):
-    pass
+    """AioKafkaProducerBadParams
+
+    This error was raised when producer was call with bad params
+    """
 
 
 class KafkaProducerError(RuntimeError):
-    pass
+    """KafkaProducerError
+
+    This error was raised when some generic error was raised form Aiokafka
+    """
 
 
 class KafkaProducerNotStartedError(RuntimeError):
-    pass
+    """KafkaProducerNotStartedError
+
+    This error was raised when producer was not started
+    """
 
 
 class KafkaProducerAlreadyStartedError(RuntimeError):
-    pass
+    """KafkaProducerAlreadyStartedError
+
+    This error was raised when producer was already started
+    """
 
 
 class KafkaProducerTimeoutError(TimeoutError):
-    pass
+    """KafkaProducerTimeoutError
+
+    This error was raised when producer timeout on broker
+    """
 
 
 class KeyErrorSendEvent(KeyError):
-    pass
+    """KeyErrorSendEvent
+
+    This error was raised when KeyError was raised
+    """
 
 
 class ValueErrorSendEvent(ValueError):
-    pass
+    """ValueErrorSendEvent
+
+    This error was raised when ValueError was raised
+    """
 
 
 class TypeErrorSendEvent(TypeError):
-    pass
+    """TypeErrorSendEvent
+
+    This error was raised when TypeError was raised
+    """
 
 
 class FailToSendEvent(Exception):
-    pass
+    """FailToSendEvent
+
+    This error was raised when producer fail to send event
+    """
 
 
 class FailToSendBatch(Exception):
-    pass
+    """FailToSendBatch
+
+    This error was raised when producer fail to send batch
+    """
 
 
 class UnknownEventBase(TypeError):
-    pass
+    """UnknownEventBase
+
+    This error was raised when producer receive an unknown BaseEvent
+    """

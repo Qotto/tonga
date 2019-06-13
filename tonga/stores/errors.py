@@ -2,6 +2,8 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contains all store errors
+"""
 
 __all__ = [
     'StoreKeyNotFound',
@@ -12,16 +14,28 @@ __all__ = [
 
 
 class StoreKeyNotFound(Exception):
-    pass
+    """StoreKeyNotFound
+
+    This error was raised when store not found value by key
+    """
 
 
 class StoreMetadataCantNotUpdated(Exception):
-    pass
+    """StoreMetadataCantNotUpdated
+
+    This error was raised when store can't update StoreMetadata
+    """
 
 
 class StorePartitionAlreadyAssigned(Exception):
-    pass
+    """StorePartitionAlreadyAssigned
+
+    This error was raised when store is already assigned on topic
+    """
 
 
 class StorePartitionNotAssigned(Exception):
-    pass
+    """StorePartitionNotAssigned
+
+    This error was raised when store have not assigned partition
+    """

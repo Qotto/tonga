@@ -1,5 +1,5 @@
-tonga.services.serializer.avro module
-----------------------------------------
+AvroSerializer
+--------------
 
 .. automodule:: tonga.services.serializer.avro
     :members:
