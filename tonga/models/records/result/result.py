@@ -22,14 +22,14 @@ Commands have the same fields as records, and a few additional ones:
 
 from typing import Dict, Any
 
-from ..base import BaseModel
+from ..base import BaseRecord
 
 __all__ = [
     'BaseResult'
 ]
 
 
-class BaseResult(BaseModel):
+class BaseResult(BaseRecord):
     """ BaseResult class, all *result* events must inherit from this class.
 
     Attributes:

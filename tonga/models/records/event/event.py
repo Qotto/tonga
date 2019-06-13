@@ -9,10 +9,10 @@ A *event* is a record to describes what happened in the system.
 
 from typing import Dict, Any
 
-from tonga.models import BaseModel
+from tonga.models.records.base import BaseRecord
 
 
-class BaseEvent(BaseModel):
+class BaseEvent(BaseRecord):
     """BaseEvent class, all *classic* events must inherit from this class.
     """
     def __init__(self, **kwargs):

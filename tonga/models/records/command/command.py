@@ -30,8 +30,8 @@ processing_guarantee: one of
 
 from typing import Dict, Any, List
 
-from tonga.models.events.base import BaseModel
-from tonga.models.events.command.errors import CommandEventMissingProcessGuarantee
+from tonga.models.records.base import BaseRecord
+from tonga.models.records.command.errors import CommandEventMissingProcessGuarantee
 
 
 __all__ = [
@@ -41,7 +41,7 @@ __all__ = [
 PROCESSING_GUARANTEE: List[str] = ['at_least_once', 'at_most_once', 'exactly_once']
 
 
-class BaseCommand(BaseModel):
+class BaseCommand(BaseRecord):
     """BaseCommand class, all event command must inherit from this class.
 
     Attributes:
