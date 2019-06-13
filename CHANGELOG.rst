@@ -1,5 +1,5 @@
-CHANGES
-=======
+CHANGELOG
+=========
 
 0.0.3 (Not released yet)
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -11,7 +11,9 @@ CHANGES
 * Moved StoreRecordHandler in models.handlers.store
 * Removed store_record folder (moved in records / handlers)
 * Fixed some StoreBuilder bug
-
+* Fixed store initialization failure
+* Fixed waiter project example
+* Fixed cash-register project example
 
 0.0.2 (2019-06-05)
 ^^^^^^^^^^^^^^^^^^
