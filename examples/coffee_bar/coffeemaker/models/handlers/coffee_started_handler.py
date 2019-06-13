@@ -7,7 +7,7 @@ from aiokafka import TopicPartition
 from typing import Optional
 
 # Import BaseEvent
-from tonga.models.events.event import BaseEvent
+from tonga.models.records.event import BaseEvent
 # Import BaseEventHandler
 from tonga.models.handlers.event.event_handler import BaseEventHandler
 

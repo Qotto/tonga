@@ -5,7 +5,7 @@
 
 from typing import Dict, Any
 
-from tonga.models.events.event import BaseEvent
+from tonga.models.records.event import BaseEvent
 
 __all__ = [
     'BillPaid'
