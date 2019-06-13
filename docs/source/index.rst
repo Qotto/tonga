@@ -36,7 +36,7 @@ Can be used with 0.9+ Kafka brokers
    usage/requirements
    usage/quickstart
 
-   changes
+   changelog
    code_of_conduct
    contributing
 

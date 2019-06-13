@@ -6,7 +6,7 @@ from sanic import Blueprint, response
 from sanic.request import Request
 from sanic.response import HTTPResponse
 
-from tonga.models.exceptions import StoreKeyNotFound
+from tonga.stores.errors import StoreKeyNotFound
 from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
 
 from examples.coffee_bar.waiter.models.events import CoffeeOrdered, CoffeeServed

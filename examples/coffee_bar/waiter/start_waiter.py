@@ -25,7 +25,7 @@ from tonga.stores.globall.memory import GlobalStoreMemory
 # Import store builder
 from tonga.stores.store_builder.store_builder import StoreBuilder
 # Import StoreRecord & StoreRecordHandler
-from tonga.models.store_record.store_record import StoreRecord
+from tonga.models.records.store.store_record import StoreRecord
 from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
 # Import key partitioner
 from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
@@ -159,6 +159,9 @@ if __name__ == '__main__':
                                                            'nb_replica': nb_replica,
                                                            'assignor_policy': 'only_own'},
                                            isolation_level='read_committed')
+
+    # Ensures future of KafkaConsumer store builder
+    waiter_app['store_builder'].return_consumer_task()
 
     # Ensures future of KafkaConsumer
     asyncio.ensure_future(waiter_app['consumer'].listen_event('committed'), loop=waiter_app['loop'])

@@ -477,31 +477,34 @@ class KafkaConsumer(BaseConsumer):
         Returns:
             None
         """
-        if self._store_builder.get_local_store().is_initialized() and \
-                self._store_builder.get_global_store().is_initialized():
-            return
 
-        self.logger.info('-------------------------------------------------------')
         # Check if local store is initialize
-
-        local_store_metadata = await self._store_builder.get_local_store().get_metadata()
-        local_store_tp = local_store_metadata.assigned_partitions[0]
-        if local_store_metadata.last_offsets[local_store_tp] == self.__last_offsets[local_store_tp]:
-            self._store_builder.get_local_store().set_initialized(True)
-            self.logger.info('Local store was initialized')
+        if not self._store_builder.get_local_store().is_initialized():
+            local_store_metadata = await self._store_builder.get_local_store().get_metadata()
+            local_store_tp = local_store_metadata.assigned_partitions[0]
+            if self.__last_offsets[local_store_tp] == 0:
+                self._store_builder.get_local_store().set_initialized(True)
+                self.logger.info('Local store was initialized')
+            elif local_store_metadata.last_offsets[local_store_tp] == (self.__last_offsets[local_store_tp] - 1):
+                self._store_builder.get_local_store().set_initialized(True)
+                self.logger.info('Local store was initialized')
 
         # Check if global store is initialize
-        global_store_metadata = await self._store_builder.get_global_store().get_metadata()
-        for tp, offset in self.__last_offsets.items():
-            self.logger.info('Topic : %s, partition : %s, offset: %s', tp.topic, tp.partition, offset)
-            if offset == global_store_metadata.last_offsets[tp]:
-                continue
+        if not self._store_builder.get_global_store().is_initialized():
+            local_store_metadata = await self._store_builder.get_local_store().get_metadata()
+            local_store_tp = local_store_metadata.assigned_partitions[0]
+            global_store_metadata = await self._store_builder.get_global_store().get_metadata()
+            for tp, offset in self.__last_offsets.items():
+                if tp != local_store_tp:
+                    if offset == 0:
+                        continue
+                    elif (offset - 1) == (global_store_metadata.last_offsets[tp]):
+                        continue
+                    else:
+                        break
             else:
-                break
-        else:
-            self._store_builder.get_global_store().set_initialized(True)
-            self.logger.info('Global store was initialized')
-        self.logger.info('-------------------------------------------------------')
+                self._store_builder.get_global_store().set_initialized(True)
+                self.logger.info('Global store was initialized')
 
     async def listen_store_records(self, rebuild: bool = False) -> None:
         """
@@ -529,6 +532,9 @@ class KafkaConsumer(BaseConsumer):
         self.pprint_consumer_offsets()
 
         async for msg in self._kafka_consumer:
+            tp = TopicPartition(msg.topic, msg.partition)
+            self.__current_offsets[tp] = msg.offset
+
             # Debug Display
             self.logger.debug("---------------------------------------------------------------------------------")
             self.logger.debug('New Message on consumer %s, Topic %s, Partition %s, Offset %s, '
@@ -539,9 +545,6 @@ class KafkaConsumer(BaseConsumer):
 
             # Check if store is ready
             await self.check_if_store_is_ready()
-
-            tp = TopicPartition(msg.topic, msg.partition)
-            self.__current_offsets[tp] = msg.offset
 
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
@@ -558,6 +561,7 @@ class KafkaConsumer(BaseConsumer):
                         # Calls local_state_handler if event is instance BaseStorageBuilder
                         if rebuild and not self._store_builder.get_local_store().is_initialized():
                             if isinstance(event_class, BaseStoreRecord):
+                                self.logger.debug('Call local_store_handler')
                                 result = await handler_class.local_store_handler(store_record=event_class,
                                                                                  group_id=self._group_id, tp=tp,
                                                                                  offset=msg.offset)
@@ -565,6 +569,7 @@ class KafkaConsumer(BaseConsumer):
                                 raise UnknownStoreRecordHandler
                     elif msg.partition != self._store_builder.get_current_instance():
                         if isinstance(event_class, BaseStoreRecord):
+                            self.logger.debug('Call global_store_handler')
                             result = await handler_class.global_store_handler(store_record=event_class,
                                                                               group_id=self._group_id, tp=tp,
                                                                               offset=msg.offset)
@@ -588,6 +593,10 @@ class KafkaConsumer(BaseConsumer):
                     #     raise ValueError
 
                     # Break if everything was successfully processed
+
+                    # Check if store is ready
+                    await self.check_if_store_is_ready()
+
                     break
                 except IllegalStateError as err:
                     self.logger.exception('%s', err.__str__())
