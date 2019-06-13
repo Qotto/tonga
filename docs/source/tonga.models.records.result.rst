@@ -1,7 +1,7 @@
 BaseResult
 ==========
 
-.. automodule:: tonga.models.events.result.result
+.. automodule:: tonga.models.records.result.result
     :members:
     :undoc-members:
     :show-inheritance:

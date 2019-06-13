@@ -1,14 +1,14 @@
 BaseCommand
 ===========
 
-.. automodule:: tonga.models.events.command.command
+.. automodule:: tonga.models.records.command.command
     :members:
     :undoc-members:
 
 Errors
 ------
 
-.. automodule:: tonga.models.events.command.errors
+.. automodule:: tonga.models.records.command.errors
     :members:
     :undoc-members:
     :show-inheritance:

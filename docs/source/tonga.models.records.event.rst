@@ -1,7 +1,7 @@
 BaseEvent
 =========
 
-.. automodule:: tonga.models.events.event.event
+.. automodule:: tonga.models.records.event.event
     :members:
     :undoc-members:
     :show-inheritance:
