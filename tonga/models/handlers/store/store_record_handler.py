@@ -9,11 +9,12 @@ This class was call when store consumer receive an new StoreRecord event and sto
 
 from aiokafka import TopicPartition
 
-from tonga.models.store_record.base import BaseStoreRecordHandler, BaseStoreRecord
+from tonga.models.handlers.base import BaseStoreRecordHandler
+from tonga.models.records.base import BaseStoreRecord
 from tonga.stores.store_builder.base import BaseStoreBuilder
 
 # Import StoreRecordHandler exceptions
-from tonga.models.store_record.errors import (UnknownStoreRecordType)
+from tonga.models.handlers.store.errors import (UnknownStoreRecordType)
 
 __all__ = [
     'StoreRecordHandler'
