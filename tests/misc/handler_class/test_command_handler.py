@@ -6,7 +6,7 @@ from aiokafka import TopicPartition
 
 from typing import Union
 
-from tonga.models.events.command.command import BaseCommand
+from tonga.models.records.command.command import BaseCommand
 from tonga.models.handlers.command.command_handler import BaseCommandHandler
 
 

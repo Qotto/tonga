@@ -4,7 +4,7 @@
 
 from aiokafka import TopicPartition
 
-from tonga.models.events.event.event import BaseEvent
+from tonga.models.records.event.event import BaseEvent
 from tonga.models.handlers.event.event_handler import BaseEventHandler
 
 from typing import Union

@@ -20,8 +20,8 @@ from tonga.stores.globall.memory import GlobalStoreMemory
 from tonga.stores.store_builder.store_builder import StoreBuilder
 
 # StoreRecord import
-from tonga.models.store_record.store_record import StoreRecord
-from tonga.models.store_record.store_record_handler import StoreRecordHandler
+from tonga.models.records.store import StoreRecord
+from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from tonga.models.events.command.command import BaseCommand
+from tonga.models.records.command.command import BaseCommand
 
 from typing import Dict, Any
 

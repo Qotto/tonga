@@ -10,8 +10,8 @@ from kafka import KafkaAdminClient
 from kafka.cluster import ClusterMetadata
 
 from tonga.stores.store_builder.store_builder import StoreBuilder
-from tonga.models.store_record.store_record import StoreRecord
-from tonga.models.store_record.store_record_handler import StoreRecordHandler
+from tonga.models.records.store.store_record import StoreRecord
+from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
 from tonga.services.serializer.avro import AvroSerializer
 
 # TestEvent / TestEventHandler import
@@ -26,7 +26,7 @@ from tests.misc.handler_class.test_command_handler import TestCommandHandler
 from tests.misc.event_class.test_result import TestResult
 from tests.misc.handler_class.test_result_handler import TestResultHandler
 
-from tonga.errors import AvroAlreadyRegister, AvroDecodeError, AvroEncodeError
+from tonga.errors import AvroAlreadyRegister, AvroEncodeError
 
 
 def test_init_avro_serializer(get_avro_serializer):
