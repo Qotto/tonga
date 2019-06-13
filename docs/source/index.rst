@@ -28,7 +28,7 @@ Can be used with 0.9+ Kafka brokers
 
 
 .. toctree::
-   :maxdepth: 6
+   :maxdepth: 3
    :titlesonly:
    :caption: Contents:
 
@@ -36,7 +36,9 @@ Can be used with 0.9+ Kafka brokers
    usage/requirements
    usage/quickstart
 
+   changes
    code_of_conduct
+   contributing
 
    tonga
 
