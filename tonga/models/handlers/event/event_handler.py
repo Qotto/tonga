@@ -14,7 +14,7 @@ from aiokafka import TopicPartition
 from typing import Union
 
 from tonga.models.handlers.base import BaseHandler
-from tonga.models.events.event.event import BaseEvent
+from tonga.models.records.event.event import BaseEvent
 
 __all__ = [
     'BaseEventHandler'

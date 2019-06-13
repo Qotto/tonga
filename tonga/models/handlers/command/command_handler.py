@@ -14,7 +14,7 @@ from aiokafka import TopicPartition
 from typing import Union
 
 from tonga.models.handlers.base import BaseHandler
-from tonga.models.events.command.command import BaseCommand
+from tonga.models.records.command.command import BaseCommand
 
 __all__ = [
     'BaseCommandHandler'
