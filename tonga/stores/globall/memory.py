@@ -49,7 +49,7 @@ class GlobalStoreMemory(BaseGlobalStore):
         """GlobalStoreMemory constructor
 
         Args:
-            **kwargs (Dict[str, Any]): Dict for BaseStore (param *name*)
+            **kwargs: Dict for BaseStore (param *name*)
 
         Returns:
             None

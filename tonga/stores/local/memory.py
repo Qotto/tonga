@@ -50,7 +50,7 @@ class LocalStoreMemory(BaseLocalStore):
         """LocalStoreMemory constructor
 
         Args:
-            **kwargs (Dict[str, Any]): Dict for BaseStore (param *name*)
+            **kwargs : Dict for BaseStore (param *name*)
 
         Returns:
             None

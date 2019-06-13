@@ -22,11 +22,11 @@ from aiokafka.errors import (TopicAuthorizationFailedError, OffsetOutOfRangeErro
                              UnsupportedVersionError, ConsumerStoppedError, NoOffsetForPartitionError,
                              RecordTooLargeError, CommitFailedError, ConnectionError)
 
-from tonga.models.events.base import BaseModel
+from tonga.models.records.base import (BaseRecord, BaseStoreRecord)
 from tonga.models.handlers.command.command_handler import BaseCommandHandler
 from tonga.models.handlers.event.event_handler import BaseEventHandler
 from tonga.models.handlers.result.result_handler import BaseResultHandler
-from tonga.models.store_record.base import BaseStoreRecord, BaseStoreRecordHandler
+from tonga.models.handlers.base import BaseStoreRecordHandler
 from tonga.services.consumer.base import BaseConsumer
 from tonga.services.consumer.errors import (ConsumerConnectionError, AioKafkaConsumerBadParams,
                                             KafkaConsumerError, ConsumerKafkaTimeoutError,
@@ -547,7 +547,7 @@ class KafkaConsumer(BaseConsumer):
             for retries in range(0, self._max_retries):
                 try:
                     decode_dict = msg.value
-                    event_class: BaseModel = decode_dict['event_class']
+                    event_class: BaseRecord = decode_dict['event_class']
                     handler_class: BaseStoreRecordHandler = decode_dict['handler_class']
 
                     self.logger.debug('Store event name : %s\nEvent content :\n%s\n',

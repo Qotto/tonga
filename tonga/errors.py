@@ -8,10 +8,10 @@ Import all tonga exceptions
 """
 
 # Import StoreRecord exceptions
-from tonga.models.store_record.errors import UnknownStoreRecordType
+from tonga.models.handlers.store.errors import UnknownStoreRecordType
 
 # Import BaseCommand exceptions
-from tonga.models.events.command.errors import CommandEventMissingProcessGuarantee
+from tonga.models.records.command.errors import CommandEventMissingProcessGuarantee
 
 # Import KeyPartitioner & StatefulsetPartitioner exceptions
 from tonga.services.coordinator.partitioner.errors import (BadKeyType, OutsideInstanceNumber)

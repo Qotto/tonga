@@ -13,7 +13,7 @@ from aiokafka import TopicPartition
 from aiokafka.producer.message_accumulator import BatchBuilder
 from aiokafka.producer.producer import TransactionContext
 
-from tonga.models.events.base import BaseModel
+from tonga.models.records.base import BaseRecord
 
 __all__ = [
     'BaseProducer',
@@ -63,7 +63,7 @@ class BaseProducer:
         """
         raise NotImplementedError
 
-    async def send_and_await(self, event: BaseModel, topic: str) -> None:
+    async def send_and_await(self, event: BaseRecord, topic: str) -> None:
         """
         Send a message and await an acknowledgments
 

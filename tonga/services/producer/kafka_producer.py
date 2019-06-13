@@ -18,8 +18,7 @@ from aiokafka.producer.message_accumulator import BatchBuilder
 from aiokafka.producer.message_accumulator import RecordMetadata
 from aiokafka.producer.producer import TransactionContext
 
-from tonga.models.events.base import BaseModel
-from tonga.models.store_record.base import BaseStoreRecord
+from tonga.models.records.base import (BaseRecord, BaseStoreRecord)
 from tonga.services.coordinator.partitioner.base import BasePartitioner
 from tonga.services.errors import BadSerializer
 from tonga.services.producer.base import BaseProducer
@@ -217,12 +216,12 @@ class KafkaProducer(BaseProducer):
         """
         await self._kafka_producer.send_offsets_to_transaction(committed_offsets, group_id)
 
-    async def send_and_await(self, event: Union[BaseModel, BaseStoreRecord], topic: str) -> Union[RecordMetadata, None]:
+    async def send_and_await(self, event: Union[BaseRecord, BaseStoreRecord], topic: str) -> Union[RecordMetadata, None]:
         """
         Send a message and await an acknowledgments
 
         Args:
-            event (BaseModel): Event to send in Kafka, inherit form BaseModel
+            event (BaseRecord): Event to send in Kafka, inherit form BaseRecord
             topic (str): Topic name to send massage
 
         Raises:
@@ -242,7 +241,7 @@ class KafkaProducer(BaseProducer):
         for retry in range(4):
             try:
                 self.logger.debug('Send event %s', event.event_name())
-                if isinstance(event, BaseModel):
+                if isinstance(event, BaseRecord):
                     record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
                                                                                key=event.partition_key)
                 elif isinstance(event, BaseStoreRecord):
@@ -271,12 +270,12 @@ class KafkaProducer(BaseProducer):
             raise FailToSendEvent
         return record_metadata
 
-    async def send(self, event: BaseModel, topic: str) -> Union[RecordMetadata, None]:
+    async def send(self, event: BaseRecord, topic: str) -> Union[RecordMetadata, None]:
         """
         Send a message and await an acknowledgments
 
         Args:
-            event (BaseModel): Event to send in Kafka, inherit form BaseModel
+            event (BaseRecord): Event to send in Kafka, inherit form BaseRecord
             topic (str): Topic name to send massage
 
         Raises:
@@ -296,7 +295,7 @@ class KafkaProducer(BaseProducer):
         for retry in range(4):
             try:
                 self.logger.debug('Send event %s', event.event_name())
-                if isinstance(event, BaseModel):
+                if isinstance(event, BaseRecord):
                     record_metadata = await self._kafka_producer.send(topic=topic, value=event,
                                                                       key=event.partition_key)
                 elif isinstance(event, BaseStoreRecord):

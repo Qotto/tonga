@@ -17,7 +17,7 @@ from aiokafka.producer.message_accumulator import RecordMetadata
 from kafka.admin import KafkaAdminClient
 from kafka.cluster import ClusterMetadata
 
-from tonga.models.store_record.store_record import StoreRecord
+from tonga.models.records.store.store_record import StoreRecord
 from tonga.services.consumer.errors import (OffsetError, TopicPartitionError, NoPartitionAssigned)
 from tonga.services.consumer.kafka_consumer import KafkaConsumer
 from tonga.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
