@@ -19,7 +19,7 @@ class BaseEvent(BaseRecord):
         """BaseEvent constructor
 
         Args:
-            **kwargs (Dict[str, Any]): see BaseModel class
+            **kwargs : see BaseModel class
         """
         super().__init__(**kwargs)
 
