@@ -2,7 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-""" BaseModel
+""" BaseRecord
 
 All event / command / result must be inherit form this base class.
 
@@ -18,12 +18,13 @@ from typing import Dict, Any
 from tonga.utils.gen_correlation_id import gen_correlation_id
 
 __all__ = [
-    'BaseModel',
+    'BaseRecord',
+    'BaseStoreRecord'
 ]
 
 
-class BaseModel:
-    """ BaseModel Class, is root class of all events
+class BaseRecord:
+    """ BaseRecord Class, is root class of all events
 
     Attributes:
         schema_version (str): Includes the schema version of the record, it helps to keep applications compatible
@@ -67,7 +68,7 @@ class BaseModel:
     def __init__(self, record_id: str = None, schema_version: str = None, partition_key: str = None,
                  correlation_id: str = None, datetime: str = None, timestamp: int = None,
                  context: Dict[str, Any] = None) -> None:
-        """ BaseModel constructor
+        """ BaseRecord constructor
 
         Args:
             record_id (str): Should be a unique identifier for your record. It should follow the UUID_ format.
@@ -137,7 +138,7 @@ class BaseModel:
 
     @classmethod
     def event_name(cls) -> str:
-        """ Return BaseModel Class name, used by serializer
+        """ Return BaseRecord Class name, used by serializer
 
         Raises:
             NotImplementedError: Abstract def
@@ -149,10 +150,95 @@ class BaseModel:
 
     @classmethod
     def from_data(cls, event_data: Dict[str, Any]):
-        """ Serialize dict to BaseModel
+        """ Serialize dict to BaseRecord
 
         Args:
-            event_data (Dict|str, Any]): Contains all BaseModel Class attribute for return an instanced class
+            event_data (Dict|str, Any]): Contains all BaseRecord Class attribute for return an instanced class
+
+        Raises:
+            NotImplementedError: Abstract def
+
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
+
+class BaseStoreRecord:
+    """ Base of all StoreRecord
+
+    Attributes:
+        schema_version (str): Includes the schema version of the record, it helps to keep applications compatible
+                              with older records in the system
+        timestamp (int): UNIX timestamp in milliseconds, which is easy to read for machines.
+        datetime (string): ISO-8601-encoded string, which is human readable, therefore useful for debugging purposes.
+        key (str): Should be a key determining to which partition your record will be assigned.
+                   Records with the same *key* value are guaranteed to be written to the same partition and by used for
+                   Kafka compaction. Use an UUID for store value
+        ctype (str): Record type (possible value *set* / *del*)
+        value (bytes): Record value as bytes format
+    """
+    schema_version: str
+    timestamp: int
+    datetime: str
+    key: str
+    ctype: str
+    value: bytes
+
+    def __init__(self, key: str, ctype: str, value: bytes, schema_version: str = None,
+                 datetime: str = None, timestamp: int = None) -> None:
+        """ BaseStoreRecord constructor
+
+        Args:
+            key (str): Should be a key determining to which partition your record will be assigned.
+                       Records with the same *key* value are guaranteed to be written to the same partition and by used
+                       for Kafka compaction. Use an UUID for store value
+            ctype (str): Record type (possible value set/del)
+            value (bytes): Record value as bytes format
+            schema_version (str): Includes the schema version of the record, it helps to keep applications compatible
+                                  with older records in the system
+            datetime (str): ISO-8601-encoded string, which is human readable, therefore useful for debugging purposes.
+            timestamp (int): UNIX timestamp in milliseconds, which is easy to read for machines.
+
+        Returns:
+            None
+        """
+        if schema_version is None:
+            self.schema_version = '0.0.0'
+        else:
+            self.schema_version = schema_version
+
+        if timestamp is None:
+            self.timestamp = round(py_datetime.now(timezone.utc).timestamp() * 1000)
+        else:
+            self.timestamp = timestamp
+
+        if datetime is None:
+            self.datetime = py_datetime.now(timezone.utc).isoformat()
+        else:
+            self.datetime = datetime
+        self.key = key
+        self.ctype = ctype
+        self.value = value
+
+    @classmethod
+    def event_name(cls) -> str:
+        """ Return store record Class name, used by serializer
+
+        Raises:
+            NotImplementedError: Abstract def
+
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
+    @classmethod
+    def from_data(cls, event_data: Dict[str, Any]):
+        """ Serialize dict to StoreRecord
+
+        Args:
+            event_data (Dict|str, Any]): Contains all StoreRecord Class attribute for return an instanced class
 
         Raises:
             NotImplementedError: Abstract def
