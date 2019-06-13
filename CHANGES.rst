@@ -5,6 +5,10 @@ CHANGES
 ^^^^^^^^^^^^^^^^^^^^^^^^
 * Added documentations
 * Changed events to records
+* Moved BaseStoreRecord in models.records
+* Moved StoreRecords in models.records.store
+* Moved BaseStoreRecordHandler in models.handler
+* Moved StoreRecordHandler in models.handlers.store
 * Removed store_record folder (moved in records / handlers)
 * Fixed some StoreBuilder bug
 
