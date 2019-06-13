@@ -10,7 +10,7 @@ More detail in BaseStoreRecord
 
 from typing import Dict, Any
 
-from tonga.models.store_record.base import BaseStoreRecord
+from tonga.models.records.base import BaseStoreRecord
 
 __all__ = [
     'StoreRecord'
