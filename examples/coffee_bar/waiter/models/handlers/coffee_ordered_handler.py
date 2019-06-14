@@ -2,6 +2,7 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+from logging import getLogger
 from aiokafka import TopicPartition
 
 from typing import Optional
@@ -21,7 +22,9 @@ class CoffeeOrderedHandler(BaseEventHandler):
         super().__init__(**kwargs)
 
     async def handle(self, event: BaseEvent, tp: TopicPartition, group_id: str, offset: int) -> Optional[str]:
-        pass
+        logger = getLogger('tonga')
+        logger.debug('Handler was called')
+        return None
 
     @classmethod
     def handler_name(cls) -> str:
