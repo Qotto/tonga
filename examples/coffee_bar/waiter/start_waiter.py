@@ -106,6 +106,7 @@ if __name__ == '__main__':
     waiter_app['loop'] = uvloop.new_event_loop()
     asyncio.set_event_loop(waiter_app['loop'])
 
+    # Creates & register AvroSerializer
     waiter_app['serializer'] = AvroSerializer(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                            'examples/coffee_bar/avro_schemas'))
 
