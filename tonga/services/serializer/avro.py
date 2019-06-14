@@ -124,30 +124,6 @@ class AvroSerializer(BaseSerializer):
                                                            flexibility creates your own class must inherit form
                                                            BaseStoreRecordHandler
 
-        Examples:
-            This is an example with Tonga StoreRecordHandler
-
-            .. code-block:: python
-
-                # Import serializer
-                from tonga.services.serializer.avro import AvroSerializer
-
-                # Import store builder
-                from tonga.stores.store_builder.store_builder import StoreBuilder
-
-                # Import StoreRecord & StoreRecordHandler
-                from tonga.models.store_record.store_record import StoreRecord
-                from tonga.models.store_record.store_record_handler import StoreRecordHandler
-
-                serializer = AvroSerializer(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                            'examples/coffee_bar/avro_schemas'))
-
-                store_builder = StoreBuilder('Some stuff')
-
-                store_record_handler = StoreRecordHandler(store_builder)
-
-                serializer.register_event_handler_store_record(StoreRecord, store_record_handler)
-
         Returns:
             None
         """
@@ -166,34 +142,6 @@ class AvroSerializer(BaseSerializer):
 
         Raises:
             NotMatchedName: Can’t find same name in registered schema
-
-        Examples:
-            .. code-block:: python
-
-                # Import serializer
-                from tonga.services.serializer.avro import AvroSerializer
-
-                # Import store builder
-                from tonga.stores.store_builder.store_builder import StoreBuilder
-
-                # Import KafkaProducer
-                from tonga.services.producer.kafka_producer import KafkaProducer
-
-                # Import waiter events
-                from examples.coffee_bar.waiter.models.events.coffee_finished import CoffeeFinished
-
-                # Import waiter handlers
-                from examples.coffee_bar.waiter.models.handlers.coffee_finished_handler import CoffeeFinishedHandler
-
-                serializer = AvroSerializer(os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                            'examples/coffee_bar/avro_schemas'))
-
-                store_builder = StoreBuilder('Go to StoreBuilder documentation')
-                transactional_producer = KafkaProducer('Go to KafkaProducer documentation')
-
-                coffee_finished_handler = CoffeeFinishedHandler(store_builder, transactional_producer)
-
-                serializer.register_class('tonga.waiter.event.CoffeeFinished', CoffeeFinished, coffee_finished_handler)
 
         Returns:
             None
