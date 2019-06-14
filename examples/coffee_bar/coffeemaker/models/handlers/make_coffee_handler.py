@@ -2,7 +2,6 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from datetime import datetime, timezone
 from aiokafka import TopicPartition
 
 # Import BaseCommandHandler
