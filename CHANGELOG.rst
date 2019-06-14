@@ -14,6 +14,7 @@ Changelog
 * Fixed store initialization failure
 * Fixed waiter project example
 * Fixed cash-register project example
+* Fixed consumer crash (without group_id and try to seek committed)
 
 0.0.2 (2019-06-05)
 ^^^^^^^^^^^^^^^^^^

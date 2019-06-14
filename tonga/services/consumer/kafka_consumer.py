@@ -447,6 +447,8 @@ class KafkaConsumer(BaseConsumer):
                         self.__current_offsets = await self.get_current_offsets()
                         self.__last_committed_offsets = await self.get_last_committed_offsets()
                     # Otherwise raise KafkaConsumerUnknownHandlerReturn
+                    elif result is None and self._group_id is None:
+                        pass
                     else:
                         raise UnknownHandlerReturn
 

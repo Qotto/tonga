@@ -35,6 +35,7 @@ Can be used with 0.9+ Kafka brokers
    usage/installation
    usage/requirements
    usage/quickstart
+   usage/examples
 
    changelog
    code_of_conduct
