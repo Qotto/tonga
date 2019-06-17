@@ -131,7 +131,7 @@ class AvroSerializer(BaseSerializer):
         self._events[event_name_regex] = store_record_event
         self._handlers[event_name_regex] = store_record_handler
 
-    def register_class(self, event_name: str, event_class: Type[BaseRecord], handler_class: BaseHandler) -> None:
+    def register_class(self, event_name: str, event_class: Type[BaseRecord], handler_class: BaseHandler = None) -> None:
         """Register project event & handler in AvroSerializer
 
         Args:
