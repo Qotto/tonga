@@ -26,6 +26,9 @@ from tests.misc.handler_class.test_command_handler import TestCommandHandler
 from tests.misc.event_class.test_result import TestResult
 from tests.misc.handler_class.test_result_handler import TestResultHandler
 
+# Tonga Kafka client
+from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
+
 from tonga.errors import AvroAlreadyRegister, AvroEncodeError
 
 
@@ -42,11 +45,13 @@ def test_register_event_handler_store_record_avro_serializer(get_avro_serializer
     serializer = get_avro_serializer
     local_store, global_store = get_avro_serializer_store
 
-    admin_client = KafkaAdminClient(bootstrap_servers='localhost:9092', client_id='test_store_builder')
-    cluster_metadata = ClusterMetadata(bootstrap_servers='localhost:9092')
+    tonga_kafka_client = KafkaClient(client_id='waiter', cur_instance=0, nb_replica=1,
+                                     bootstrap_servers='localhost:9092')
     loop = asyncio.get_event_loop()
-    store_builder = StoreBuilder('test_store_builder', 0, 1, 'test-store', serializer, local_store, global_store,
-                                 'localhost:9092', cluster_metadata, admin_client, loop, False, False)
+
+    store_builder = StoreBuilder(name='test_store_builder', client=tonga_kafka_client, topic_store='test-store',
+                                      serializer=serializer, loop=loop, rebuild=True, event_sourcing=False,
+                                      local_store=local_store, global_store=global_store)
 
     store_record_handler = StoreRecordHandler(store_builder)
     serializer.register_event_handler_store_record(StoreRecord, store_record_handler)
