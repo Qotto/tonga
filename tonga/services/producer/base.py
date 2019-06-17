@@ -63,7 +63,7 @@ class BaseProducer:
         """
         raise NotImplementedError
 
-    async def send_and_await(self, event: BaseRecord, topic: str) -> None:
+    async def send_and_wait(self, event: BaseRecord, topic: str) -> None:
         """
         Send a message and await an acknowledgments
 
