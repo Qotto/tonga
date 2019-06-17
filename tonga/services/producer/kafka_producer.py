@@ -22,6 +22,7 @@ from tonga.models.records.base import (BaseRecord, BaseStoreRecord)
 from tonga.services.coordinator.partitioner.base import BasePartitioner
 from tonga.services.errors import BadSerializer
 from tonga.services.producer.base import BaseProducer
+from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
 from tonga.services.producer.errors import AioKafkaProducerBadParams
 from tonga.services.producer.errors import FailToSendBatch
 from tonga.services.producer.errors import FailToSendEvent
@@ -47,7 +48,6 @@ class KafkaProducer(BaseProducer):
     KafkaProducer Class, this class make bridge between AioKafkaProducer an tonga
 
     Attributes:
-        name (str): Kafka Producer name
         logger (Logger): Python logger
         serializer (BaseSerializer): Serializer encode & decode event
         _bootstrap_servers (Union[str, List[str]): ‘host[:port]’ string (or list of ‘host[:port]’ strings) that
@@ -61,9 +61,9 @@ class KafkaProducer(BaseProducer):
         _kafka_producer (AIOKafkaProducer): AioKafkaProducer for more information go to
         _loop (AbstractEventLoop): Asyncio loop
     """
-    name: str
     logger: Logger
     serializer: BaseSerializer
+    _client: KafkaClient
     _bootstrap_servers: Union[str, List[str]]
     _client_id: str
     _acks: Union[int, str]
@@ -72,21 +72,18 @@ class KafkaProducer(BaseProducer):
     _kafka_producer: AIOKafkaProducer
     _loop: asyncio.AbstractEventLoop
 
-    def __init__(self, name: str, bootstrap_servers: Union[str, List[str]], client_id: str, serializer: BaseSerializer,
-                 loop: asyncio.AbstractEventLoop, partitioner: BasePartitioner, acks: Union[int, str] = 1,
+    def __init__(self, client: KafkaClient, serializer: BaseSerializer, loop: asyncio.AbstractEventLoop,
+                 partitioner: BasePartitioner, client_id: str = None, acks: Union[int, str] = 1,
                  transactional_id: str = None) -> None:
         """
         KafkaProducer constructor
 
         Args:
-            name (str): Kafka Producer name
-            bootstrap_servers (Union[str, List[str]): ‘host[:port]’ string (or list of ‘host[:port]’ strings) that
-                                                    the consumer should contact to bootstrap initial cluster metadata
-            client_id (str): A name for this client. This string is passed in each request to servers and can be used
-                            to identify specific server-side log entries that correspond to this client
+            client (KafkaClient): Initialization class (contains, client_id / bootstraps_server)
             serializer (BaseSerializer): Serializer encode & decode event
             acks (Union[int, str]): The number of acknowledgments the producer requires the leader to have
                                  received before considering a request complete. Possible value (0 / 1 / all)
+            client_id (str): Client name (if is none, KafkaConsumer use KafkaClient client_id)
             transactional_id: Id for make transactional process
 
         Raises:
@@ -97,11 +94,16 @@ class KafkaProducer(BaseProducer):
             None
         """
         super().__init__()
-        self.name = name
         self.logger = getLogger('tonga')
+        self._client = client
 
-        self._bootstrap_servers = bootstrap_servers
-        self._client_id = client_id
+        # Create client_id
+        if client_id is None:
+            self._client_id = self._client.client_id + '-' + str(self._client.cur_instance)
+        else:
+            self._client_id = client_id
+
+        self._bootstrap_servers = self._client.bootstrap_servers
         self._acks = acks
         if isinstance(serializer, BaseSerializer):
             self.serializer = serializer
@@ -124,7 +126,7 @@ class KafkaProducer(BaseProducer):
         except KafkaError as err:
             self.logger.exception('%s', err.__str__())
             raise KafkaProducerError
-        self.logger.debug('Create new producer %s', client_id)
+        self.logger.debug('Create new producer %s', self._client_id)
 
     async def start_producer(self) -> None:
         """
@@ -216,7 +218,7 @@ class KafkaProducer(BaseProducer):
         """
         await self._kafka_producer.send_offsets_to_transaction(committed_offsets, group_id)
 
-    async def send_and_await(self, event: Union[BaseRecord, BaseStoreRecord], topic: str) -> Union[RecordMetadata, None]:
+    async def send_and_wait(self, event: Union[BaseRecord, BaseStoreRecord], topic: str) -> Union[RecordMetadata, None]:
         """
         Send a message and await an acknowledgments
 
