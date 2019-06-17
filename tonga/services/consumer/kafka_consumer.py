@@ -8,6 +8,8 @@ This class consume event / command / result in Kafka topics.
 
 Todo:
     * In function listen_store_records, add commit store (later V2)
+    * Change check if initialize store (working but in case of partition 0 as only one record store
+      was automatically initialized), change this logic in next release
 """
 
 import asyncio
@@ -22,11 +24,11 @@ from aiokafka.errors import (TopicAuthorizationFailedError, OffsetOutOfRangeErro
                              UnsupportedVersionError, ConsumerStoppedError, NoOffsetForPartitionError,
                              RecordTooLargeError, CommitFailedError, ConnectionError)
 
-from tonga.models.records.base import (BaseRecord, BaseStoreRecord)
+from tonga.models.handlers.base import BaseStoreRecordHandler
 from tonga.models.handlers.command.command_handler import BaseCommandHandler
 from tonga.models.handlers.event.event_handler import BaseEventHandler
 from tonga.models.handlers.result.result_handler import BaseResultHandler
-from tonga.models.handlers.base import BaseStoreRecordHandler
+from tonga.models.records.base import (BaseRecord, BaseStoreRecord)
 from tonga.services.consumer.base import BaseConsumer
 from tonga.services.consumer.errors import (ConsumerConnectionError, AioKafkaConsumerBadParams,
                                             KafkaConsumerError, ConsumerKafkaTimeoutError,
@@ -40,6 +42,7 @@ from tonga.services.errors import BadSerializer
 from tonga.services.serializer.base import BaseSerializer
 from tonga.services.serializer.kafka_key import KafkaKeySerializer
 from tonga.stores.store_builder.base import BaseStoreBuilder
+from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
 
 __all__ = [
     'KafkaConsumer',
@@ -80,6 +83,7 @@ class KafkaConsumer(BaseConsumer):
         _loop (asyncio.AbstractEventLoop): Asyncio loop
         logger (Logger): Python logger
     """
+    _client: KafkaClient
     serializer: BaseSerializer
     _bootstrap_servers: Union[str, List[str]]
     _client_id: str
@@ -102,23 +106,20 @@ class KafkaConsumer(BaseConsumer):
     _loop: asyncio.AbstractEventLoop
     logger: Logger
 
-    def __init__(self, name: str, serializer: BaseSerializer, bootstrap_servers: Union[str, List[str]],
-                 client_id: str, topics: List[str], loop: asyncio.AbstractEventLoop,
-                 group_id: str = None, auto_offset_reset: str = 'earliest', max_retries: int = 10,
-                 retry_interval: int = 1000, retry_backoff_coeff: int = 2, assignors_data=None,
-                 store_builder: BaseStoreBuilder = None, isolation_level: str = 'read_uncommitted') -> None:
+    def __init__(self, client: KafkaClient, serializer: BaseSerializer, topics: List[str],
+                 loop: asyncio.AbstractEventLoop, client_id: str = None, group_id: str = None,
+                 auto_offset_reset: str = 'earliest', max_retries: int = 10, retry_interval: int = 1000,
+                 retry_backoff_coeff: int = 2, assignors_data=None, store_builder: BaseStoreBuilder = None,
+                 isolation_level: str = 'read_uncommitted') -> None:
         """
         KafkaConsumer constructor
 
         Args:
-            name (str): Kafka consumer name
+            client (KafkaClient): Initialization class (contains, client_id / bootstraps_server)
             serializer (BaseSerializer): Serializer encode & decode event
-            bootstrap_servers (Union[str, List[str]): ‘host[:port]’ string (or list of ‘host[:port]’ strings) that
-                                                       the consumer should contact to bootstrap initial cluster metadata
-            client_id (str): A name for this client. This string is passed in each request to servers and can be used
-                            to identify specific server-side log entries that correspond to this client
             topics (List[str]): List of topics to subscribe to
             loop (asyncio.AbstractEventLoop): Asyncio loop
+            client_id (str): Client name (if is none, KafkaConsumer use KafkaClient client_id)
             group_id (str): name of the consumer group, and to use for fetching and committing offsets.
                             If None, offset commits are disabled
             auto_offset_reset (str): A policy for resetting offsets on OffsetOutOfRange errors: ‘earliest’ will move to
@@ -140,20 +141,27 @@ class KafkaConsumer(BaseConsumer):
             None
         """
         super().__init__()
-        self.name = name
+        self.logger = getLogger('tonga')
 
+        # Register KafkaClient
+        self._client = client
+
+        # Set default assignors_data if is None
         if assignors_data is None:
             assignors_data = {}
 
-        self.logger = getLogger('tonga')
+        # Create client_id
+        if client_id is None:
+            self._client_id = self._client.client_id + '-' + str(self._client.cur_instance)
+        else:
+            self._client_id = client_id
 
         if isinstance(serializer, BaseSerializer):
             self.serializer = serializer
         else:
             raise BadSerializer
 
-        self._bootstrap_servers = bootstrap_servers
-        self._client_id = client_id
+        self._bootstrap_servers = self._client.bootstrap_servers
         self._topics = topics
         self._group_id = group_id
         self._auto_offset_reset = auto_offset_reset
@@ -175,7 +183,7 @@ class KafkaConsumer(BaseConsumer):
             statefulset_assignor = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data), 'utf-8'))
             self._kafka_consumer = AIOKafkaConsumer(*self._topics, loop=self._loop,
                                                     bootstrap_servers=self._bootstrap_servers,
-                                                    client_id=client_id, group_id=group_id,
+                                                    client_id=self._client_id, group_id=group_id,
                                                     value_deserializer=self.serializer.decode,
                                                     auto_offset_reset=self._auto_offset_reset,
                                                     isolation_level=self._isolation_level, enable_auto_commit=False,
@@ -187,7 +195,7 @@ class KafkaConsumer(BaseConsumer):
         except ValueError as err:
             self.logger.exception('%s', err.__str__())
             raise AioKafkaConsumerBadParams
-        self.logger.debug('Create new consumer %s, group_id %s', client_id, group_id)
+        self.logger.debug('Create new consumer %s, group_id %s', self._client_id, group_id)
 
     async def start_consumer(self) -> None:
         """
@@ -411,6 +419,10 @@ class KafkaConsumer(BaseConsumer):
                     decode_dict = msg.value
                     event_class = decode_dict['event_class']
                     handler_class = decode_dict['handler_class']
+
+                    if handler_class is None:
+                        self.logger.debug('Empty handler')
+                        break
 
                     self.logger.debug('Event name : %s  Event content :\n%s',
                                       event_class.event_name(), event_class.__dict__)
