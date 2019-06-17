@@ -44,6 +44,9 @@ from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated,
 # Import StoreBuilder exceptions
 from tonga.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
 
+# Import KafkaClient exceptions
+from tonga.services.coordinator.kafka_client.errors import (BadArgumentKafkaClient, KafkaClientConnectionErrors,
+                                                            KafkaAdminConfigurationError, CurrentInstanceOutOfRange)
 
 __all__ = [
     # StoreRecord exceptions
@@ -100,5 +103,10 @@ __all__ = [
     # StoreBuilder exceptions
     'UninitializedStore',
     'CanNotInitializeStore',
-    'FailToSendStoreRecord'
+    'FailToSendStoreRecord',
+    # KafkaClient exceptions
+    'BadArgumentKafkaClient',
+    'CurrentInstanceOutOfRange',
+    'KafkaAdminConfigurationError',
+    'KafkaClientConnectionErrors'
 ]
