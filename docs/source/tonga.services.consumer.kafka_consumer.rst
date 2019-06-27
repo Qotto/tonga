@@ -1,7 +1,5 @@
 KafkaConsumer
 -------------
 
-.. automodule:: tonga.services.consumer.kafka_consumer
+.. autoclass:: tonga.services.consumer.kafka_consumer.KafkaConsumer
     :members:
-    :undoc-members:
-    :show-inheritance:

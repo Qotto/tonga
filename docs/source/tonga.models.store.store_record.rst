@@ -1,7 +1,7 @@
 StoreRecord
 ===========
 
-.. automodule:: tonga.models.records.store.store_record
+.. automodule:: tonga.models.store.store_record
     :members:
     :undoc-members:
     :show-inheritance:

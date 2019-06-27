@@ -1,7 +1,7 @@
 StoreRecordHandler
 ==================
 
-.. automodule:: tonga.models.handlers.store.store_record_handler
+.. automodule:: tonga.models.store.store_record_handler
     :members:
     :undoc-members:
     :show-inheritance:
@@ -9,7 +9,7 @@ StoreRecordHandler
 
 Errors
 ======
-.. automodule:: tonga.models.handlers.store.errors
+.. automodule:: tonga.models.store.errors
     :members:
     :undoc-members:
     :show-inheritance:
