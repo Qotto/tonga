@@ -9,20 +9,20 @@ Produce messages and send them in a Kafka topic.
 
 import asyncio
 from logging import (getLogger, Logger)
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Awaitable
 
-from aiokafka import TopicPartition
 from aiokafka.errors import KafkaError, KafkaTimeoutError
 from aiokafka.producer import AIOKafkaProducer
 from aiokafka.producer.message_accumulator import BatchBuilder
-from aiokafka.producer.message_accumulator import RecordMetadata
 from aiokafka.producer.producer import TransactionContext
 
-from tonga.models.records.base import (BaseRecord, BaseStoreRecord)
+from tonga.models.records.base import BaseRecord
+from tonga.models.store.store_record import StoreRecord
+from tonga.models.structs.positioning import (BasePositioning, KafkaPositioning)
+from tonga.services.coordinator.client.kafka_client import KafkaClient
 from tonga.services.coordinator.partitioner.base import BasePartitioner
 from tonga.services.errors import BadSerializer
 from tonga.services.producer.base import BaseProducer
-from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
 from tonga.services.producer.errors import AioKafkaProducerBadParams
 from tonga.services.producer.errors import FailToSendBatch
 from tonga.services.producer.errors import FailToSendEvent
@@ -198,32 +198,35 @@ class KafkaProducer(BaseProducer):
     # Transaction sugar function
     def init_transaction(self) -> TransactionContext:
         """
-        Sugar function, inits transaction
+        Inits transaction
 
         Returns:
             TransactionContext: Aiokafka TransactionContext
         """
         return self._kafka_producer.transaction()
 
-    async def end_transaction(self, committed_offsets: Dict[TopicPartition, int], group_id: str) -> None:
+    async def end_transaction(self, committed_offsets: Dict[str, BasePositioning], group_id: str) -> None:
         """
-        Sugar function, ends transaction
+        Ends transaction
 
         Args:
-            committed_offsets (Dict[TopicPartition, int]): Committed offsets during transaction
+            committed_offsets (Dict[str, BasePositioning]): Committed offsets during transaction
             group_id (str): Group_id to commit
 
         Returns:
             None
         """
-        await self._kafka_producer.send_offsets_to_transaction(committed_offsets, group_id)
+        kafka_committed_offsets = dict()
+        for key, positioning in committed_offsets.items():
+            kafka_committed_offsets[positioning.to_topics_partition()] = positioning.get_current_offset()
+        await self._kafka_producer.send_offsets_to_transaction(kafka_committed_offsets, group_id)
 
-    async def send_and_wait(self, event: Union[BaseRecord, BaseStoreRecord], topic: str) -> Union[RecordMetadata, None]:
+    async def send_and_wait(self, msg: Union[BaseRecord, StoreRecord], topic: str) -> BasePositioning:
         """
         Send a message and await an acknowledgments
 
         Args:
-            event (BaseRecord): Event to send in Kafka, inherit form BaseRecord
+            msg (BaseRecord): Event to send in Kafka, inherit form BaseRecord
             topic (str): Topic name to send massage
 
         Raises:
@@ -239,16 +242,68 @@ class KafkaProducer(BaseProducer):
         if not self._running:
             await self.start_producer()
 
-        record_metadata = None
         for retry in range(4):
             try:
-                self.logger.debug('Send event %s', event.event_name())
-                if isinstance(event, BaseRecord):
-                    record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
-                                                                               key=event.partition_key)
-                elif isinstance(event, BaseStoreRecord):
-                    record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=event,
-                                                                               key=event.key)
+                if isinstance(msg, BaseRecord):
+                    self.logger.debug('Send record %s', msg.to_dict())
+                    record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=msg,
+                                                                               key=msg.partition_key)
+                elif isinstance(msg, StoreRecord):
+                    self.logger.debug('Send store record %s', msg.to_dict())
+                    record_metadata = await self._kafka_producer.send_and_wait(topic=topic, value=msg,
+                                                                               key=msg.key)
+                else:
+                    self.logger.error('Fail to send msg %s', msg.event_name())
+                    raise UnknownEventBase
+            except KafkaTimeoutError as err:
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
+                await asyncio.sleep(1)
+            except KeyError as err:
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
+                raise KeyErrorSendEvent
+            except ValueError as err:
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
+                raise ValueErrorSendEvent
+            except TypeError as err:
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
+                raise TypeErrorSendEvent
+            except KafkaError as err:
+                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
+                raise err
+            else:
+                return KafkaPositioning(record_metadata.topic, record_metadata.partition, record_metadata.offset)
+        else:
+            raise FailToSendEvent
+
+    async def send(self, msg: Union[BaseRecord, StoreRecord], topic: str) -> Awaitable:
+        """
+        Send a message and await an acknowledgments
+
+        Args:
+            msg (BaseRecord): Event to send in Kafka, inherit form BaseRecord
+            topic (str): Topic name to send massage
+
+        Raises:
+            KeyErrorSendEvent: raised when KeyError was raised
+            ValueErrorSendEvent:  raised when ValueError was raised
+            TypeErrorSendEvent: raised when TypeError was raised
+            KafkaError: raised when catch KafkaError
+            FailToSendEvent: raised when producer fail to send event
+
+        Returns:
+            None
+        """
+        if not self._running:
+            await self.start_producer()
+
+        for retry in range(4):
+            try:
+                if isinstance(msg, BaseRecord):
+                    self.logger.debug('Send record %s', msg.to_dict())
+                    record_promise = self._kafka_producer.send(topic=topic, value=msg, key=msg.partition_key)
+                elif isinstance(msg, StoreRecord):
+                    self.logger.debug('Send store record %s', msg.to_dict())
+                    record_promise = self._kafka_producer.send(topic=topic, value=msg, key=msg.key)
                 else:
                     raise UnknownEventBase
             except KafkaTimeoutError as err:
@@ -267,64 +322,9 @@ class KafkaProducer(BaseProducer):
                 self.logger.exception('retry: %s, err: %s', retry, err.__str__())
                 raise err
             else:
-                break
+                return record_promise
         else:
             raise FailToSendEvent
-        return record_metadata
-
-    async def send(self, event: BaseRecord, topic: str) -> Union[RecordMetadata, None]:
-        """
-        Send a message and await an acknowledgments
-
-        Args:
-            event (BaseRecord): Event to send in Kafka, inherit form BaseRecord
-            topic (str): Topic name to send massage
-
-        Raises:
-            KeyErrorSendEvent: raised when KeyError was raised
-            ValueErrorSendEvent:  raised when ValueError was raised
-            TypeErrorSendEvent: raised when TypeError was raised
-            KafkaError: raised when catch KafkaError
-            FailToSendEvent: raised when producer fail to send event
-
-        Returns:
-            None
-        """
-        if not self._running:
-            await self.start_producer()
-
-        record_metadata = None
-        for retry in range(4):
-            try:
-                self.logger.debug('Send event %s', event.event_name())
-                if isinstance(event, BaseRecord):
-                    record_metadata = await self._kafka_producer.send(topic=topic, value=event,
-                                                                      key=event.partition_key)
-                elif isinstance(event, BaseStoreRecord):
-                    record_metadata = await self._kafka_producer.send(topic=topic, value=event,
-                                                                      key=event.key)
-                else:
-                    raise UnknownEventBase
-            except KafkaTimeoutError as err:
-                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
-                await asyncio.sleep(1)
-            except KeyError as err:
-                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
-                raise KeyErrorSendEvent
-            except ValueError as err:
-                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
-                raise ValueErrorSendEvent
-            except TypeError as err:
-                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
-                raise TypeErrorSendEvent
-            except KafkaError as err:
-                self.logger.exception('retry: %s, err: %s', retry, err.__str__())
-                raise err
-            else:
-                break
-        else:
-            raise FailToSendEvent
-        return record_metadata
 
     async def create_batch(self) -> BatchBuilder:
         """
@@ -410,7 +410,7 @@ class KafkaProducer(BaseProducer):
             raise err
         return partitions
 
-    def get_kafka_producer(self) -> AIOKafkaProducer:
+    def get_producer(self) -> AIOKafkaProducer:
         """
         Get kafka producer
 
