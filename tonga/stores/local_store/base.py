@@ -7,11 +7,11 @@
 All local store must be inherit form this class
 """
 
-from typing import Dict, List
+from typing import Dict, Type
 
-from aiokafka import TopicPartition
-
-from tonga.stores.base import BaseStores, BaseStoreMetaData
+from tonga.models.structs.positioning import BasePositioning
+from tonga.stores.base import BaseStores
+from tonga.stores.metadata.base import BaseStoreMetaData
 
 __all__ = [
     'BaseLocalStore',
@@ -21,18 +21,17 @@ __all__ = [
 class BaseLocalStore(BaseStores):
     """ Base of all local stores
     """
-    async def set_store_position(self, current_instance: int, nb_replica: int,
-                                 assigned_partitions: List[TopicPartition],
-                                 last_offsets: Dict[TopicPartition, int]) -> None:
+
+    def set_metadata_class(self, store_metadata_class: Type[BaseStoreMetaData]) -> None:
+        raise NotImplementedError
+
+    async def set_store_position(self, store_metadata: BaseStoreMetaData) -> None:
         """ Set store position (consumer offset)
 
         Abstract method
 
         Args:
-            current_instance (int): Project current instance
-            nb_replica (int): Number of project replica
-            assigned_partitions (List[TopicPartition]): List of assigned partition
-            last_offsets (Dict[TopicPartition, int]): List of last offsets consumed by store
+            store_metadata (int): Store metadata
 
         Raises:
             NotImplementedError: Abstract method
@@ -166,6 +165,17 @@ class BaseLocalStore(BaseStores):
         """
         raise NotImplementedError
 
+    async def update_metadata_tp_offset(self, positioning: BasePositioning) -> None:
+        """ Update store metadata
+
+        Args:
+            positioning (BasePositioning): Contains topic name / current partition / current offset
+
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
     async def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         """ Set store metadata
 
@@ -180,23 +190,6 @@ class BaseLocalStore(BaseStores):
         Returns:
             None
 
-        """
-        raise NotImplementedError
-
-    async def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
-        """ Update store metadata
-
-        Abstract method
-
-        Args:
-            tp (TopicPartition): Kafka topic partition
-            offset (int): Kafka offset
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            None
         """
         raise NotImplementedError
 
