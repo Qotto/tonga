@@ -17,7 +17,7 @@ fields:
   - name: timestamp
     doc: UNIX timestamp in milliseconds, when this record was generated
     type:
-      type: long
+      type: double
       logicalType: timestamp-millis
   - name: datetime
     doc: ISO 8601 date with timezone, when this record was generated
