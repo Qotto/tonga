@@ -2,16 +2,21 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contain KafkaClient.
+
+This class manage configuration on each KafkaConsumer / KafkaProducer / StoreBuilder
+"""
+
 from logging import (Logger, getLogger)
+from typing import List, Union
 
 from kafka import KafkaAdminClient
 from kafka.cluster import ClusterMetadata
 from kafka.errors import (KafkaConfigurationError, NoBrokersAvailable, KafkaConnectionError)
 
-from typing import List, Union
-
-from tonga.services.coordinator.kafka_client.errors import (BadArgumentKafkaClient, KafkaClientConnectionErrors,
-                                                            KafkaAdminConfigurationError, CurrentInstanceOutOfRange)
+from tonga.services.coordinator.client.base import BaseClient
+from tonga.services.coordinator.client.errors import (BadArgumentKafkaClient, KafkaClientConnectionErrors,
+                                                      KafkaAdminConfigurationError)
 
 __all__ = [
     'KafkaClient'
@@ -20,7 +25,7 @@ __all__ = [
 logger: Logger = getLogger()
 
 
-class KafkaClient:
+class KafkaClient(BaseClient):
     """ Class KafkaClient
 
     Contain all repetitive information, this class was used in KafkaConsumer / KafkaProducer / StoreBuilder
@@ -32,6 +37,10 @@ class KafkaClient:
                                         least one broker that will respond to a Metadata API Request.
                                         Default port is 9092. If no servers are specified, will default
                                         to localhost:9092.
+        client_id (str): A name for this client. This string is passed in each request to servers and can be
+                        used to identify specific server-side log entries that correspond to this client
+        cur_instance: (int): Current service instance
+        nb_replica (int): Number of service replica
     """
     bootstrap_servers: Union[str, List[str]]
     client_id: str
@@ -41,8 +50,7 @@ class KafkaClient:
     _kafka_admin_client: KafkaAdminClient
     _cluster_metadata: ClusterMetadata
 
-    def __init__(self, client_id: str, cur_instance: int = 0, nb_replica: int = 1,
-                 bootstrap_servers: Union[str, List[str]] = None):
+    def __init__(self, client_id: str, bootstrap_servers: Union[str, List[str]] = None, **kwargs) -> None:
         """ KafkaClient constructor
 
         Args:
@@ -52,24 +60,28 @@ class KafkaClient:
                                         least one broker that will respond to a Metadata API Request.
                                         Default port is 9092. If no servers are specified, will default
                                         to localhost:9092.
-            client_id (str): Client name
-            cur_instance: Current instance
-            nb_replica: Number of replica
+            client_id (str): A name for this client. This string is passed in each request to servers and can be
+                            used to identify specific server-side log entries that correspond to this client
+            cur_instance: Current service instance
+            nb_replica: Number of service replica
+
+        Raises:
+            BadArgumentKafkaClient: raised if argument are not valid
+            CurrentInstanceOutOfRange: raised if current instance is highest than replica number
+            KafkaAdminConfigurationError: raised if KafkaAdminClient argument are not valid
+            KafkaClientConnectionErrors: raised if KafkaClient can't connect on kafka or no brokers are available
         """
+        super().__init__(**kwargs)
+
         if bootstrap_servers is None:
             self.bootstrap_servers = 'localhost:9092'
         else:
             self.bootstrap_servers = bootstrap_servers
 
-        if isinstance(client_id, str) and isinstance(nb_replica, int) and isinstance(cur_instance, int):
+        if isinstance(client_id, str):
             self.client_id = client_id
-            self.nb_replica = nb_replica
-            self.cur_instance = cur_instance
         else:
             raise BadArgumentKafkaClient
-
-        if self.cur_instance > self.nb_replica:
-            raise CurrentInstanceOutOfRange
 
         try:
             self._kafka_admin_client = KafkaAdminClient(bootstrap_servers=self.bootstrap_servers,
@@ -81,7 +93,17 @@ class KafkaClient:
             raise KafkaClientConnectionErrors
 
     def get_kafka_admin_client(self) -> KafkaAdminClient:
+        """ Return KafkaAdminClient
+
+        Returns:
+            KafkaAdminClient
+        """
         return self._kafka_admin_client
 
     def get_cluster_metadata(self) -> ClusterMetadata:
+        """ Return ClusterMetadata
+
+        Returns:
+            ClusterMetadata
+        """
         return self._cluster_metadata
