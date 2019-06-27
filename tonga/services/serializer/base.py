@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" BaseSerializer
+
+Base of each serializer
+"""
+
 from typing import Any
 
 __all__ = [
