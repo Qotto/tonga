@@ -23,10 +23,10 @@ Todo:
 
 import collections
 import json
-import logging
+from logging import (Logger, getLogger)
 from typing import Dict, DefaultDict, Any, Set, List
 
-from kafka import TopicPartition
+from aiokafka import TopicPartition
 from kafka.cluster import ClusterMetadata
 from kafka.coordinator.assignors.abstract import AbstractPartitionAssignor
 from kafka.coordinator.protocol import ConsumerProtocolMemberMetadata, ConsumerProtocolMemberAssignment
@@ -46,10 +46,10 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
         assignors_data (bytes): Bytes dict which contains all information for assign consumer
         logger (Logger): StatefulsetPartitionAssignor logger
     """
-    name = 'StatefulsetPartitionAssignor'
-    version = 0
+    name: str = 'StatefulsetPartitionAssignor'
+    version: int = 0
     assignors_data: bytes = b''
-    logger = logging.getLogger('tonga')
+    logger: Logger = getLogger('tonga')
 
     def __init__(self, assignors_data: bytes) -> None:
         """StatefulsetPartitionAssignor constructor
@@ -139,7 +139,6 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
     def get_advanced_assignor_dict(all_topic_partitions: List[TopicPartition]) -> Dict[str, List[int]]:
         """ Transform List[TopicPartition] to Dict[str, List[int]]
 
-
         Args:
             all_topic_partitions (List[TopicPartition]): List of TopicPartition
 
@@ -153,15 +152,14 @@ class StatefulsetPartitionAssignor(AbstractPartitionAssignor):
             result[tp.topic].append(tp.partition)
         return result
 
-    def metadata(self, topics):
-        """
-
+    def metadata(self, topics) -> ConsumerProtocolMemberMetadata:
+        """ Return an ConsumerProtocolMemberMetadata with version, topics in list, and assignors_data as bytes
 
         Args:
-            topics:
+            topics : list of topics
 
         Returns:
-
+            ConsumerProtocolMemberMetadata
         """
         return ConsumerProtocolMemberMetadata(self.version, list(topics), self.assignors_data)
 
