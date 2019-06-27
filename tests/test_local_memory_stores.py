@@ -4,9 +4,8 @@
 
 import pytest
 
-from aiokafka import TopicPartition
-
-from tonga.stores import BaseStoreMetaData
+from tonga.models.structs.positioning import KafkaPositioning
+from tonga.stores.metadata.kafka_metadata import KafkaStoreMetaData
 from tonga.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, UninitializedStore, BadKeyType
 
 
@@ -15,13 +14,14 @@ from tonga.errors import StoreMetadataCantNotUpdated, StoreKeyNotFound, Uninitia
 async def test_local_memory_store_set_store_position(get_local_memory_store_connection):
     local_memory_store = get_local_memory_store_connection
 
-    assigned_partitions = [TopicPartition('test', 2)]
-    last_offsets = {TopicPartition('test', 2): 0}
+    assigned_partitions = [KafkaPositioning('test', 2, 0)]
+    last_offsets = {KafkaPositioning.make_class_assignment_key('test', 2): KafkaPositioning('test', 2, 0)}
     current_instance = 2
     nb_replica = 4
-    await local_memory_store.set_store_position(current_instance, nb_replica, assigned_partitions, last_offsets)
+    db_meta = KafkaStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
 
-    db_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
+    await local_memory_store.set_store_position(db_meta)
+
     r_db_meta = await local_memory_store.get_metadata()
     assert r_db_meta.to_dict() == db_meta.to_dict()
 
@@ -132,40 +132,43 @@ async def test_local_memory_store_get_all(get_local_memory_store_connection):
     await local_memory_store.set('test1', b'value1')
     await local_memory_store.set('test2', b'value2')
 
-    assigned_partitions = [TopicPartition('test', 2)]
-    last_offsets = {TopicPartition('test', 2): 0}
+    assigned_partitions = [KafkaPositioning('test', 2, 0)]
+    last_offsets = {KafkaPositioning.make_class_assignment_key('test', 2): KafkaPositioning('test', 2, 0)}
     current_instance = 2
     nb_replica = 4
-    meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
+    db_meta = KafkaStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
 
     assert await local_memory_store.get_all() == {'test1': b'value1', 'test2': b'value2',
-                                                  'metadata': bytes(str(meta.to_dict()), 'utf-8')}
+                                                  'metadata': bytes(str(db_meta.to_dict()), 'utf-8')}
 
 
 # Test update_metadata_tp_offset function
 @pytest.mark.asyncio
 async def test_local_memory_get_metadata(get_local_memory_store_connection):
     local_memory_store = get_local_memory_store_connection
-    assigned_partitions = [TopicPartition('test', 2)]
-    last_offsets = {TopicPartition('test', 2): 0}
+
+    assigned_partitions = [KafkaPositioning('test', 2, 0)]
+    last_offsets = {KafkaPositioning.make_class_assignment_key('test', 2): KafkaPositioning('test', 2, 0)}
     current_instance = 2
     nb_replica = 4
-    db_meta = await local_memory_store.get_metadata()
-    local_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica).to_dict()
-    assert db_meta.to_dict() == local_meta
+    db_meta = KafkaStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
+
+    local_meta = await local_memory_store.get_metadata()
+    assert local_meta.to_dict() == db_meta.to_dict()
 
 
 @pytest.mark.asyncio
 async def test_local_memory_update_metadata_tp_offset(get_local_memory_store_connection):
     local_memory_store = get_local_memory_store_connection
-    tp = TopicPartition('test', 2)
-    await local_memory_store.update_metadata_tp_offset(tp, 4)
+    positioning = KafkaPositioning('test', 2, 4)
+    await local_memory_store.update_metadata_tp_offset(positioning)
 
-    assigned_partitions = [TopicPartition('test', 2)]
-    last_offsets = {TopicPartition('test', 2): 4}
+    assigned_partitions = [KafkaPositioning('test', 2, 0)]
+    last_offsets = {KafkaPositioning.make_class_assignment_key('test', 2): KafkaPositioning('test', 2, 4)}
     current_instance = 2
     nb_replica = 4
-    local_meta = BaseStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica).to_dict()
+    db_meta = KafkaStoreMetaData(assigned_partitions, last_offsets, current_instance, nb_replica)
 
-    db_meta = await local_memory_store.get_metadata()
-    assert db_meta.to_dict() == local_meta
+    local_meta = await local_memory_store.get_metadata()
+    assert local_meta.to_dict() == db_meta.to_dict()
+

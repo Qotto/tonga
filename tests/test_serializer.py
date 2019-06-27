@@ -6,12 +6,10 @@ import pytest
 import asyncio
 import os
 from avro.schema import NamedSchema
-from kafka import KafkaAdminClient
-from kafka.cluster import ClusterMetadata
 
-from tonga.stores.store_builder.store_builder import StoreBuilder
-from tonga.models.records.store.store_record import StoreRecord
-from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
+from tonga.stores.manager.kafka_store_manager import KafkaStoreManager
+from tonga.models.store.store_record import StoreRecord
+from tonga.models.store.store_record_handler import StoreRecordHandler
 from tonga.services.serializer.avro import AvroSerializer
 
 # TestEvent / TestEventHandler import
@@ -27,7 +25,7 @@ from tests.misc.event_class.test_result import TestResult
 from tests.misc.handler_class.test_result_handler import TestResultHandler
 
 # Tonga Kafka client
-from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
+from tonga.services.coordinator.client.kafka_client import KafkaClient
 
 from tonga.errors import AvroAlreadyRegister, AvroEncodeError
 
@@ -49,7 +47,7 @@ def test_register_event_handler_store_record_avro_serializer(get_avro_serializer
                                      bootstrap_servers='localhost:9092')
     loop = asyncio.get_event_loop()
 
-    store_builder = StoreBuilder(name='test_store_builder', client=tonga_kafka_client, topic_store='test-store',
+    store_builder = KafkaStoreManager(name='test_store_builder', client=tonga_kafka_client, topic_store='test-store',
                                       serializer=serializer, loop=loop, rebuild=True, event_sourcing=False,
                                       local_store=local_store, global_store=global_store)
 
@@ -182,7 +180,7 @@ def test_encode_fail_error_avro_serializer(get_avro_serializer):
 
     test_encode = TestEvent(test='LOL')
     test_encode.__delattr__('test')
-    with pytest.raises(AvroEncodeError):
+    with pytest.raises((AvroEncodeError, AttributeError)):
         encoded_test = serializer.encode(test_encode)
 
 
@@ -194,5 +192,5 @@ def test_encode_avro_serializer(get_avro_serializer):
     encoded_test = serializer.encode(test_encode)
 
     r_dict = serializer.decode(encoded_test)
-    assert r_dict['event_class'].__dict__ == test_encode.__dict__
+    assert r_dict['record_class'].to_dict() == test_encode.to_dict()
     assert r_dict['handler_class'].handler_name() == 'tonga.test.event'
