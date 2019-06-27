@@ -2,43 +2,44 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import os
-import logging
-from colorlog import ColoredFormatter
 import argparse
-import uvloop
 import asyncio
-from sanic import Sanic
-from sanic.request import Request
+import logging
+import os
 from signal import signal, SIGINT
 
-# Import KafkaProducer / KafkaConsumer
-from tonga.services.consumer.kafka_consumer import KafkaConsumer
-from tonga.services.producer.kafka_producer import KafkaProducer
-# Import serializer
-from tonga.services.serializer.avro import AvroSerializer
-# Import local & global store memory
-from tonga.stores.local.memory import LocalStoreMemory
-from tonga.stores.globall.memory import GlobalStoreMemory
-# Import store builder
-from tonga.stores.store_builder.store_builder import StoreBuilder
-# Import StoreRecord & StoreRecordHandler
-from tonga.models.records.store.store_record import StoreRecord
-from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
-# Import key partitioner
-from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
-# Import KafkaClient
-from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
+import uvloop
+from colorlog import ColoredFormatter
+from sanic import Sanic
+from sanic.request import Request
 
+from examples.coffee_bar.waiter import transactional_manager
 # Import waiter blueprint
 from examples.coffee_bar.waiter.interfaces.rest.health import health_bp
 from examples.coffee_bar.waiter.interfaces.rest.waiter import waiter_bp
+from examples.coffee_bar.waiter.models.events.coffee_finished import CoffeeFinished
 # Import waiter events
 from examples.coffee_bar.waiter.models.events.coffee_ordered import CoffeeOrdered
-from examples.coffee_bar.waiter.models.events.coffee_finished import CoffeeFinished
 from examples.coffee_bar.waiter.models.events.coffee_served import CoffeeServed
 # Import waiter handlers
 from examples.coffee_bar.waiter.models.handlers.coffee_finished_handler import CoffeeFinishedHandler
+# Import StoreRecord & StoreRecordHandler
+from tonga.models.store.store_record import StoreRecord
+from tonga.models.store.store_record_handler import StoreRecordHandler
+# Import KafkaProducer / KafkaConsumer
+from tonga.services.consumer.kafka_consumer import KafkaConsumer
+# Import KafkaClient
+from tonga.services.coordinator.client.kafka_client import KafkaClient
+# Import key partitioner
+from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
+from tonga.services.producer.kafka_producer import KafkaProducer
+# Import serializer
+from tonga.services.serializer.avro import AvroSerializer
+from tonga.stores.global_store.memory import GlobalStoreMemory
+# Import local & global store memory
+from tonga.stores.local_store.memory import LocalStoreMemory
+# Import store builder
+from tonga.stores.manager.kafka_store_manager import KafkaStoreManager
 
 
 def setup_logger():
@@ -112,22 +113,26 @@ if __name__ == '__main__':
     waiter_app['global_store'] = GlobalStoreMemory(name=f'waiter-{cur_instance}-global-memory')
 
     # Creates & registers store builder
-    waiter_app['store_builder'] = StoreBuilder(name=f'waiter-store', client=waiter_app['kafka_client'],
-                                               topic_store='waiter-stores', serializer=waiter_app['serializer'],
-                                               local_store=waiter_app['local_store'],
-                                               global_store=waiter_app['global_store'],
-                                               loop=waiter_app['loop'], rebuild=True,
-                                               event_sourcing=False)
+    waiter_app['store_builder'] = KafkaStoreManager(name=f'waiter-store', client=waiter_app['kafka_client'],
+                                                    topic_store='waiter-stores', serializer=waiter_app['serializer'],
+                                                    local_store=waiter_app['local_store'],
+                                                    global_store=waiter_app['global_store'],
+                                                    loop=waiter_app['loop'], rebuild=True,
+                                                    event_sourcing=False)
 
     # Creates & register transactional KafkaProducer
     waiter_app['transactional_producer'] = KafkaProducer(client=waiter_app['kafka_client'],
                                                          serializer=waiter_app['serializer'],
                                                          loop=waiter_app['loop'], partitioner=KeyPartitioner(),
-                                                         acks='all', transactional_id=f'waiter')
+                                                         acks='all', transactional_id=f'waiter-'
+                                                         f'{waiter_app["kafka_client"].cur_instance}')
+
+    waiter_app['transactional_manager'] = transactional_manager
+    waiter_app['transactional_manager'].set_transactional_producer(waiter_app['transactional_producer'])
 
     # Initializes waiter handlers
     store_record_handler = StoreRecordHandler(waiter_app['store_builder'])
-    coffee_finished_handler = CoffeeFinishedHandler(waiter_app['store_builder'],  waiter_app['transactional_producer'])
+    coffee_finished_handler = CoffeeFinishedHandler(waiter_app['store_builder'])
 
     # Registers events / handlers in serializer
     waiter_app['serializer'].register_event_handler_store_record(StoreRecord, store_record_handler)
@@ -143,13 +148,14 @@ if __name__ == '__main__':
                                            assignors_data={'instance': cur_instance,
                                                            'nb_replica': nb_replica,
                                                            'assignor_policy': 'only_own'},
-                                           isolation_level='read_committed')
+                                           isolation_level='read_committed',
+                                           transactional_manager=waiter_app['transactional_manager'])
+
+    # Ensures future of KafkaConsumer
+    asyncio.ensure_future(waiter_app['consumer'].listen_records('committed'), loop=waiter_app['loop'])
 
     # Ensures future of KafkaConsumer store builder
     waiter_app['store_builder'].return_consumer_task()
-
-    # Ensures future of KafkaConsumer
-    asyncio.ensure_future(waiter_app['consumer'].listen_event('committed'), loop=waiter_app['loop'])
 
     # Creates & register KafkaProducer
     waiter_app['producer'] = KafkaProducer(client=waiter_app['kafka_client'], serializer=waiter_app['serializer'],
