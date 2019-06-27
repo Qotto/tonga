@@ -35,12 +35,23 @@ class BaseEvent(BaseRecord):
         """
         raise NotImplementedError
 
+    def to_dict(self) -> Dict[str, Any]:
+        """ Serialize BaseRecord to dict
+
+        Raises:
+            NotImplementedError: Abstract def
+
+        Returns:
+            Dict[str, Any]: class in dict format
+        """
+        raise NotImplementedError
+
     @classmethod
-    def from_data(cls, event_data: Dict[str, Any]):
-        """ Serialize dict to Event Class
+    def from_dict(cls, dict_data: Dict[str, Any]):
+        """ Deserialize dict to BaseRecord
 
         Args:
-            event_data (Dict|str, Any]): Contains all Event class attribute for return an instanced class
+            dict_data (Dict|str, Any]): Contains all BaseRecord Class attribute for return an instanced class
 
         Raises:
             NotImplementedError: Abstract def
