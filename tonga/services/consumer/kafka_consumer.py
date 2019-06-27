@@ -8,8 +8,6 @@ This class consume event / command / result in Kafka topics.
 
 Todo:
     * In function listen_store_records, add commit store (later V2)
-    * Change check if initialize store (working but in case of partition 0 as only one record store
-      was automatically initialized), change this logic in next release
 """
 
 import asyncio
@@ -17,18 +15,17 @@ import json
 from logging import Logger, getLogger
 from typing import List, Dict, Any, Union
 
-from aiokafka import TopicPartition
-from aiokafka.consumer import AIOKafkaConsumer
-from aiokafka.errors import KafkaError, KafkaTimeoutError
-from aiokafka.errors import (TopicAuthorizationFailedError, OffsetOutOfRangeError, IllegalStateError,
-                             UnsupportedVersionError, ConsumerStoppedError, NoOffsetForPartitionError,
-                             RecordTooLargeError, CommitFailedError, ConnectionError)
+from aiokafka import (AIOKafkaConsumer)
+from aiokafka.errors import (IllegalStateError, UnsupportedVersionError, CommitFailedError,
+                             KafkaError, KafkaTimeoutError)
+from kafka.errors import KafkaConnectionError
 
-from tonga.models.handlers.base import BaseStoreRecordHandler
 from tonga.models.handlers.command.command_handler import BaseCommandHandler
 from tonga.models.handlers.event.event_handler import BaseEventHandler
 from tonga.models.handlers.result.result_handler import BaseResultHandler
-from tonga.models.records.base import (BaseRecord, BaseStoreRecord)
+from tonga.models.records.base import BaseRecord
+from tonga.models.store.base import BaseStoreRecordHandler
+from tonga.models.store.store_record import StoreRecord
 from tonga.services.consumer.base import BaseConsumer
 from tonga.services.consumer.errors import (ConsumerConnectionError, AioKafkaConsumerBadParams,
                                             KafkaConsumerError, ConsumerKafkaTimeoutError,
@@ -38,11 +35,15 @@ from tonga.services.consumer.errors import (ConsumerConnectionError, AioKafkaCon
                                             HandlerException, KafkaConsumerAlreadyStartedError,
                                             KafkaConsumerNotStartedError)
 from tonga.services.coordinator.assignors.statefulset_assignors import StatefulsetPartitionAssignor
+from tonga.services.coordinator.client.kafka_client import KafkaClient
+from tonga.services.coordinator.transaction.kafka_transaction import (KafkaTransactionalManager,
+                                                                      KafkaTransactionContext)
 from tonga.services.errors import BadSerializer
 from tonga.services.serializer.base import BaseSerializer
 from tonga.services.serializer.kafka_key import KafkaKeySerializer
-from tonga.stores.store_builder.base import BaseStoreBuilder
-from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
+from tonga.stores.manager.base import BaseStoreManager
+from tonga.stores.manager.errors import UninitializedStore
+from tonga.models.structs.positioning import (BasePositioning, KafkaPositioning)
 
 __all__ = [
     'KafkaConsumer',
@@ -50,38 +51,7 @@ __all__ = [
 
 
 class KafkaConsumer(BaseConsumer):
-    """KafkaConsumer Class
-
-    Attributes:
-        serializer (BaseSerializer): Serializer encode & decode event
-        _bootstrap_servers (Union[str, List[str]): ‘host[:port]’ string (or list of ‘host[:port]’ strings) that
-                                 the consumer should contact to bootstrap initial cluster metadata
-        _client_id (str): A name for this client. This string is passed in each request to servers and can be used
-                          to identify specific server-side log entries that correspond to this client
-        _topics (List[str]): List of topics to subscribe to
-        _group_id (str): name of the consumer group, and to use for fetching and committing offsets.
-                        If None, offset commits are disabled
-        _auto_offset_reset (str): A policy for resetting offsets on OffsetOutOfRange errors: ‘earliest’ will move to
-                                  the oldest available message, ‘latest’ will move to the most recent.
-                                  Any other value will raise the exception
-        _max_retries (int): Number of retries before critical failure
-        _retry_interval (int): Interval before next retries
-        _retry_backoff_coeff (int): Backoff coeff for next retries
-        _isolation_level (str): Controls how to read messages written transactionally. If set to read_committed,
-                                will only return transactional messages which have been committed.
-                                If set to read_uncommitted, will return all messages, even transactional messages
-                                which have been aborted. Non-transactional messages will be returned unconditionally in
-                                either mode.
-        _assignors_data (Dict[str, Any]): Dict with assignors information, more details in StatefulsetPartitionAssignor
-        _store_builder (BaseStoreBuilder): If this flag is step consumer run build_stores() otherwise listen_event
-                                           was started
-        _running (bool): Is running flag
-        _kafka_consumer (AIOKafkaConsumer): AioKafkaConsumer for more information go to
-        __current_offsets (Dict[TopicPartition, int]): Contains current TopicPartition and offsets
-        __last_offsets (Dict[TopicPartition, int]): Contains last TopicPartition and offsets
-        __last_committed_offsets (Dict[TopicPartition, int]): Contains last committed TopicPartition and offsets
-        _loop (asyncio.AbstractEventLoop): Asyncio loop
-        logger (Logger): Python logger
+    """KafkaConsumer is a client that publishes records to the Kafka cluster.
     """
     _client: KafkaClient
     serializer: BaseSerializer
@@ -95,13 +65,14 @@ class KafkaConsumer(BaseConsumer):
     _retry_backoff_coeff: int
     _isolation_level: str
     _assignors_data: Dict[str, Any]
-    _store_builder: BaseStoreBuilder
+    _store_builder: BaseStoreManager
     _running: bool
     _kafka_consumer: AIOKafkaConsumer
+    _transactional_manager: KafkaTransactionalManager
 
-    __current_offsets: Dict[TopicPartition, int]
-    __last_offsets: Dict[TopicPartition, int]
-    __last_committed_offsets: Dict[TopicPartition, int]
+    __current_offsets: Dict[str, BasePositioning]
+    __last_offsets: Dict[str, BasePositioning]
+    __last_committed_offsets: Dict[str, BasePositioning]
 
     _loop: asyncio.AbstractEventLoop
     logger: Logger
@@ -109,8 +80,9 @@ class KafkaConsumer(BaseConsumer):
     def __init__(self, client: KafkaClient, serializer: BaseSerializer, topics: List[str],
                  loop: asyncio.AbstractEventLoop, client_id: str = None, group_id: str = None,
                  auto_offset_reset: str = 'earliest', max_retries: int = 10, retry_interval: int = 1000,
-                 retry_backoff_coeff: int = 2, assignors_data=None, store_builder: BaseStoreBuilder = None,
-                 isolation_level: str = 'read_uncommitted') -> None:
+                 retry_backoff_coeff: int = 2, assignors_data: Dict[str, Any] = None,
+                 store_builder: BaseStoreManager = None, isolation_level: str = 'read_uncommitted',
+                 transactional_manager: KafkaTransactionalManager = None) -> None:
         """
         KafkaConsumer constructor
 
@@ -178,6 +150,8 @@ class KafkaConsumer(BaseConsumer):
         self.__last_offsets = dict()
         self.__last_committed_offsets = dict()
 
+        self._transactional_manager = transactional_manager
+
         try:
             self.logger.info(json.dumps(assignors_data))
             statefulset_assignor = StatefulsetPartitionAssignor(bytes(json.dumps(assignors_data), 'utf-8'))
@@ -220,7 +194,7 @@ class KafkaConsumer(BaseConsumer):
             except KafkaTimeoutError as err:
                 self.logger.exception('%s', err.__str__())
                 await asyncio.sleep(1)
-            except ConnectionError as err:
+            except KafkaConnectionError as err:
                 self.logger.exception('%s', err.__str__())
                 await asyncio.sleep(1)
             except KafkaError as err:
@@ -259,80 +233,84 @@ class KafkaConsumer(BaseConsumer):
     def is_running(self) -> bool:
         return self._running
 
-    async def get_last_committed_offsets(self) -> Dict[TopicPartition, int]:
+    async def get_last_committed_offsets(self) -> Dict[str, BasePositioning]:
         """
         Get last committed offsets
 
         Returns:
-            Dict[TopicPartition, int]: Contains all assigned partitions with last committed offsets
+            Dict[str, KafkaPositioning]: Contains all assigned partitions with last committed offsets
         """
-        last_committed_offsets: Dict[TopicPartition, int] = dict()
+        last_committed_offsets: Dict[str, BasePositioning] = dict()
         self.logger.debug('Get last committed offsets')
         if self._group_id is None:
             raise IllegalOperation
-        for partition in self._kafka_consumer.assignment():
-            offset = await self._kafka_consumer.committed(partition)
-            last_committed_offsets[partition] = offset
+        for tp in self._kafka_consumer.assignment():
+            offset = await self._kafka_consumer.committed(tp)
+            last_committed_offsets[KafkaPositioning.make_class_assignment_key(tp.topic, tp.partition)] = \
+                KafkaPositioning(tp.topic, tp.partition, offset)
         return last_committed_offsets
 
-    async def get_current_offsets(self) -> Dict[TopicPartition, int]:
+    async def get_current_offsets(self) -> Dict[str, BasePositioning]:
         """
         Get current offsets
 
         Returns:
-            Dict[TopicPartition, int]: Contains all assigned partitions with current offsets
+            Dict[str, KafkaPositioning]: Contains all assigned partitions with current offsets
         """
-        current_offsets: Dict[TopicPartition, int] = dict()
+        current_offsets: Dict[str, BasePositioning] = dict()
         self.logger.debug('Get current offsets')
-        for partition in self._kafka_consumer.assignment():
+        for tp in self._kafka_consumer.assignment():
             try:
-                offset = await self._kafka_consumer.position(partition)
+                offset = await self._kafka_consumer.position(tp)
+                current_offsets[KafkaPositioning.make_class_assignment_key(tp.topic, tp.partition)] = \
+                    KafkaPositioning(tp.topic, tp.partition, offset)
             except IllegalStateError as err:
                 self.logger.exception('%s', err.__str__())
                 raise err
-            current_offsets[partition] = offset
         return current_offsets
 
-    async def get_beginning_offsets(self) -> Dict[TopicPartition, int]:
+    async def get_beginning_offsets(self) -> Dict[str, BasePositioning]:
         """
         Get beginning offsets
 
         Returns:
-            Dict[TopicPartition, int]: Contains all assigned partitions with beginning offsets
+            Dict[str, KafkaPositioning]: Contains all assigned partitions with beginning offsets
         """
-        beginning_offsets: Dict[TopicPartition, int] = dict()
+        beginning_offsets: Dict[str, BasePositioning] = dict()
         self.logger.debug('Get beginning offsets')
-        for partition in self._kafka_consumer.assignment():
+        for tp in self._kafka_consumer.assignment():
             try:
-                offset = (await self._kafka_consumer.beginning_offsets([partition]))[partition]
+                offset = (await self._kafka_consumer.beginning_offsets([tp]))[tp]
+                beginning_offsets[KafkaPositioning.make_class_assignment_key(tp.topic, tp.partition)] = \
+                    KafkaPositioning(tp.topic, tp.partition, offset)
             except KafkaTimeoutError as err:
                 self.logger.exception('%s', err.__str__())
                 raise ConsumerKafkaTimeoutError
             except UnsupportedVersionError as err:
                 self.logger.exception('%s', err.__str__())
                 raise err
-            beginning_offsets[partition] = offset
         return beginning_offsets
 
-    async def get_last_offsets(self) -> Dict[TopicPartition, int]:
+    async def get_last_offsets(self) -> Dict[str, BasePositioning]:
         """
         Get last offsets
 
         Returns:
-            Dict[TopicPartition, int]: Contains all assigned partitions with last offsets
+            Dict[str, KafkaPositioning]: Contains all assigned partitions with last offsets
         """
-        last_offsets: Dict[TopicPartition, int] = dict()
+        last_offsets: Dict[str, BasePositioning] = dict()
         self.logger.debug('Get last offsets')
-        for partition in self._kafka_consumer.assignment():
+        for tp in self._kafka_consumer.assignment():
             try:
-                offset = (await self._kafka_consumer.end_offsets([partition]))[partition]
+                offset = (await self._kafka_consumer.end_offsets([tp]))[tp]
+                last_offsets[KafkaPositioning.make_class_assignment_key(tp.topic, tp.partition)] = \
+                    KafkaPositioning(tp.topic, tp.partition, offset)
             except KafkaTimeoutError as err:
                 self.logger.exception('%s', err.__str__())
                 raise ConsumerKafkaTimeoutError
             except UnsupportedVersionError as err:
                 self.logger.exception('%s', err.__str__())
                 raise err
-            last_offsets[partition] = offset
         return last_offsets
 
     async def load_offsets(self, mod: str = 'earliest') -> None:
@@ -363,10 +341,10 @@ class KafkaConsumer(BaseConsumer):
 
         if self._group_id is not None:
             self.__last_committed_offsets = await self.get_last_committed_offsets()
-            for tp, offset in self.__last_committed_offsets.items():
-                if offset is None:
+            for key, kafka_positioning in self.__last_committed_offsets.items():
+                if kafka_positioning.get_current_offset() is None:
                     self.logger.debug('Seek to beginning, no committed offsets was found')
-                    await self.seek_to_beginning(tp.partition, tp.topic)
+                    await self.seek_to_beginning(kafka_positioning)
 
     async def debug_print_all_msg(self):
         """
@@ -383,9 +361,9 @@ class KafkaConsumer(BaseConsumer):
                              message.headers)
             self.logger.info('----------------------------------------------------------------------------------------')
 
-    async def listen_event(self, mod: str = 'earliest') -> None:
+    async def listen_records(self, mod: str = 'earliest') -> None:
         """
-        Listens events from assigned topic / partitions
+        Listens records from assigned topic / partitions
 
         Args:
             mod: Start position of consumer (earliest, latest, committed)
@@ -398,8 +376,6 @@ class KafkaConsumer(BaseConsumer):
 
         self.pprint_consumer_offsets()
 
-        # await self.getone()
-
         async for msg in self._kafka_consumer:
             # Debug Display
             self.logger.debug("---------------------------------------------------------------------------------")
@@ -409,63 +385,70 @@ class KafkaConsumer(BaseConsumer):
             self.pprint_consumer_offsets()
             self.logger.debug("---------------------------------------------------------------------------------")
 
-            tp = TopicPartition(msg.topic, msg.partition)
-            self.__current_offsets[tp] = msg.offset
+            key = KafkaPositioning.make_class_assignment_key(msg.topic, msg.partition)
+            self.__current_offsets[key].set_current_offset(msg.offset)
+            if self._transactional_manager is not None:
+                self._transactional_manager.set_ctx(KafkaTransactionContext(msg.topic, msg.partition,
+                                                                            msg.offset, self._group_id))
             # self.last_offsets = await self.get_last_offsets()
 
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
                 try:
-                    decode_dict = msg.value
-                    event_class = decode_dict['event_class']
-                    handler_class = decode_dict['handler_class']
+                    record_class = msg.value['record_class']
+                    handler_class = msg.value['handler_class']
 
                     if handler_class is None:
                         self.logger.debug('Empty handler')
                         break
 
                     self.logger.debug('Event name : %s  Event content :\n%s',
-                                      event_class.event_name(), event_class.__dict__)
+                                      record_class.event_name(), record_class.__dict__)
 
                     # Calls handle if event is instance BaseHandler
                     if isinstance(handler_class, BaseEventHandler):
-                        result = await handler_class.handle(event=event_class, group_id=self._group_id, tp=tp,
-                                                            offset=msg.offset)
+                        transactional = await handler_class.handle(event=record_class)
                     elif isinstance(handler_class, BaseCommandHandler):
-                        result = await handler_class.execute(event=event_class, group_id=self._group_id, tp=tp,
-                                                             offset=msg.offset)
+                        transactional = await handler_class.execute(event=record_class)
                     elif isinstance(handler_class, BaseResultHandler):
-                        result = await handler_class.on_result(event=event_class, group_id=self._group_id, tp=tp,
-                                                               offset=msg.offset)
+                        transactional = await handler_class.on_result(event=record_class)
                     else:
                         # Otherwise raise KafkaConsumerUnknownHandler
                         raise UnknownHandler
 
                     # If result is none (no transactional process), check if consumer has an
                     # group_id (mandatory to commit in Kafka)
-                    if result is None and self._group_id is not None:
+                    if transactional is None and self._group_id is not None:
                         # Check if next commit was possible (Kafka offset)
-                        if self.__last_committed_offsets[tp] is None or \
-                                self.__last_committed_offsets[tp] <= self.__current_offsets[tp]:
+                        if self.__last_committed_offsets[key] is None or \
+                                self.__last_committed_offsets[key].get_current_offset() <= \
+                                self.__current_offsets[key].get_current_offset():
+
                             self.logger.debug('Commit msg %s in topic %s partition %s offset %s',
-                                              event_class.event_name(), msg.topic, msg.partition,
-                                              self.__current_offsets[tp] + 1)
-                            await self._kafka_consumer.commit({tp: self.__current_offsets[tp] + 1})
-                            self.__last_committed_offsets[tp] = msg.offset + 1
+                                              record_class.event_name(), msg.topic, msg.partition,
+                                              self.__current_offsets[key].get_current_offset() + 1)
+                            tp = self.__current_offsets[key].to_topics_partition()
+                            await self._kafka_consumer.commit(
+                                {tp: self.__current_offsets[key].get_current_offset() + 1})
+                            self.__last_committed_offsets[key].set_current_offset(msg.offset + 1)
 
                     # Transactional process no commit
-                    elif result == 'transaction':
+                    elif transactional:
                         self.logger.debug('Transaction end')
                         self.__current_offsets = await self.get_current_offsets()
                         self.__last_committed_offsets = await self.get_last_committed_offsets()
                     # Otherwise raise KafkaConsumerUnknownHandlerReturn
-                    elif result is None and self._group_id is None:
+                    elif transactional is None and self._group_id is None:
                         pass
                     else:
                         raise UnknownHandlerReturn
 
                     # Break if everything was successfully processed
                     break
+                except UninitializedStore as err:
+                    self.logger.exception('%s', err.__str__())
+                    retries = 0
+                    await asyncio.sleep(10)
                 except IllegalStateError as err:
                     self.logger.exception('%s', err.__str__())
                     raise NoPartitionAssigned
@@ -493,26 +476,27 @@ class KafkaConsumer(BaseConsumer):
         """
 
         # Check if local store is initialize
+        self.logger.info('Started check_if_store_is_ready')
         if not self._store_builder.get_local_store().is_initialized():
             local_store_metadata = await self._store_builder.get_local_store().get_metadata()
-            local_store_tp = local_store_metadata.assigned_partitions[0]
-            if self.__last_offsets[local_store_tp] == 0:
+            local_store_positioning = local_store_metadata.assigned_partitions[0]
+            if self.__last_offsets[local_store_positioning.make_assignment_key()].get_current_offset() == 0:
                 self._store_builder.get_local_store().set_initialized(True)
                 self.logger.info('Local store was initialized')
-            elif local_store_metadata.last_offsets[local_store_tp] == (self.__last_offsets[local_store_tp] - 1):
+            elif local_store_metadata.last_offsets[local_store_positioning.make_assignment_key()].get_current_offset() \
+                    == (self.__last_offsets[local_store_positioning.make_assignment_key()].get_current_offset()):
                 self._store_builder.get_local_store().set_initialized(True)
                 self.logger.info('Local store was initialized')
 
         # Check if global store is initialize
         if not self._store_builder.get_global_store().is_initialized():
-            local_store_metadata = await self._store_builder.get_local_store().get_metadata()
-            local_store_tp = local_store_metadata.assigned_partitions[0]
             global_store_metadata = await self._store_builder.get_global_store().get_metadata()
-            for tp, offset in self.__last_offsets.items():
-                if tp != local_store_tp:
-                    if offset == 0:
+            for key, positioning in self.__last_offsets.items():
+                if self._client.cur_instance != positioning.get_partition():
+                    if positioning.get_current_offset() == 0:
                         continue
-                    elif (offset - 1) == (global_store_metadata.last_offsets[tp]):
+                    elif (positioning.get_current_offset()) == \
+                            global_store_metadata.last_offsets[positioning.make_assignment_key()].get_current_offset():
                         continue
                     else:
                         break
@@ -536,7 +520,7 @@ class KafkaConsumer(BaseConsumer):
         self.logger.info('Start listen store records')
 
         await self.start_consumer()
-        await self._store_builder.initialize_store_builder()
+        await self._store_builder.initialize_store_manager()
 
         if not self._running:
             raise KafkaConsumerError('Fail to start tongaConsumer', 500)
@@ -546,8 +530,8 @@ class KafkaConsumer(BaseConsumer):
         self.pprint_consumer_offsets()
 
         async for msg in self._kafka_consumer:
-            tp = TopicPartition(msg.topic, msg.partition)
-            self.__current_offsets[tp] = msg.offset
+            positioning_key = KafkaPositioning.make_class_assignment_key(msg.topic, msg.partition)
+            self.__current_offsets[positioning_key].set_current_offset(msg.offset)
 
             # Debug Display
             self.logger.debug("---------------------------------------------------------------------------------")
@@ -563,54 +547,36 @@ class KafkaConsumer(BaseConsumer):
             sleep_duration_in_ms = self._retry_interval
             for retries in range(0, self._max_retries):
                 try:
-                    decode_dict = msg.value
-                    event_class: BaseRecord = decode_dict['event_class']
-                    handler_class: BaseStoreRecordHandler = decode_dict['handler_class']
+                    record_class: BaseRecord = msg.value['record_class']
+                    handler_class: BaseStoreRecordHandler = msg.value['handler_class']
 
                     self.logger.debug('Store event name : %s\nEvent content :\n%s\n',
-                                      event_class.event_name(), event_class.__dict__)
+                                      record_class.event_name(), record_class.__dict__)
 
-                    result = None
-                    if msg.partition == self._store_builder.get_current_instance():
+                    positioning = self.__current_offsets[positioning_key]
+                    if self._store_builder.get_current_instance() == msg.partition:
                         # Calls local_state_handler if event is instance BaseStorageBuilder
                         if rebuild and not self._store_builder.get_local_store().is_initialized():
-                            if isinstance(event_class, BaseStoreRecord):
+                            if isinstance(record_class, StoreRecord):
                                 self.logger.debug('Call local_store_handler')
-                                result = await handler_class.local_store_handler(store_record=event_class,
-                                                                                 group_id=self._group_id, tp=tp,
-                                                                                 offset=msg.offset)
+                                await handler_class.local_store_handler(store_record=record_class,
+                                                                        positioning=positioning)
                             else:
                                 raise UnknownStoreRecordHandler
-                    elif msg.partition != self._store_builder.get_current_instance():
-                        if isinstance(event_class, BaseStoreRecord):
+                    elif self._store_builder.get_current_instance() != msg.partition:
+                        if isinstance(record_class, StoreRecord):
                             self.logger.debug('Call global_store_handler')
-                            result = await handler_class.global_store_handler(store_record=event_class,
-                                                                              group_id=self._group_id, tp=tp,
-                                                                              offset=msg.offset)
+                            await handler_class.global_store_handler(store_record=record_class, positioning=positioning)
                         else:
                             raise UnknownStoreRecordHandler
 
-                    self.logger.info('result: %s', result)
-
-                    # If result is none (no transactional process), check if consumer has an
-                    # group_id (mandatory to commit in Kafka)
-                    # if result is None and self._group_id is not None:
-                    #     # Check if next commit was possible (Kafka offset)
-                    #     if self.__last_committed_offsets[tp] is None or \
-                    #             self.__last_committed_offsets[tp] <= self.__current_offsets[tp]:
-                    #         self.logger.debug(f'Commit msg {event_class.event_name()} in topic {msg.topic} partition '
-                    #                           f'{msg.partition} offset {self.__current_offsets[tp] + 1}')
-                    #         await self._kafka_consumer.commit({tp: self.__current_offsets[tp] + 1})
-                    #         self.__last_committed_offsets[tp] = msg.offset + 1
-                    # # Otherwise raise ValueError
-                    # else:
-                    #     raise ValueError
-
-                    # Break if everything was successfully processed
+                    self.logger.info('Before next check store !')
 
                     # Check if store is ready
+
                     await self.check_if_store_is_ready()
 
+                    # Break if everything was successfully processed
                     break
                 except IllegalStateError as err:
                     self.logger.exception('%s', err.__str__())
@@ -642,79 +608,30 @@ class KafkaConsumer(BaseConsumer):
             return False
         return True
 
-    async def get_next(self):
+    async def seek_to_beginning(self, positioning: BasePositioning = None) -> None:
         """
-        Async generator for consumer msg
-
-        Yields:
-            Any: yields new msg
-        """
-        while True:
-            try:
-                yield self._kafka_consumer.getone()
-            except ConsumerStoppedError:
-                raise StopAsyncIteration
-            except (TopicAuthorizationFailedError,
-                    OffsetOutOfRangeError,
-                    NoOffsetForPartitionError) as err:
-                raise KafkaConsumerError(err, 500)
-            except RecordTooLargeError:
-                pass
-
-    async def get_many(self, partitions: List[TopicPartition] = None, max_records: int = None) -> Dict[Any, Any]:
-        """
-        Get many msg in batch
+        Seek to fist offset, mod 'earliest'.
+        If positioning is None consumer will seek all assigned partition to beginning
 
         Args:
-            partitions (List[TopicPartition]): List of topic / partition to get many msg
-            max_records (int): Max msg records
-
-        Returns:
-            Dict[Any, Any]: Return a dict contain msg
-        """
-        if not self._running:
-            await self.start_consumer()
-        self.logger.debug('Get many in partitions : %s', partitions)
-        return await self._kafka_consumer.getmany(*partitions, max_records=max_records)
-
-    async def get_one(self, partitions: List[TopicPartition] = None) -> Any:
-        """
-        Get one message
-
-        Args:
-            partitions (List[TopicPartition]): List of topic / partition to get many msg
-
-        Returns:
-            Any: return msg
-        """
-        if not self._running:
-            await self.start_consumer()
-        self.logger.debug('Get one in partitions : %s', partitions)
-        return await self._kafka_consumer.getone(*partitions)
-
-    async def seek_to_beginning(self, partition: int = None, topic: str = None) -> None:
-        """
-        Seek to fist offset, mod 'earliest'
-
-        Args:
-            partition (int): Partition value
-            topic (str): Topic name
+            positioning (BasePositioning): Positioning class contain (topic name / partition number)
 
         Returns:
             None
         """
         if not self._running:
             await self.start_consumer()
-        if partition is not None and topic is not None:
+        if positioning is not None:
             try:
-                await self._kafka_consumer.seek_to_beginning(TopicPartition(topic, partition))
+                await self._kafka_consumer.seek_to_beginning(positioning.to_topics_partition())
             except IllegalStateError as err:
                 self.logger.exception('%s', err.__str__())
                 raise NoPartitionAssigned
             except TypeError as err:
                 self.logger.exception('%s', err.__str__())
                 raise TopicPartitionError
-            self.logger.debug('Seek to beginning for topic : %s, partition : %s', topic, partition)
+            self.logger.debug('Seek to beginning for topic : %s, partition : %s', positioning.get_partition(),
+                              positioning.get_partition())
         else:
             try:
                 await self._kafka_consumer.seek_to_beginning()
@@ -723,29 +640,30 @@ class KafkaConsumer(BaseConsumer):
                 raise NoPartitionAssigned
             self.logger.debug('Seek to beginning for all topics & partitions')
 
-    async def seek_to_end(self, partition: int = None, topic: str = None) -> None:
+    async def seek_to_end(self, positioning: BasePositioning = None) -> None:
         """
-        Seek to latest offset, mod 'latest'
+        Seek to latest offset, mod 'latest'.
+        If positioning is None consumer will seek all assigned partition to end
 
         Args:
-            partition (int): Partition value
-            topic (str): Topic name
+            positioning (BasePositioning): Positioning class contain (topic name / partition number)
 
         Returns:
             None
         """
         if not self._running:
             await self.start_consumer()
-        if partition is not None and topic is not None:
+        if positioning is not None:
             try:
-                await self._kafka_consumer.seek_to_end(TopicPartition(topic, partition))
+                await self._kafka_consumer.seek_to_end(positioning.to_topics_partition())
             except IllegalStateError as err:
                 self.logger.exception('%s', err.__str__())
                 raise NoPartitionAssigned
             except TypeError as err:
                 self.logger.exception('%s', err.__str__())
                 raise TopicPartitionError
-            self.logger.debug('Seek to end for topic : %s, partition : %s', topic, partition)
+            self.logger.debug('Seek to end for topic : %s, partition : %s', positioning.get_topics(),
+                              positioning.get_partition())
         else:
             try:
                 await self._kafka_consumer.seek_to_end()
@@ -754,13 +672,13 @@ class KafkaConsumer(BaseConsumer):
                 raise NoPartitionAssigned
             self.logger.debug('Seek to end for all topics & partitions')
 
-    async def seek_to_last_commit(self, partition: int = None, topic: str = None) -> None:
+    async def seek_to_last_commit(self, positioning: BasePositioning = None) -> None:
         """
         Seek to last committed offsets, mod 'committed'
+        If positioning is None consumer will seek all assigned partition to last committed offset
 
         Args:
-            partition (int): Partition value
-            topic (str): Topic name
+            positioning (BasePositioning): Positioning class contain (topic name / partition number / offset number)
 
         Returns:
             None
@@ -769,16 +687,17 @@ class KafkaConsumer(BaseConsumer):
             raise IllegalOperation
         if not self._running:
             await self.start_consumer()
-        if partition is not None and topic is not None:
+        if positioning:
             try:
-                await self._kafka_consumer.seek_to_committed(TopicPartition(topic, partition))
+                await self._kafka_consumer.seek_to_committed(positioning.to_topics_partition())
             except IllegalStateError as err:
                 self.logger.exception('%s', err.__str__())
                 raise NoPartitionAssigned
             except TypeError as err:
                 self.logger.exception('%s', err.__str__())
                 raise TopicPartitionError
-            self.logger.debug('Seek to last committed for topic : %s, partition : %s', topic, partition)
+            self.logger.debug('Seek to last committed for topic : %s, partition : %s', positioning.get_topics(),
+                              positioning.get_partition())
         else:
             try:
                 await self._kafka_consumer.seek_to_committed()
@@ -787,23 +706,21 @@ class KafkaConsumer(BaseConsumer):
                 raise NoPartitionAssigned
             self.logger.debug('Seek to last committed for all topics & partitions')
 
-    async def seek_custom(self, topic: str = None, partition: int = None, offset: int = None) -> None:
+    async def seek_custom(self, positioning: BasePositioning) -> None:
         """
         Seek to custom offsets
 
         Args:
-            partition (int): Partition value
-            topic (str): Topic name
-            offset (int): Offset value
+            positioning (BasePositioning): Positioning class contain (topic name / partition number / offset number)
 
         Returns:
             None
         """
         if not self._running:
             await self.start_consumer()
-        if partition is not None and topic is not None and offset is not None:
+        if positioning is not None:
             try:
-                await self._kafka_consumer.seek(TopicPartition(topic, partition), offset)
+                await self._kafka_consumer.seek(positioning.to_topics_partition(), positioning.get_current_offset())
             except ValueError as err:
                 self.logger.exception('%s', err.__str__())
                 raise OffsetError
@@ -813,7 +730,8 @@ class KafkaConsumer(BaseConsumer):
             except IllegalStateError as err:
                 self.logger.exception('%s', err.__str__())
                 raise NoPartitionAssigned
-            self.logger.debug('Custom seek for topic : %s, partition : %s, offset : %s', topic, partition, offset)
+            self.logger.debug('Custom seek for topic : %s, partition : %s, offset : %s',
+                              positioning.get_topics(), positioning.get_partition(), positioning.get_current_offset())
         else:
             raise KafkaConsumerError
 
@@ -838,12 +756,15 @@ class KafkaConsumer(BaseConsumer):
         """
         self.logger.debug('Client ID = %s', self._client_id)
 
-        self.logger.debug('Current Offset = %s', self.__current_offsets)
-        self.logger.debug('Last Offset = %s', self.__last_offsets)
+        self.logger.debug('Current Offset = %s', [positioning.pprint() for key, positioning in
+                                                  self.__current_offsets.items()])
+        self.logger.debug('Last Offset = %s', [positioning.pprint() for key, positioning in
+                                               self.__last_offsets.items()])
 
-        self.logger.debug('Last committed offset = %s', self.__last_committed_offsets)
+        self.logger.debug('Last committed offset = %s', [positioning.pprint() for key, positioning in
+                                                         self.__last_committed_offsets.items()])
 
-    def get_aiokafka_consumer(self) -> AIOKafkaConsumer:
+    def get_consumer(self) -> AIOKafkaConsumer:
         """
         Get aiokafka consumer
 
@@ -852,7 +773,7 @@ class KafkaConsumer(BaseConsumer):
         """
         return self._kafka_consumer
 
-    def get_offset_bundle(self) -> Dict[str, Dict[TopicPartition, int]]:
+    def get_offset_bundle(self) -> Dict[str, Dict[str, BasePositioning]]:
         """
         Return a bundle with each assigned assigned topic/partition with current, latest, last committed
         topic/partition as dict
@@ -866,29 +787,29 @@ class KafkaConsumer(BaseConsumer):
             'last_committed_offset': self.__last_committed_offsets.copy()
         }
 
-    def get_current_offset(self) -> Dict[TopicPartition, int]:
+    def get_current_offset(self) -> Dict[str, BasePositioning]:
         """
         Return current offset of each assigned topic/partition
 
         Returns:
-            Dict[TopicPartition, int]: Dict contains current offset of each assigned partition
+            Dict[str, BasePositioning]: Dict contains current offset of each assigned partition
         """
         return self.__current_offsets.copy()
 
-    def get_last_offset(self) -> Dict[TopicPartition, int]:
+    def get_last_offset(self) -> Dict[str, BasePositioning]:
         """
         Return last offset of each assigned topic/partition
 
         Returns:
-            Dict[TopicPartition, int]: Dict contains latest offset of each assigned partition
+            Dict[str, BasePositioning]: Dict contains latest offset of each assigned partition
         """
         return self.__last_offsets.copy()
 
-    def get_last_committed_offset(self) -> Dict[TopicPartition, int]:
+    def get_last_committed_offset(self) -> Dict[str, BasePositioning]:
         """
         Return last committed offset of each assigned topic/partition
 
         Returns:
-            Dict[TopicPartition, int]: Dict contains last committed offset of each assigned partition
+            Dict[str, BasePositioning]: Dict contains last committed offset of each assigned partition
         """
         return self.__last_committed_offsets.copy()
