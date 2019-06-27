@@ -2,11 +2,14 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-from tonga.models.structs.kafka_positioning import KafkaPositioning
+""" Regular packages
+
+Import structs module
+"""
+
 from tonga.models.structs.store_record_type import StoreRecordType
 
 
 __all__ = [
-    'KafkaPositioning',
     'StoreRecordType'
 ]
