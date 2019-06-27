@@ -10,53 +10,38 @@ This class manage one local & global store.
 import asyncio
 from asyncio import (AbstractEventLoop, Future)
 from logging import (Logger, getLogger)
-from typing import List
+from typing import List, Union, Dict
 
-from aiokafka import TopicPartition
-from aiokafka.producer.message_accumulator import RecordMetadata
-
-from tonga.models.records.store.store_record import StoreRecord
+from tonga.models.store.store_record import StoreRecord
+from tonga.models.structs.positioning import (KafkaPositioning, BasePositioning)
+from tonga.models.structs.store_record_type import StoreRecordType
 from tonga.services.consumer.errors import (OffsetError, TopicPartitionError, NoPartitionAssigned)
 from tonga.services.consumer.kafka_consumer import KafkaConsumer
-from tonga.services.coordinator.kafka_client.kafka_client import KafkaClient
+from tonga.services.coordinator.client.kafka_client import KafkaClient
 from tonga.services.coordinator.partitioner.statefulset_partitioner import StatefulsetPartitioner
 from tonga.services.producer.errors import (KeyErrorSendEvent, ValueErrorSendEvent,
                                             TypeErrorSendEvent, FailToSendEvent)
 from tonga.services.producer.kafka_producer import KafkaProducer
 from tonga.services.serializer.base import BaseSerializer
 from tonga.stores.errors import StoreKeyNotFound
-from tonga.stores.globall.base import BaseGlobalStore
-from tonga.stores.globall.memory import GlobalStoreMemory
-from tonga.stores.local.base import BaseLocalStore
-from tonga.stores.local.memory import LocalStoreMemory
-from tonga.stores.store_builder.base import BaseStoreBuilder
-from tonga.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
+from tonga.stores.global_store.base import BaseGlobalStore
+from tonga.stores.global_store.memory import GlobalStoreMemory
+from tonga.stores.local_store.base import BaseLocalStore
+from tonga.stores.local_store.memory import LocalStoreMemory
+from tonga.stores.manager.base import BaseStoreManager
+from tonga.stores.manager.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
+from tonga.stores.metadata.kafka_metadata import KafkaStoreMetaData
 
 __all__ = [
-    'StoreBuilder'
+    'KafkaStoreManager'
 ]
 
 
-class StoreBuilder(BaseStoreBuilder):
-    """Store builder
+class KafkaStoreManager(BaseStoreManager):
+    """Kafka Store Manager
 
     This class manage one local & global store. He builds stores on start of services.
     He has own KafkaProducer & KafkaConsumer
-
-    Attributes:
-        name (str): StoreBuilder name
-        _topic_store (str): Name topic where store event was send
-        _rebuild (bool): If is true store is rebuild from first offset of topic/partition
-        _local_store (BaseLocalStore): Local store instance Memory / Shelve / RockDB / ...
-        _global_store (BaseGlobalStore): Global store instance Memory / Shelve / RockDB / ...
-        _loop (AbstractEventLoop): Asyncio loop
-        _store_consumer (KafkaConsumer): KafkaConsumer go to for more details
-        _store_producer (KafkaProducer): KafkaProducer go to for more details
-        _event_sourcing: If is true StateBuilder block instance for write in local & global store, storage will
-                            be only updated by handle store function, more details in StorageBuilder.
-                            Otherwise instance can only write in own local store, global store is only read only
-
-        _stores_partitions (List[TopicPartition]): List of topics/partitions
     """
 
     name: str
@@ -64,8 +49,8 @@ class StoreBuilder(BaseStoreBuilder):
     _rebuild: bool
     _event_sourcing: bool
 
-    _local_store: BaseLocalStore
-    _global_store: BaseGlobalStore
+    _local_store: Union[LocalStoreMemory]
+    _global_store: Union[GlobalStoreMemory]
 
     _loop: AbstractEventLoop
 
@@ -74,16 +59,16 @@ class StoreBuilder(BaseStoreBuilder):
 
     _logger: Logger
 
-    _stores_partitions: List[TopicPartition]
+    _stores_partitions: List[BasePositioning]
 
     def __init__(self, name: str, client: KafkaClient, topic_store: str, serializer: BaseSerializer,
-                 local_store: BaseLocalStore, global_store: BaseGlobalStore,
+                 local_store: Union[LocalStoreMemory], global_store: Union[GlobalStoreMemory],
                  loop: AbstractEventLoop, rebuild: bool = False, event_sourcing: bool = False) -> None:
         """
-        StoreBuilder constructor
+        KafkaStoreManager constructor
 
         Args:
-            name (str): StoreBuilder name used for client_id creation
+            name (str): KafkaStoreManager name used for client_id creation
             client (KafkaClient): Initialization class (contains, client_id / bootstraps_server)
             topic_store: Name topic where store event was send
             serializer: Serializer, this param was sends by tonga
@@ -137,8 +122,8 @@ class StoreBuilder(BaseStoreBuilder):
         """
         return asyncio.ensure_future(self._store_consumer.listen_store_records(self._rebuild), loop=self._loop)
 
-    async def initialize_store_builder(self) -> None:
-        """Initializes store builder, this function was call by consumer for init store builder and set StoreMetaData,
+    async def initialize_store_manager(self) -> None:
+        """Initializes store manager, this function was call by consumer for init store manager and set StoreMetaData,
         seek to last committed offset if store_metadata exist.
 
         Raises:
@@ -147,17 +132,27 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             None
         """
+
+        self._logger.info('Start initialize store manager')
+        self._local_store.set_metadata_class(KafkaStoreMetaData)
+        self._global_store.set_metadata_class(KafkaStoreMetaData)
+
         # Initialize local store
-        self._logger.info('Start initialize store builder')
         if isinstance(self._local_store, LocalStoreMemory):
             # If _local_store is an instance from LocalStoreMemory, auto seek to earliest position for rebuild
             self._logger.info('LocalStoreMemory seek to earliest')
-            assigned_partitions = list()
-            last_offsets = dict()
-            assigned_partitions.append(TopicPartition(self._topic_store, self._client.cur_instance))
-            last_offsets[TopicPartition(self._topic_store, self._client.cur_instance)] = 0
-            await self._local_store.set_store_position(self._client.cur_instance, self._client.nb_replica,
-                                                       assigned_partitions, last_offsets)
+            assigned_partitions_mem: List[BasePositioning] = list()
+            last_offsets_mem: Dict[str, BasePositioning] = dict()
+
+            assigned_partitions_mem.append(KafkaPositioning(self._topic_store, self._client.cur_instance, 0))
+            last_offsets_mem[KafkaPositioning.make_class_assignment_key(self._topic_store,
+                                                                        self._client.cur_instance)] = \
+                KafkaPositioning(self._topic_store, self._client.cur_instance, 0)
+
+            await self._local_store.set_store_position(KafkaStoreMetaData(assigned_partitions=assigned_partitions_mem,
+                                                                          last_offsets=last_offsets_mem,
+                                                                          current_instance=self._client.cur_instance,
+                                                                          nb_replica=self._client.nb_replica))
             try:
                 await self._store_consumer.load_offsets('earliest')
             except (TopicPartitionError, NoPartitionAssigned) as err:
@@ -169,12 +164,18 @@ class StoreBuilder(BaseStoreBuilder):
                 local_store_metadata = await self._local_store.get_metadata()
             except StoreKeyNotFound:
                 # If metadata doesn't exist in DB, auto seek to earliest position for rebuild
-                assigned_partitions = list()
-                last_offsets = dict()
-                assigned_partitions.append(TopicPartition(self._topic_store, self._client.cur_instance))
-                last_offsets[TopicPartition(self._topic_store, self._client.cur_instance)] = 0
-                await self._local_store.set_store_position(self._client.cur_instance, self._client.nb_replica,
-                                                           assigned_partitions, last_offsets)
+                assigned_partitions_cls: List[BasePositioning] = list()
+                last_offsets_cls: Dict[str, BasePositioning] = dict()
+
+                assigned_partitions_cls.append(KafkaPositioning(self._topic_store, self._client.cur_instance, 0))
+                key = KafkaPositioning.make_class_assignment_key(self._topic_store, self._client.cur_instance)
+                last_offsets_cls[key] = KafkaPositioning(self._topic_store, self._client.cur_instance, 0)
+
+                await self._local_store.set_store_position(
+                    KafkaStoreMetaData(assigned_partitions=assigned_partitions_cls,
+                                       last_offsets=last_offsets_cls,
+                                       current_instance=self._client.cur_instance,
+                                       nb_replica=self._client.nb_replica))
                 try:
                     await self._store_consumer.load_offsets('earliest')
                 except (TopicPartitionError, NoPartitionAssigned) as err:
@@ -183,28 +184,39 @@ class StoreBuilder(BaseStoreBuilder):
             else:
                 # If metadata is exist in DB, , auto seek to last position
                 try:
-                    last_offset = local_store_metadata.last_offsets[
-                        TopicPartition(self._topic_store, self._client.cur_instance)]
-                    await self._store_consumer.seek_custom(self._topic_store, self._client.cur_instance, last_offset)
+                    last_kafka_positioning = local_store_metadata.last_offsets[
+                        KafkaPositioning.make_class_assignment_key(self._topic_store, self._client.cur_instance)]
+
+                    await self._store_consumer.seek_custom(last_kafka_positioning)
+
+                    await self._local_store.set_store_position(
+                        KafkaStoreMetaData(assigned_partitions=local_store_metadata.assigned_partitions,
+                                           last_offsets=local_store_metadata.last_offsets,
+                                           current_instance=self._client.cur_instance,
+                                           nb_replica=self._client.nb_replica))
                 except (OffsetError, TopicPartitionError, NoPartitionAssigned) as err:
                     self._logger.exception('%s', err.__str__())
                     raise CanNotInitializeStore
-                await self._local_store.set_store_position(self._client.cur_instance, self._client.nb_replica,
-                                                           local_store_metadata.assigned_partitions,
-                                                           local_store_metadata.last_offsets)
 
         # Initialize global store
         if isinstance(self._global_store, GlobalStoreMemory):
             # If _global_store is an instance from GlobalStoreMemory, auto seek to earliest position for rebuild
+            g_assigned_partitions_mem: List[BasePositioning] = list()
+            g_last_offsets_mem: Dict[str, BasePositioning] = dict()
             self._logger.info('GlobalStoreMemory seek to earliest')
-            assigned_partitions = list()
-            last_offsets = dict()
             for i in range(0, self._client.nb_replica):
-                assigned_partitions.append(TopicPartition(self._topic_store, i))
+                if i != self._client.cur_instance:
+                    g_assigned_partitions_mem.append(KafkaPositioning(self._topic_store, i, 0))
             for j in range(0, self._client.nb_replica):
-                last_offsets[TopicPartition(self._topic_store, j)] = 0
-            await self._global_store.set_store_position(self._client.cur_instance, self._client.nb_replica,
-                                                        assigned_partitions, last_offsets)
+                if j != self._client.cur_instance:
+                    g_last_offsets_mem[KafkaPositioning.make_class_assignment_key(self._topic_store, j)] = \
+                        KafkaPositioning(self._topic_store, j, 0)
+
+            await self._global_store.set_store_position(
+                KafkaStoreMetaData(assigned_partitions=g_assigned_partitions_mem,
+                                   last_offsets=g_last_offsets_mem,
+                                   current_instance=self._client.cur_instance,
+                                   nb_replica=self._client.nb_replica))
             try:
                 await self._store_consumer.load_offsets('earliest')
             except (TopicPartitionError, NoPartitionAssigned) as err:
@@ -215,14 +227,22 @@ class StoreBuilder(BaseStoreBuilder):
                 global_store_metadata = await self._global_store.get_metadata()
             except StoreKeyNotFound:
                 # If metadata doesn't exist in DB
-                assigned_partitions = list()
-                last_offsets = dict()
+                g_assigned_partitions_cls: List[BasePositioning] = list()
+                g_last_offsets_cls: Dict[str, BasePositioning] = dict()
+
                 for i in range(0, self._client.nb_replica):
-                    assigned_partitions.append(TopicPartition(self._topic_store, self._client.cur_instance))
+                    if i != self._client.cur_instance:
+                        g_assigned_partitions_cls.append(KafkaPositioning(self._topic_store, i, 0))
                 for j in range(0, self._client.nb_replica):
-                    last_offsets[TopicPartition(self._topic_store, self._client.cur_instance)] = 0
-                await self._global_store.set_store_position(self._client.cur_instance, self._client.nb_replica,
-                                                            assigned_partitions, last_offsets)
+                    if j != self._client.cur_instance:
+                        g_last_offsets_cls[KafkaPositioning.make_class_assignment_key(self._topic_store, j)] = \
+                            KafkaPositioning(self._topic_store, j, 0)
+
+                await self._global_store.set_store_position(
+                    KafkaStoreMetaData(assigned_partitions=g_assigned_partitions_cls,
+                                       last_offsets=g_last_offsets_cls,
+                                       current_instance=self._client.cur_instance,
+                                       nb_replica=self._client.nb_replica))
                 try:
                     await self._store_consumer.load_offsets('earliest')
                 except (TopicPartitionError, NoPartitionAssigned) as err:
@@ -230,15 +250,18 @@ class StoreBuilder(BaseStoreBuilder):
                     raise CanNotInitializeStore
             else:
                 # If metadata is exist in DB
-                for tp, offset in global_store_metadata.last_offsets.items():
+                for key, kafka_positioning in global_store_metadata.last_offsets.items():
                     try:
-                        await self._store_consumer.seek_custom(tp.topic, tp.partition, offset)
+                        await self._store_consumer.seek_custom(kafka_positioning)
                     except (OffsetError, TopicPartitionError, NoPartitionAssigned) as err:
                         self._logger.exception('%s', err.__str__())
                         raise CanNotInitializeStore
-                await self._global_store.set_store_position(self._client.cur_instance, self._client.nb_replica,
-                                                            global_store_metadata.assigned_partitions,
-                                                            global_store_metadata.last_offsets)
+
+                await self._global_store.set_store_position(
+                    KafkaStoreMetaData(assigned_partitions=global_store_metadata.assigned_partitions,
+                                       last_offsets=global_store_metadata.last_offsets,
+                                       current_instance=self._client.cur_instance,
+                                       nb_replica=self._client.nb_replica))
 
     def set_local_store_initialize(self, initialized: bool) -> None:
         """Set local store initialized flag
@@ -263,7 +286,7 @@ class StoreBuilder(BaseStoreBuilder):
         self._global_store.set_initialized(initialized)
 
     # Sugar functions for local store management
-    async def set_from_local_store(self, key: str, value: bytes) -> RecordMetadata:
+    async def set_from_local_store(self, key: str, value: bytes) -> None:
         """Set from local store
 
         Args:
@@ -277,19 +300,25 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             RecordMetadata: Kafka record metadata (see kafka-python for more details)
         """
+        while not self._local_store.is_initialized():
+            await asyncio.sleep(2)
+
+        self._logger.debug('self._local_store.is_initialized() = %s', self._local_store.is_initialized())
+
         if self._local_store.is_initialized():
-            store_builder = StoreRecord(key=key, ctype='set', value=value)
+            store_builder = StoreRecord(key=key, operation_type=StoreRecordType('set'), value=value)
+
             try:
-                record_metadata: RecordMetadata = await self._store_producer.send_and_wait(store_builder,
-                                                                                           self._topic_store)
+                record_metadata: BasePositioning = await self._store_producer.send_and_wait(store_builder,
+                                                                                            self._topic_store)
             except (KeyErrorSendEvent, ValueErrorSendEvent, TypeErrorSendEvent, FailToSendEvent):
                 raise FailToSendStoreRecord
-            await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
-                                                                             record_metadata.partition),
-                                                              record_metadata.offset)
+            await self._local_store.update_metadata_tp_offset(KafkaPositioning(record_metadata.get_topics(),
+                                                                               record_metadata.get_partition(),
+                                                                               record_metadata.get_current_offset()))
             await self._local_store.set(key, value)
-            return record_metadata
-        raise UninitializedStore
+        else:
+            raise UninitializedStore
 
     async def get_from_local_store(self, key: str) -> bytes:
         """Get from local store
@@ -303,11 +332,14 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             bytes: Object value as bytes
         """
+        while not self._local_store.is_initialized():
+            await asyncio.sleep(2)
+
         if self._local_store.is_initialized():
             return await self._local_store.get(key)
         raise UninitializedStore
 
-    async def delete_from_local_store(self, key: str) -> RecordMetadata:
+    async def delete_from_local_store(self, key: str) -> None:
         """Delete from local store
 
         Args:
@@ -320,19 +352,23 @@ class StoreBuilder(BaseStoreBuilder):
         Returns:
             RecordMetadata: Kafka record metadata (see kafka-python for more details)
         """
+        while not self._local_store.is_initialized():
+            await asyncio.sleep(2)
+
         if self._local_store.is_initialized():
-            store_builder = StoreRecord(key=key, ctype='del', value=b'')
+            store_builder = StoreRecord(key=key, operation_type=StoreRecordType('del'), value=b'')
             try:
-                record_metadata: RecordMetadata = await self._store_producer.send_and_wait(store_builder,
-                                                                                           self._topic_store)
-                await self._local_store.update_metadata_tp_offset(TopicPartition(record_metadata.topic,
-                                                                                 record_metadata.partition),
-                                                                  record_metadata.offset)
+                record_metadata: BasePositioning = await self._store_producer.send_and_wait(store_builder,
+                                                                                            self._topic_store)
             except (KeyErrorSendEvent, ValueErrorSendEvent, TypeErrorSendEvent, FailToSendEvent):
                 raise FailToSendStoreRecord
+
+            await self._local_store.update_metadata_tp_offset(KafkaPositioning(record_metadata.get_topics(),
+                                                                               record_metadata.get_partition(),
+                                                                               record_metadata.get_current_offset()))
             await self._local_store.delete(key)
-            return record_metadata
-        raise UninitializedStore
+        else:
+            raise UninitializedStore
 
     async def set_from_local_store_rebuild(self, key: str, value: bytes) -> None:
         """ Set key & value in local store in rebuild mod
@@ -357,17 +393,16 @@ class StoreBuilder(BaseStoreBuilder):
         """
         await self._local_store.build_delete(key)
 
-    async def update_metadata_from_local_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_local_store(self, positioning: BasePositioning) -> None:
         """ Update local store metadata
 
         Args:
-            tp (TopicPartition): Topic and partition (see kafka-python for more details))
-            offset (int): offset
+            positioning (BasePositioning): KafkaPositioning class
 
         Returns:
             None
         """
-        await self._local_store.update_metadata_tp_offset(tp, offset)
+        await self._local_store.update_metadata_tp_offset(positioning)
 
     # Sugar function for global store management
     async def get_from_global_store(self, key: str) -> bytes:
@@ -410,17 +445,16 @@ class StoreBuilder(BaseStoreBuilder):
         """
         await self._global_store.global_delete(key)
 
-    async def update_metadata_from_global_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_global_store(self, positioning: BasePositioning) -> None:
         """ Update global store metadata
 
         Args:
-            tp (TopicPartition): Topic / Partition (see kafka-python for more details)
-            offset (int): Current offset
+            positioning (BasePositioning): KafkaPositioning class
 
         Returns:
             None
         """
-        await self._global_store.update_metadata_tp_offset(tp, offset)
+        await self._global_store.update_metadata_tp_offset(positioning)
 
     # Get stores
     def get_local_store(self) -> BaseLocalStore:
