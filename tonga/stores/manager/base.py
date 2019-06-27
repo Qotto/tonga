@@ -2,35 +2,65 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-""" BaseStoreBuilder
+""" BaseStoreManager
 
-All store builder must be inherit form this class
+All store manager must be inherit form this class
 """
+from asyncio import Future
 
-from aiokafka import TopicPartition
-
+from tonga.models.structs.positioning import BasePositioning
 from tonga.services.consumer.base import BaseConsumer
 from tonga.services.producer.base import BaseProducer
-from tonga.stores.local.base import BaseLocalStore
-from tonga.stores.globall.base import BaseGlobalStore
+from tonga.stores.global_store.base import BaseGlobalStore
+from tonga.stores.local_store.base import BaseLocalStore
 
 __all__ = [
-    'BaseStoreBuilder'
+    'BaseStoreManager'
 ]
 
 
-class BaseStoreBuilder:
-    """ Base store builder, all store builder must be inherit form this class
+class BaseStoreManager:
+    """ Base store manager, all store manager must be inherit form this class
     """
 
-    async def initialize_store_builder(self) -> None:
-        """ Initialize store builder, this function was call by consumer for init store builder and set StoreMetaData
+    async def initialize_store_manager(self) -> None:
+        """ Initialize store manager, this function was call by consumer for init store manager and set StoreMetaData
         Seek to last committed offset if store_metadata exist.
 
         Abstract method
 
         Raises:
             NotImplementedError: Abstract method
+
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
+    def return_consumer_task(self) -> Future:
+        """ Return consumer future
+
+        Returns:
+            Future: return consumer future task
+        """
+        raise NotImplementedError
+
+    def set_local_store_initialize(self, initialized: bool) -> None:
+        """Set local store initialized flag
+
+        Args:
+            initialized (bool): true for set local store initialized, otherwise false
+
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
+    def set_global_store_initialize(self, initialized: bool) -> None:
+        """Set global store initialized flag
+
+        Args:
+            initialized (bool): true for set global store initialized, otherwise false
 
         Returns:
             None
@@ -132,7 +162,7 @@ class BaseStoreBuilder:
             NotImplementedError: Abstract method
 
         Returns:
-            None
+            Abstract method
         """
         raise NotImplementedError
 
@@ -142,13 +172,13 @@ class BaseStoreBuilder:
         Abstract method
 
         Args:
-            key: Key value as string
+            key (str): Abstract param
 
         Raises:
             NotImplementedError: Abstract method
 
         Returns:
-            bytes: value as bytes
+            Abstract method
         """
         raise NotImplementedError
 
@@ -158,7 +188,7 @@ class BaseStoreBuilder:
         Abstract method
 
         Args:
-            key (str): Key value as string
+            key (key): Abstract parameter
 
         Raises:
             NotImplementedError: Abstract method
@@ -168,14 +198,13 @@ class BaseStoreBuilder:
         """
         raise NotImplementedError
 
-    async def update_metadata_from_local_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_local_store(self, positioning: BasePositioning) -> None:
         """ Update local store metadata
 
         Abstract method
 
         Args:
-            tp (TopicPartition): Topic / Partition (see kafka-python for more details)
-            offset (int): Current offset
+            positioning (BasePositioning) : Positioning class / contain topic / partition / offset
 
         Raises:
             NotImplementedError: Abstract method
@@ -191,8 +220,8 @@ class BaseStoreBuilder:
         Abstract method
 
         Args:
-            key (str): Key value as string
-            value (bytes): Value as bytes
+            key (str): Abstract parameter
+            value (bytes): Abstract parameter
 
         Raises:
             NotImplementedError: Abstract method
@@ -208,7 +237,7 @@ class BaseStoreBuilder:
         Abstract method
 
         Args:
-            key (str): Key value as string
+            key (str): Abstract parameter
 
         Raises:
             NotImplementedError: Abstract method
@@ -225,7 +254,7 @@ class BaseStoreBuilder:
         Abstract method
 
         Args:
-            key (str): Key value as string
+            key (str): Abstract parameter
 
         Raises:
             NotImplementedError: Abstract method
@@ -244,7 +273,7 @@ class BaseStoreBuilder:
             DO NOT USE THIS FUNCTION, IT ONLY CALLED BY CONSUMER FOR GLOBAL STORE CONSTRUCTION
 
         Args:
-            key (str): Key value as string
+            key (str): Key of value as string
             value (bytes): Value as bytes
 
         Raises:
@@ -264,7 +293,7 @@ class BaseStoreBuilder:
             DO NOT USE THIS FUNCTION, IT ONLY CALLED BY CONSUMER FOR GLOBAL STORE CONSTRUCTION
 
         Args:
-            key (str): Key value as string
+            key (str): Key of value as string
 
         Raises:
             NotImplementedError: Abstract method
@@ -274,14 +303,13 @@ class BaseStoreBuilder:
         """
         raise NotImplementedError
 
-    async def update_metadata_from_global_store(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_from_global_store(self, positioning: BasePositioning) -> None:
         """ Update global store metadata
 
         Abstract method
 
         Args:
-            tp (TopicPartition): Topic / Partition (see kafka-python for more details)
-            offset (int): Current offset
+            positioning (BasePositioning) : Positioning class / contain topic / partition / offset
 
         Raises:
             NotImplementedError: Abstract method
