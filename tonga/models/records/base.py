@@ -10,8 +10,7 @@ This class contain some base attribute for more details read class docstring
 """
 
 import uuid
-from datetime import datetime as py_datetime
-from datetime import timezone
+from datetime import (datetime, timezone)
 
 from typing import Dict, Any
 
@@ -19,7 +18,6 @@ from tonga.utils.gen_correlation_id import gen_correlation_id
 
 __all__ = [
     'BaseRecord',
-    'BaseStoreRecord'
 ]
 
 
@@ -34,8 +32,6 @@ class BaseRecord:
         partition_key (str): Should be a key determining to which partition your record will be assigned.
                              Records with the same *partition_key* value are guaranteed to be written to
                              the same partition. This field can, for instance, be derived from the aggregate ID.
-        timestamp (int): UNIX timestamp in milliseconds, which is easy to read for machines.
-        datetime (str): ISO-8601-encoded string, which is human readable, therefore useful for debugging purposes.
         correlation_id (str): An identifier that should be propagated across every call through the entire system.
                               The purpose of this identifier is to track the waterfall of actions triggered by a unique
                               upstream event. This is mainly used for debugging purposes.
@@ -60,14 +56,12 @@ class BaseRecord:
     schema_version: str
     record_id: str
     partition_key: str
-    timestamp: int
-    datetime: str
+    date: datetime
     correlation_id: str
     context: Dict[str, Any]
 
     def __init__(self, record_id: str = None, schema_version: str = None, partition_key: str = None,
-                 correlation_id: str = None, datetime: str = None, timestamp: int = None,
-                 context: Dict[str, Any] = None) -> None:
+                 correlation_id: str = None, date: datetime = None, context: Dict[str, Any] = None) -> None:
         """ BaseRecord constructor
 
         Args:
@@ -78,11 +72,13 @@ class BaseRecord:
             partition_key (str): Should be a key determining to which partition your record will be assigned.
                                  Records with the same *partition_key* value are guaranteed to be written to
                                  the same partition. This field can, for instance, be derived from the aggregate ID.
-            timestamp (int): UNIX timestamp in milliseconds, which is easy to read for machines.
-            datetime (str): ISO-8601-encoded string, which is human readable, therefore useful for debugging purposes.
             correlation_id (str): An identifier that should be propagated across every call through the entire system.
                                   The purpose of this identifier is to track the waterfall of actions triggered
                                   by a unique upstream event. This is mainly used for debugging purposes.
+            date (datetime): Python datetime, when base_dict was call date was split into two variable,
+                            (*timestamp* UNIX timestamp in milliseconds, which is easy to read for machines)
+                            (*datetime* ISO-8601-encoded string, which is human readable, therefore useful for
+                            debugging purposes.)
             context (Dict[str, Any]): Somewhat similar to *correlation_id* in its implementation, because it
                                       should propagate to all downstream records. At each step, *context* can be
                                       completed with additional data, relevant to actions that were taken.
@@ -121,20 +117,32 @@ class BaseRecord:
         else:
             self.correlation_id = correlation_id
 
-        if timestamp is None:
-            self.timestamp = round(py_datetime.now(timezone.utc).timestamp()*1000)
+        if date is None:
+            self.date = datetime.now(timezone.utc)
         else:
-            self.timestamp = timestamp
-
-        if datetime is None:
-            self.datetime = py_datetime.now(timezone.utc).isoformat()
-        else:
-            self.datetime = datetime
+            self.date = date
 
         if context is None:
             self.context = dict()
         else:
             self.context = context
+
+    def base_dict(self) -> Dict[str, Any]:
+        """ Return base dict.
+
+        Returns:
+            Dict[str, Any]: Base dict contains (record_id, schema_version, partition_key, datetime,
+                                                timestamp, correlation_id, context)
+        """
+        return {
+            'record_id': self.record_id,
+            'schema_version': self.schema_version,
+            'partition_key': self.partition_key,
+            'datetime': self.date.isoformat(),
+            'timestamp': self.date.timestamp() * 1000,
+            'correlation_id': self.correlation_id,
+            'context': self.context
+        }
 
     @classmethod
     def event_name(cls) -> str:
@@ -148,97 +156,23 @@ class BaseRecord:
         """
         raise NotImplementedError
 
-    @classmethod
-    def from_data(cls, event_data: Dict[str, Any]):
-        """ Serialize dict to BaseRecord
-
-        Args:
-            event_data (Dict|str, Any]): Contains all BaseRecord Class attribute for return an instanced class
+    def to_dict(self) -> Dict[str, Any]:
+        """ Serialize BaseRecord to dict
 
         Raises:
             NotImplementedError: Abstract def
 
         Returns:
-            None
-        """
-        raise NotImplementedError
-
-
-class BaseStoreRecord:
-    """ Base of all StoreRecord
-
-    Attributes:
-        schema_version (str): Includes the schema version of the record, it helps to keep applications compatible
-                              with older records in the system
-        timestamp (int): UNIX timestamp in milliseconds, which is easy to read for machines.
-        datetime (string): ISO-8601-encoded string, which is human readable, therefore useful for debugging purposes.
-        key (str): Should be a key determining to which partition your record will be assigned.
-                   Records with the same *key* value are guaranteed to be written to the same partition and by used for
-                   Kafka compaction. Use an UUID for store value
-        ctype (str): Record type (possible value *set* / *del*)
-        value (bytes): Record value as bytes format
-    """
-    schema_version: str
-    timestamp: int
-    datetime: str
-    key: str
-    ctype: str
-    value: bytes
-
-    def __init__(self, key: str, ctype: str, value: bytes, schema_version: str = None,
-                 datetime: str = None, timestamp: int = None) -> None:
-        """ BaseStoreRecord constructor
-
-        Args:
-            key (str): Should be a key determining to which partition your record will be assigned.
-                       Records with the same *key* value are guaranteed to be written to the same partition and by used
-                       for Kafka compaction. Use an UUID for store value
-            ctype (str): Record type (possible value set/del)
-            value (bytes): Record value as bytes format
-            schema_version (str): Includes the schema version of the record, it helps to keep applications compatible
-                                  with older records in the system
-            datetime (str): ISO-8601-encoded string, which is human readable, therefore useful for debugging purposes.
-            timestamp (int): UNIX timestamp in milliseconds, which is easy to read for machines.
-
-        Returns:
-            None
-        """
-        if schema_version is None:
-            self.schema_version = '0.0.0'
-        else:
-            self.schema_version = schema_version
-
-        if timestamp is None:
-            self.timestamp = round(py_datetime.now(timezone.utc).timestamp() * 1000)
-        else:
-            self.timestamp = timestamp
-
-        if datetime is None:
-            self.datetime = py_datetime.now(timezone.utc).isoformat()
-        else:
-            self.datetime = datetime
-        self.key = key
-        self.ctype = ctype
-        self.value = value
-
-    @classmethod
-    def event_name(cls) -> str:
-        """ Return store record Class name, used by serializer
-
-        Raises:
-            NotImplementedError: Abstract def
-
-        Returns:
-            None
+            Dict[str, Any]: class in dict format
         """
         raise NotImplementedError
 
     @classmethod
-    def from_data(cls, event_data: Dict[str, Any]):
-        """ Serialize dict to StoreRecord
+    def from_dict(cls, dict_data: Dict[str, Any]):
+        """ Deserialize dict to BaseRecord
 
         Args:
-            event_data (Dict|str, Any]): Contains all StoreRecord Class attribute for return an instanced class
+            dict_data (Dict|str, Any]): Contains all BaseRecord Class attribute for return an instanced class
 
         Raises:
             NotImplementedError: Abstract def
