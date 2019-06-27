@@ -8,7 +8,7 @@ Import all tonga exceptions
 """
 
 # Import StoreRecord exceptions
-from tonga.models.handlers.store.errors import UnknownStoreRecordType
+from tonga.models.store.errors import UnknownStoreRecordType
 
 # Import BaseCommand exceptions
 from tonga.models.records.command.errors import CommandEventMissingProcessGuarantee
@@ -42,11 +42,11 @@ from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated,
                                  StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
 
 # Import StoreBuilder exceptions
-from tonga.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
+from tonga.stores.manager.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
 
 # Import KafkaClient exceptions
-from tonga.services.coordinator.kafka_client.errors import (BadArgumentKafkaClient, KafkaClientConnectionErrors,
-                                                            KafkaAdminConfigurationError, CurrentInstanceOutOfRange)
+from tonga.services.coordinator.client.errors import (BadArgumentKafkaClient, KafkaClientConnectionErrors,
+                                                      KafkaAdminConfigurationError, CurrentInstanceOutOfRange)
 
 __all__ = [
     # StoreRecord exceptions
