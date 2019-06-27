@@ -2,6 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contain all KafkaClient errors
+"""
+
 from kafka.errors import KafkaConfigurationError
 
 __all__ = [
