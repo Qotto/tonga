@@ -515,7 +515,7 @@ known-third-party=enchant
 max-args=15
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=20
+max-attributes=22
 
 # Maximum number of boolean expressions in an if statement.
 max-bool-expr=5

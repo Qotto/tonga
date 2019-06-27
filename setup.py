@@ -21,10 +21,10 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[
-        'avro-python3==1.9.0',
-        'pyyaml==5.1',
-        'aiokafka==0.5.1',
-        'kafka-python==1.4.6'
+        'avro-python3>=1.9.0',
+        'pyyaml>=5.1',
+        'aiokafka>=0.5.2',
+        'kafka-python>=1.4.6'
     ],
     classifiers=[
         'Intended Audience :: Developers',
