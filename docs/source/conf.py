@@ -17,12 +17,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../../"))
 
 # -- Project information -----------------------------------------------------
 
-project = 'tonga'
+project = 'Tonga'
 copyright = '2019, Qotto'
 author = 'Qotto'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.0.2'
 
 # Master doc
 master_doc = 'index'
@@ -44,7 +44,7 @@ extensions = [
 napoleon_google_docstring = True
 napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = True
-napoleon_include_private_with_doc = True
+napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = True
 napoleon_use_admonition_for_examples = True
 napoleon_use_admonition_for_notes = True
