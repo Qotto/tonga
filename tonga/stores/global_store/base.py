@@ -7,11 +7,11 @@
 All global store must be inherit form this class
 """
 
-from typing import Dict, Any, List
+from typing import Dict, List, Type
 
-from aiokafka import TopicPartition
-
-from tonga.stores.base import BaseStores, BaseStoreMetaData
+from tonga.models.structs.positioning import BasePositioning
+from tonga.stores.base import BaseStores
+from tonga.stores.metadata.base import BaseStoreMetaData
 
 __all__ = [
     'BaseGlobalStore',
@@ -21,18 +21,17 @@ __all__ = [
 class BaseGlobalStore(BaseStores):
     """ Base of all global store
     """
-    async def set_store_position(self, current_instance: int, nb_replica: int,
-                                 assigned_partitions: List[TopicPartition],
-                                 last_offsets: Dict[TopicPartition, int]) -> None:
+
+    def set_metadata_class(self, store_metadata_class: Type[BaseStoreMetaData]) -> None:
+        raise NotImplementedError
+
+    async def set_store_position(self, store_metadata: BaseStoreMetaData) -> None:
         """ Set store position (consumer offset)
 
         Abstract method
 
         Args:
-            current_instance (int): Project current instance
-            nb_replica (int): Number of project replica
-            assigned_partitions (List[TopicPartition]): List of assigned partition
-            last_offsets (Dict[TopicPartition, int]): List of last offsets consumed by store
+            store_metadata (BaseStoreMetaData): Store metadata
 
         Raises:
             NotImplementedError: Abstract method
@@ -71,7 +70,7 @@ class BaseGlobalStore(BaseStores):
         """
         raise NotImplementedError
 
-    async def get(self, key: str) -> Any:
+    async def get(self, key: str) -> bytes:
         """ Get value by key
 
         Abstract method
@@ -150,17 +149,11 @@ class BaseGlobalStore(BaseStores):
         """
         raise NotImplementedError
 
-    async def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
+    async def update_metadata_tp_offset(self, positioning: BasePositioning) -> None:
         """ Update store metadata
 
-        Abstract method
-
         Args:
-            tp (TopicPartition): Kafka topic partition
-            offset (int): Kafka offset
-
-        Raises:
-            NotImplementedError: Abstract method
+            positioning (BasePositioning): Contains topic name / current partition / current offset
 
         Returns:
             None
