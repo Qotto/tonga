@@ -2,9 +2,15 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-"""
-Attributes:
-    AVRO_SCHEMA_FILE_EXTENSION (str): Constant for Avro schema file extension (default : *avsc.yaml*)
+""" AvroSerializer class
+
+Serialize / Deserialize record to avro schema
+
+Note:
+    In schemas folder your avro file must have the *avsc.yaml* extension
+
+Todo:
+    * Remove workaround in constructor (os.path ...)
 """
 
 import json
@@ -17,11 +23,12 @@ from typing import Dict, Any, Union, Type
 from avro.datafile import DataFileWriter, DataFileReader
 from avro.io import DatumWriter, DatumReader, AvroTypeException
 from avro.schema import NamedSchema, Parse
-from yaml import FullLoader, load_all  # type: ignore
+from yaml import (FullLoader, load_all)  # type: ignore
 
-from tonga.models.records.base import BaseRecord, BaseStoreRecord
 from tonga.models.handlers.base import BaseHandler
-from tonga.models.handlers.base import BaseStoreRecordHandler
+from tonga.models.records.base import BaseRecord
+from tonga.models.store.base import BaseStoreRecordHandler
+from tonga.models.store.store_record import StoreRecord
 from tonga.services.serializer.errors import (AvroEncodeError, AvroDecodeError, AvroAlreadyRegister,
                                               NotMatchedName, MissingEventClass, MissingHandlerClass)
 from .base import BaseSerializer
@@ -36,18 +43,12 @@ AVRO_SCHEMA_FILE_EXTENSION: str = 'avsc.yaml'
 class AvroSerializer(BaseSerializer):
     """Class serializer Avro schema to class instance
 
-    Attributes:
-        logger (Logger): Serializer logger
-        schemas_folder (Dict[str, NamedSchema]): Dict store all Avro schema after loading in schemas_folder
-        _events (Dict[object, Union[Type[BaseRecord], Type[BaseStoreRecord]]]): Dict where are stored BaseModel /
-                                                                               BaseStoreRecord class
-        _handlers (Dict[object, Union[BaseHandler, BaseStoreRecordHandler]]): Dict where are stored BaseHandler /
-                                                                               BaseStoreRecordHandler class
+    Serialize / Deserialize (BaseRecord & StoreRecord) to avro schema
     """
     logger: Logger
     schemas_folder: str
     _schemas: Dict[str, NamedSchema]
-    _events: Dict[object, Union[Type[BaseRecord], Type[BaseStoreRecord]]]
+    _events: Dict[object, Union[Type[BaseRecord], Type[StoreRecord]]]
     _handlers: Dict[object, Union[BaseHandler, BaseStoreRecordHandler]]
 
     def __init__(self, schemas_folder: str):
@@ -63,7 +64,6 @@ class AvroSerializer(BaseSerializer):
         """
         super().__init__()
         self.schemas_folder = schemas_folder
-        # TODO Remove workaround
         self.schemas_folder_lib = os.path.dirname(os.path.abspath(__file__)) + '/../../models/avro_schema'
         self.logger = getLogger('tonga')
         self._schemas = dict()
@@ -112,7 +112,7 @@ class AvroSerializer(BaseSerializer):
                     raise AvroAlreadyRegister
                 self._schemas[schema_name] = avro_schema
 
-    def register_event_handler_store_record(self, store_record_event: Type[BaseStoreRecord],
+    def register_event_handler_store_record(self, store_record_event: Type[StoreRecord],
                                             store_record_handler: BaseStoreRecordHandler) -> None:
         """ Register project event & handler in AvroSerializer
 
@@ -166,7 +166,7 @@ class AvroSerializer(BaseSerializer):
         """
         return self._schemas
 
-    def get_events(self) -> Dict[object, Union[Type[BaseRecord], Type[BaseStoreRecord]]]:
+    def get_events(self) -> Dict[object, Union[Type[BaseRecord], Type[StoreRecord]]]:
         """ Return _events class attributes
 
         Returns:
@@ -206,7 +206,7 @@ class AvroSerializer(BaseSerializer):
         try:
             output = BytesIO()
             writer = DataFileWriter(output, DatumWriter(), schema)
-            writer.append(obj.__dict__)
+            writer.append(obj.to_dict())
             writer.flush()
             encoded_event = output.getvalue()
             writer.close()
@@ -215,7 +215,7 @@ class AvroSerializer(BaseSerializer):
             raise AvroEncodeError
         return encoded_event
 
-    def decode(self, encoded_obj: Any) -> Dict[str, Union[BaseRecord, BaseStoreRecord,
+    def decode(self, encoded_obj: Any) -> Dict[str, Union[BaseRecord, StoreRecord,
                                                           BaseHandler, BaseStoreRecordHandler]]:
         """ Decode bytes format to BaseModel and return dict which contains decoded *BaseModel / BaseStoreRecord*
 
@@ -237,7 +237,7 @@ class AvroSerializer(BaseSerializer):
             reader = DataFileReader(BytesIO(encoded_obj), DatumReader())
             schema = json.loads(reader.meta.get('avro.schema').decode('utf-8'))
             schema_name = schema['namespace'] + '.' + schema['name']
-            event_data = next(reader)
+            dict_data = next(reader)
         except AvroTypeException as err:
             self.logger.exception('%s', err.__str__())
             raise AvroDecodeError
@@ -245,7 +245,7 @@ class AvroSerializer(BaseSerializer):
         # Finds a matching event name
         for e_name, event in self._events.items():
             if e_name.match(schema_name):  # type: ignore
-                event_class = event
+                record_class = event
                 break
         else:
             raise MissingEventClass
@@ -257,4 +257,4 @@ class AvroSerializer(BaseSerializer):
                 break
         else:
             raise MissingHandlerClass
-        return {'event_class': event_class.from_data(event_data=event_data), 'handler_class': handler_class}
+        return {'record_class': record_class.from_dict(dict_data=dict_data), 'handler_class': handler_class}
