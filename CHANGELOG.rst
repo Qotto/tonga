@@ -96,6 +96,7 @@ Changelog
     - KafkaConsumer crash (without group_id and try to seek committed)
     - KafkaConsumer & KafkaStoreManager bug (Fail to init store if topic / partition have only one record)
     - Tests (new concept adaptation)
+    - Possible circular import
 
 0.0.2 (2019-06-05)
 ^^^^^^^^^^^^^^^^^^
