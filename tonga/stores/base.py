@@ -12,136 +12,19 @@ an BaseStoreMetaData but this one was never send in Kafka. Used by store or deve
 
 import logging
 from logging import Logger
-from typing import Dict, Any, List
+from abc import ABCMeta, abstractmethod
 
-from aiokafka import TopicPartition
+from typing import Dict, Type
 
-from tonga.stores.errors import StorePartitionAlreadyAssigned, StorePartitionNotAssigned
+from tonga.stores.metadata.base import BaseStoreMetaData
+from tonga.models.structs.positioning import BasePositioning
 
 __all__ = [
     'BaseStores',
-    'BaseStoreMetaData',
 ]
 
 
-class BaseStoreMetaData:
-    """ Store positioning class
-
-    Attributes:
-        assigned_partitions (List[TopicPartition]): List of assigned partition
-        current_instance (int): Project current instance
-        nb_replica (int): Number of project replica
-        last_offsets (Dict[TopicPartition, int]): List of last offsets consumed by store
-    """
-    assigned_partitions: List[TopicPartition]
-    current_instance: int
-    nb_replica: int
-    last_offsets: Dict[TopicPartition, int]
-
-    def __init__(self, assigned_partitions: List[TopicPartition], last_offsets: Dict[TopicPartition, int],
-                 current_instance: int, nb_replica: int) -> None:
-        """ BaseStoreMetaData constructor
-
-        Args:
-            assigned_partitions (List[TopicPartition]): List of assigned partition
-            current_instance (int): Project current instance
-            nb_replica (int): Number of project replica
-            last_offsets (Dict[TopicPartition, int]): List of last offsets consumed by store
-
-        Returns:
-            None
-        """
-        self.assigned_partitions = assigned_partitions
-        self.current_instance = current_instance
-        self.nb_replica = nb_replica
-        self.last_offsets = last_offsets
-
-    def update_last_offsets(self, tp: TopicPartition, offset: int) -> None:
-        """ Update last offsets by TopicPartition
-
-        Args:
-            tp (TopicPartition): Kafka TopicPartition
-            offset (int): Kafka offset
-
-        Raises:
-            StorePartitionNotAssigned: raised when partition was not assigned
-
-        Returns:
-            None
-        """
-        if tp not in self.last_offsets:
-            raise StorePartitionNotAssigned
-        self.last_offsets[tp] = offset
-
-    def assign_partition(self, tp: TopicPartition) -> None:
-        """Assign partition by TopicPartition
-
-        Args:
-            tp (TopicPartition): Kafka TopicPartition
-
-        Raises:
-            StorePartitionAlreadyAssigned: raised when partition is already assigned
-
-        Returns:
-            None
-        """
-        if tp not in self.assigned_partitions:
-            self.assigned_partitions.append(tp)
-            self.last_offsets[tp] = 0
-        else:
-            raise StorePartitionAlreadyAssigned
-
-    def unassign_partition(self, tp: TopicPartition) -> None:
-        """Unassing partition by TopicPartition
-
-        Args:
-            tp (TopicPartition): Kafka TopicPartition
-
-        Raises:
-            StorePartitionNotAssigned: raised when partition was not assigned
-
-        Returns:
-            None
-        """
-        if tp in self.assigned_partitions:
-            self.assigned_partitions.remove(tp)
-            del self.last_offsets[tp]
-        raise StorePartitionNotAssigned
-
-    def to_dict(self) -> Dict[str, Any]:
-        """ Return class as dict
-
-        Returns:
-            Dict[str, Any]: class as dict format
-        """
-        return {
-            'assigned_partitions': [{'topic': tp.topic, 'partition': tp.partition} for tp in self.assigned_partitions],
-            'current_instance': self.current_instance,
-            'nb_replica': self.nb_replica,
-            'last_offsets': [{'topic': tp.topic, 'partition': tp.partition, 'offsets': key} for tp, key in
-                             self.last_offsets.items()]
-        }
-
-    @classmethod
-    def from_dict(cls, meta_dict: Dict[str, Any]):
-        """ Return class form dict
-
-        Args:
-            meta_dict (Dict[str, Any]): Metadata class as dict format
-
-        Returns:
-            BaseStoreMetaData: return instanced class
-        """
-        assigned_partitions = [TopicPartition(tp['topic'], tp['partition']) for tp in
-                               meta_dict['assigned_partitions']]
-        last_offsets = {}
-        for tp in meta_dict['last_offsets']:
-            last_offsets[TopicPartition(tp['topic'], tp['partition'])] = tp['offsets']
-        return cls(assigned_partitions=assigned_partitions, last_offsets=last_offsets,
-                   current_instance=meta_dict['current_instance'], nb_replica=meta_dict['nb_replica'])
-
-
-class BaseStores:
+class BaseStores(metaclass=ABCMeta):
     """ Base of all stores
 
     Attributes:
@@ -163,18 +46,18 @@ class BaseStores:
         self._name = name
         self._logger = logging.getLogger('tonga')
 
-    async def set_store_position(self, current_instance: int, nb_replica: int,
-                                 assigned_partitions: List[TopicPartition],
-                                 last_offsets: Dict[TopicPartition, int]) -> None:
+    @abstractmethod
+    def set_metadata_class(self, store_metadata_class: Type[BaseStoreMetaData]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def set_store_position(self, store_metadata: BaseStoreMetaData) -> None:
         """ Set store position (consumer offset)
 
         Abstract method
 
         Args:
-            current_instance (int): Project current instance
-            nb_replica (int): Number of project replica
-            assigned_partitions (List[TopicPartition]): List of assigned partition
-            last_offsets (Dict[TopicPartition, int]): List of last offsets consumed by store
+            store_metadata (BaseStoreMetaData): Store metadata
 
         Raises:
             NotImplementedError: Abstract method
@@ -184,6 +67,7 @@ class BaseStores:
         """
         raise NotImplementedError
 
+    @abstractmethod
     def is_initialized(self) -> bool:
         """ Return store state
 
@@ -197,6 +81,7 @@ class BaseStores:
         """
         raise NotImplementedError
 
+    @abstractmethod
     def set_initialized(self, initialized: bool) -> None:
         """Set store state
 
@@ -213,13 +98,14 @@ class BaseStores:
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def get(self, key: str) -> bytes:
         """ Get value by key
 
         Abstract method
 
         Args:
-            key (str): Value key as string
+            key (str): Value key abstract param
 
         Raises:
             NotImplementedError: Abstract method
@@ -229,6 +115,7 @@ class BaseStores:
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def get_all(self) -> Dict[str, bytes]:
         """ Get all value in store in dict
 
@@ -242,23 +129,19 @@ class BaseStores:
         """
         raise NotImplementedError
 
-    async def update_metadata_tp_offset(self, tp: TopicPartition, offset: int) -> None:
+    @abstractmethod
+    async def update_metadata_tp_offset(self, positioning: BasePositioning) -> None:
         """ Update store metadata
 
-        Abstract method
-
         Args:
-            tp (TopicPartition): Kafka topic partition
-            offset (int): Kafka offset
-
-        Raises:
-            NotImplementedError: Abstract method
+            positioning (BasePositioning): Contains topic name / current partition / current offset
 
         Returns:
             None
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         """ Set store metadata
 
@@ -276,6 +159,7 @@ class BaseStores:
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def get_metadata(self) -> BaseStoreMetaData:
         """ Return store metadata class
 
@@ -289,6 +173,7 @@ class BaseStores:
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def _update_metadata(self) -> None:
         """ Store metadata in db
 
@@ -302,6 +187,7 @@ class BaseStores:
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def flush(self) -> None:
         """ Flush store
 
