@@ -6,18 +6,16 @@
 
 Global Store in memory save key / value in a dict. Fast DB, but no persistence, At each start, it will have to rebuild
 own global store before being available
-
 """
 
 import ast
-from typing import Dict, Any, List, Union
+from typing import Dict, Any, List, Union, Type
 
-from aiokafka import TopicPartition
-
+from tonga.models.structs.positioning import BasePositioning
 from tonga.services.coordinator.partitioner.errors import BadKeyType
-from tonga.stores.base import BaseStoreMetaData
 from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated)
-from tonga.stores.globall.base import BaseGlobalStore
+from tonga.stores.global_store.base import BaseGlobalStore
+from tonga.stores.metadata.base import BaseStoreMetaData
 from tonga.utils.decorator import check_initialized
 
 
@@ -40,10 +38,11 @@ class GlobalStoreMemory(BaseGlobalStore):
     _current_instance: int
     _nb_replica: int
 
-    _assigned_partitions: List[TopicPartition]
-    _last_offsets: Dict[TopicPartition, int]
+    _assigned_partitions: List[BasePositioning]
+    _last_offsets: Dict[str, BasePositioning]
 
     _initialized: bool
+    _store_metadata_class: Type[BaseStoreMetaData]
 
     def __init__(self, **kwargs) -> None:
         """GlobalStoreMemory constructor
@@ -68,27 +67,25 @@ class GlobalStoreMemory(BaseGlobalStore):
         self._assigned_partitions = list()
         self._last_offsets = dict()
 
-    async def set_store_position(self, current_instance: int, nb_replica: int,
-                                 assigned_partitions: List[TopicPartition],
-                                 last_offsets: Dict[TopicPartition, int]) -> None:
+    def set_metadata_class(self, store_metadata_class: Type[BaseStoreMetaData]):
+        self._store_metadata_class = store_metadata_class
+
+    async def set_store_position(self, store_metadata: BaseStoreMetaData) -> None:
         """ Set store position (consumer offset)
 
         Args:
-            current_instance (int): Project current instance
-            nb_replica (int): Number of project replica
-            assigned_partitions (List[TopicPartition]): List of assigned partition
-            last_offsets (Dict[TopicPartition, int]): List of last offsets consumed by store
+            store_metadata (BaseStoreMetaData): Store metadata
 
         Returns:
             None
         """
-        self._assigned_partitions = assigned_partitions
-        self._last_offsets = last_offsets
-        self._nb_replica = nb_replica
-        self._current_instance = current_instance
+        self._assigned_partitions = store_metadata.assigned_partitions
+        self._last_offsets = store_metadata.last_offsets
+        self._nb_replica = store_metadata.nb_replica
+        self._current_instance = store_metadata.current_instance
 
-        self._store_metadata = BaseStoreMetaData(self._assigned_partitions, self._last_offsets, self._current_instance,
-                                                 self._nb_replica)
+        self._store_metadata = store_metadata
+
         await self._update_metadata()
 
     def set_initialized(self, initialized: bool) -> None:
@@ -179,6 +176,28 @@ class GlobalStoreMemory(BaseGlobalStore):
             raise StoreKeyNotFound
         del self._db[key]
 
+    async def update_metadata_tp_offset(self, positioning: BasePositioning) -> None:
+        """ Update store metadata
+
+        Args:
+            positioning (BasePositioning): Contains topic name / current partition / current offset
+
+        Returns:
+            None
+        """
+        self._store_metadata.update_last_offsets(positioning)
+        await self._update_metadata()
+
+    async def get_metadata(self) -> BaseStoreMetaData:
+        """ Return store metadata class
+
+        Returns:
+            BaseStoreMetaData: return positioning class
+        """
+        if 'metadata' not in self._db:
+            raise StoreKeyNotFound
+        return self._store_metadata_class.from_dict(ast.literal_eval(self._db['metadata'].decode('utf-8')))
+
     async def set_metadata(self, metadata: BaseStoreMetaData) -> None:
         """ Set store metadata
 
@@ -190,27 +209,6 @@ class GlobalStoreMemory(BaseGlobalStore):
 
         """
         self._db['metadata'] = bytes(str(metadata.to_dict()), 'utf-8')
-
-    async def get_metadata(self) -> BaseStoreMetaData:
-        """ Return store metadata class
-
-        Returns:
-            BaseStoreMetaData: return positioning class
-        """
-        return BaseStoreMetaData.from_dict(ast.literal_eval(self._db['metadata'].decode('utf-8')))
-
-    async def update_metadata_tp_offset(self, tp: TopicPartition, offset: int):
-        """ Update store metadata
-
-        Args:
-            tp (TopicPartition): Kafka topic partition
-            offset (int): Kafka offset
-
-        Returns:
-            None
-        """
-        self._store_metadata.update_last_offsets(tp, offset)
-        await self._update_metadata()
 
     async def _update_metadata(self) -> None:
         """ Store metadata in db
