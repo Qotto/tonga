@@ -2,55 +2,35 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import asyncio
-from aiokafka import TopicPartition
-
-from typing import Optional
-
-# Import BaseEvent
-from tonga.models.records.event import BaseEvent
 # Import BaseEventHandler
 from tonga.models.handlers.event.event_handler import BaseEventHandler
 # Import StoreBuilderBase
-from tonga.stores.store_builder.base import BaseStoreBuilder
-# Import BaseProducer
-from tonga.services.producer.base import BaseProducer
+from tonga.stores.manager.kafka_store_manager import KafkaStoreManager
 
+# Import TransactionManager
+from examples.coffee_bar.waiter import transactional_manager
+# Import CoffeeFinished event model
+from examples.coffee_bar.waiter.models.events.coffee_finished import CoffeeFinished
 # Import Coffee Model
 from examples.coffee_bar.waiter.models.coffee import Coffee
 
 
 class CoffeeFinishedHandler(BaseEventHandler):
-    _store_builder: BaseStoreBuilder
-    _transactional_producer: BaseProducer
+    _store_builder: KafkaStoreManager
 
-    def __init__(self, store_builder: BaseStoreBuilder, transactional_producer: BaseProducer, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, store_builder: KafkaStoreManager):
         self._store_builder = store_builder
-        self._transactional_producer = transactional_producer
 
-    async def handle(self, event: BaseEvent, tp: TopicPartition, group_id: str, offset: int) -> Optional[str]:
-        if not self._transactional_producer.is_running():
-            await self._transactional_producer.start_producer()
+    @transactional_manager
+    async def handle(self, event: CoffeeFinished) -> None:
+        coffee = Coffee.__from_dict_bytes__(await self._store_builder.get_from_local_store(event.uuid))
 
-        async with self._transactional_producer.init_transaction():
-            # Creates commit_offsets dict
-            commit_offsets = {tp: offset + 1}
+        # Updates coffee
+        coffee.set_state('awaiting')
+        coffee.set_context(event.context)
 
-            # Gets coffee in local store
-            coffee = Coffee.__from_dict_bytes__(await self._store_builder.get_from_local_store(event.uuid))
-
-            # Updates coffee
-            coffee.set_state('awaiting')
-            coffee.set_context(event.context)
-
-            # Sets coffee in local store
-            await self._store_builder.set_from_local_store(event.uuid, coffee.__to_bytes_dict__())
-
-            # End transaction
-            await self._transactional_producer.end_transaction(commit_offsets, group_id)
-        # TODO raise an exception
-        return 'transaction'
+        # Sets coffee in local store
+        await self._store_builder.set_from_local_store(event.uuid, coffee.__to_bytes_dict__())
 
     @classmethod
     def handler_name(cls) -> str:
