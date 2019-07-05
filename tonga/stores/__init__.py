@@ -7,9 +7,8 @@
 Import Base Store / BaseStoreMetaData
 """
 
-from .base import BaseStores, BaseStoreMetaData
+from .base import BaseStores
 
 __all__ = [
     'BaseStores',
-    'BaseStoreMetaData',
 ]
