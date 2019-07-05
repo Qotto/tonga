@@ -22,8 +22,6 @@ from .services.consumer.kafka_consumer import KafkaConsumer
 from .services.coordinator.partitioner.key_partitioner import KeyPartitioner
 from .services.producer.kafka_producer import KafkaProducer
 from .services.serializer.avro import AvroSerializer
-from .stores.global_store.memory import GlobalStoreMemory
-from .stores.local_store.memory import LocalStoreMemory
 
 __all__ = [
     # KafkaConsumer / KafkaProducer
@@ -46,7 +44,4 @@ __all__ = [
     # StoreRecord / StoreRecordHandler
     'StoreRecord',
     'StoreRecordHandler',
-    # LocalStoreMemory / GlobalStoreMemory
-    'LocalStoreMemory',
-    'GlobalStoreMemory'
 ]
