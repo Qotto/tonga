@@ -7,9 +7,9 @@
 
 __all__ = [
     'StoreKeyNotFound',
-    'StoreMetadataCantNotUpdated',
     'StorePartitionAlreadyAssigned',
     'StorePartitionNotAssigned',
+    'BadEntryType'
 ]
 
 
@@ -20,10 +20,10 @@ class StoreKeyNotFound(Exception):
     """
 
 
-class StoreMetadataCantNotUpdated(Exception):
-    """StoreMetadataCantNotUpdated
+class BadEntryType(TypeError):
+    """StoreKeyNotFound
 
-    This error was raised when store can't update StoreMetadata
+    This error was raised when store not found value by key
     """
 
 
