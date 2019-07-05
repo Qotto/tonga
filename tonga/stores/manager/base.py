@@ -6,313 +6,197 @@
 
 All store manager must be inherit form this class
 """
-from asyncio import Future
+from asyncio import AbstractEventLoop
+from logging import Logger
+from abc import ABCMeta, abstractmethod
 
-from tonga.models.structs.positioning import BasePositioning
 from tonga.services.consumer.base import BaseConsumer
 from tonga.services.producer.base import BaseProducer
-from tonga.stores.global_store.base import BaseGlobalStore
-from tonga.stores.local_store.base import BaseLocalStore
+from tonga.services.coordinator.client.base import BaseClient
+from tonga.services.serializer.base import BaseSerializer
+from tonga.stores.local_store import LocalStore
+from tonga.stores.global_store import GlobalStore
+from tonga.models.structs.persistency_type import PersistencyType
 
 __all__ = [
     'BaseStoreManager'
 ]
 
 
-class BaseStoreManager:
+class BaseStoreManager(metaclass=ABCMeta):
     """ Base store manager, all store manager must be inherit form this class
     """
+    _local_store: LocalStore
+    _global_store: GlobalStore
+    _client: BaseClient
+    _serializer: BaseSerializer
+    _store_consumer: BaseConsumer
+    _store_producer: BaseProducer
+    _loop: AbstractEventLoop
+    _rebuild: bool
+    _persistency_type: PersistencyType
+    _logger: Logger
 
-    async def initialize_store_manager(self) -> None:
-        """ Initialize store manager, this function was call by consumer for init store manager and set StoreMetaData
-        Seek to last committed offset if store_metadata exist.
+    @abstractmethod
+    async def _initialize_stores(self) -> None:
+        """ This method initialize stores (construct, pre-build)
 
         Abstract method
 
-        Raises:
-            NotImplementedError: Abstract method
+        Returns:
+            NOne
+        """
+        raise NotImplementedError
+
+    def _initialize_local_store(self) -> None:
+        """ This protected method set local store initialize flag to true
 
         Returns:
             None
         """
-        raise NotImplementedError
+        self._local_store.get_persistency().__getattribute__('_set_initialize').__call__()
 
-    def return_consumer_task(self) -> Future:
-        """ Return consumer future
-
-        Returns:
-            Future: return consumer future task
-        """
-        raise NotImplementedError
-
-    def set_local_store_initialize(self, initialized: bool) -> None:
-        """Set local store initialized flag
-
-        Args:
-            initialized (bool): true for set local store initialized, otherwise false
+    def _initialize_global_store(self) -> None:
+        """ This protected method set global store initialize flag to true
 
         Returns:
             None
         """
-        raise NotImplementedError
+        self._global_store.get_persistency().__getattribute__('_set_initialize').__call__()
 
-    def set_global_store_initialize(self, initialized: bool) -> None:
-        """Set global store initialized flag
+    def get_local_store(self) -> LocalStore:
+        return self._local_store
 
-        Args:
-            initialized (bool): true for set global store initialized, otherwise false
+    def get_global_store(self) -> GlobalStore:
+        return self._global_store
 
-        Returns:
-            None
-        """
-        raise NotImplementedError
+    # Store function
+    @abstractmethod
+    async def set_entry_in_local_store(self, key: str, value: bytes) -> None:
+        """ Set an entry in local store
 
-    # Get stores
-    def get_local_store(self) -> BaseLocalStore:
-        """ Return local store instance
-
-        Abstract method
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            BaseLocalStore: local store instance
-        """
-        raise NotImplementedError
-
-    def get_global_store(self) -> BaseGlobalStore:
-        """ Return global store instance
-
-        Abstract method
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            BaseGlobalStore: global store instance
-        """
-        raise NotImplementedError
-
-    # Get info
-    def get_current_instance(self) -> int:
-        """ Return service current instance
-
-        Abstract method
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            int: service current instance
-        """
-        raise NotImplementedError
-
-    def is_event_sourcing(self) -> bool:
-        """ Return event sourcing value
-
-        Abstract method
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            int: true if event sourcing is enable, otherwise false
-        """
-        raise NotImplementedError
-
-    # Get producer & consumer
-    def get_producer(self) -> BaseProducer:
-        """ Return producer instance
-
-        Abstract method
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            BaseProducer: current producer instance
-        """
-        raise NotImplementedError
-
-    def get_consumer(self) -> BaseConsumer:
-        """ Return consumer instance
-
-        Abstract method
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            BaseConsumer: current consumer instance
-        """
-        raise NotImplementedError
-
-    # Functions for local store management
-    async def set_from_local_store(self, key: str, value: bytes) -> None:
-        """ Set key & value in local store
+        This method send an StoreRecord in event bus and store entry asynchronously
 
         Abstract method
 
         Args:
-            key (str): Key value as string
+            key (str): Key entry as string
             value (bytes): Value as bytes
 
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            Abstract method
-        """
-        raise NotImplementedError
-
-    async def get_from_local_store(self, key: str) -> bytes:
-        """ Get value by key in local store
-
-        Abstract method
-
-        Args:
-            key (str): Abstract param
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            Abstract method
-        """
-        raise NotImplementedError
-
-    async def delete_from_local_store(self, key: str) -> None:
-        """ Delete value from local store by key
-
-        Abstract method
-
-        Args:
-            key (key): Abstract parameter
-
-        Raises:
-            NotImplementedError: Abstract method
-
         Returns:
             None
         """
         raise NotImplementedError
 
-    async def update_metadata_from_local_store(self, positioning: BasePositioning) -> None:
-        """ Update local store metadata
+    @abstractmethod
+    async def get_entry_in_local_store(self, key: str) -> bytes:
+        """ Get an entry by key in local store
+
+        This method try to get an entry in local store asynchronously
 
         Abstract method
 
         Args:
-            positioning (BasePositioning) : Positioning class / contain topic / partition / offset
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            None
-        """
-        raise NotImplementedError
-
-    async def set_from_local_store_rebuild(self, key: str, value: bytes) -> None:
-        """ Set key & value in local store in rebuild mod
-
-        Abstract method
-
-        Args:
-            key (str): Abstract parameter
-            value (bytes): Abstract parameter
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            None
-        """
-        raise NotImplementedError
-
-    async def delete_from_local_store_rebuild(self, key: str) -> None:
-        """ Delete value by key in local store in rebuild mod
-
-        Abstract method
-
-        Args:
-            key (str): Abstract parameter
-
-        Raises:
-            NotImplementedError: Abstract method
-
-        Returns:
-            None
-        """
-        raise NotImplementedError
-
-    # Function for global store management
-    async def get_from_global_store(self, key: str) -> bytes:
-        """ Get value by key in global store
-
-        Abstract method
-
-        Args:
-            key (str): Abstract parameter
-
-        Raises:
-            NotImplementedError: Abstract method
+            key (str): Key entry as string
 
         Returns:
             bytes: return value as bytes
         """
         raise NotImplementedError
 
-    async def set_from_global_store(self, key: str, value: bytes) -> None:
-        """ Set key & value in global store
+    @abstractmethod
+    async def delete_entry_in_local(self, key: str) -> None:
+        """ Delete an entry in local store
+
+        This method send an StoreRecord in event bus and delete entry asynchronously
 
         Abstract method
 
-        Warnings:
-            DO NOT USE THIS FUNCTION, IT ONLY CALLED BY CONSUMER FOR GLOBAL STORE CONSTRUCTION
+        Args:
+            key (str): Key entry as string
+
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_entry_in_global_store(self, key: str) -> bytes:
+        """ Get an entry by key in global store
+
+        This method try to get an entry in global store asynchronously
+
+        Abstract method
 
         Args:
-            key (str): Key of value as string
+            key (str): Key entry as string
+
+        Returns:
+            bytes: return value as bytes
+        """
+        raise NotImplementedError
+
+    # Storage builder part
+    @abstractmethod
+    async def _build_set_entry_in_global_store(self, key: str, value: bytes) -> None:
+        """ Set an entry in global store
+
+        This protected method store an entry asynchronously
+
+        Abstract method
+
+        Args:
+            key (str): Key entry as string
             value (bytes): Value as bytes
 
-        Raises:
-            NotImplementedError: Abstract method
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def _build_delete_entry_in_global_store(self, key: str) -> None:
+        """ Delete an entry in global store
+
+        This method delete an entry asynchronously
+
+        Abstract method
+
+        Args:
+            key (str): Key entry as string
 
         Returns:
             None
         """
         raise NotImplementedError
 
-    async def delete_from_global_store(self, key: str) -> None:
-        """ Delete key & value in global store
+    @abstractmethod
+    async def _build_set_entry_in_local_store(self, key: str, value: bytes) -> None:
+        """ Set an entry in local store
+
+        This protected method store an entry asynchronously
 
         Abstract method
 
-        Warnings:
-            DO NOT USE THIS FUNCTION, IT ONLY CALLED BY CONSUMER FOR GLOBAL STORE CONSTRUCTION
-
         Args:
-            key (str): Key of value as string
-
-        Raises:
-            NotImplementedError: Abstract method
+            key (str): Key entry as string
+            value (bytes): Value as bytes
 
         Returns:
             None
         """
         raise NotImplementedError
 
-    async def update_metadata_from_global_store(self, positioning: BasePositioning) -> None:
-        """ Update global store metadata
+    @abstractmethod
+    async def _build_delete_entry_in_local_store(self, key: str) -> None:
+        """ Delete an entry in local store
+
+        This method delete an entry asynchronously
 
         Abstract method
 
         Args:
-            positioning (BasePositioning) : Positioning class / contain topic / partition / offset
-
-        Raises:
-            NotImplementedError: Abstract method
+            key (str): Key entry as string
 
         Returns:
             None
