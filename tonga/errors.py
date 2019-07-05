@@ -38,8 +38,7 @@ from tonga.services.serializer.errors import (AvroAlreadyRegister, AvroEncodeErr
                                               KeySerializerEncodeError)
 
 # Import LocalStore & GlobalStore exceptions
-from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated,
-                                 StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
+from tonga.stores.errors import (StoreKeyNotFound, StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
 
 # Import StoreBuilder exceptions
 from tonga.stores.manager.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
@@ -97,7 +96,6 @@ __all__ = [
     'KeySerializerEncodeError',
     # LocalStore & GlobalStore exceptions
     'StoreKeyNotFound',
-    'StoreMetadataCantNotUpdated',
     'StorePartitionAlreadyAssigned',
     'StorePartitionNotAssigned',
     # StoreBuilder exceptions
