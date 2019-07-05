@@ -26,21 +26,21 @@ class StoreRecordHandler(BaseStoreRecordHandler):
     """ StoreRecordHandler Class
 
     Attributes:
-        _store_builder (BaseStoreBuilder): Store builder class, used for build & maintain local & global store
+        _store_manager (BaseStoreBuilder): Store manager class, used for build & maintain local & global store
     """
-    _store_builder: BaseStoreManager
+    _store_manager: BaseStoreManager
 
-    def __init__(self, store_builder: BaseStoreManager) -> None:
+    def __init__(self, store_manager: BaseStoreManager) -> None:
         """ StoreRecordHandler constructor
 
         Args:
-            store_builder (BaseStoreBuilder): Store builder class, used for build & maintain local & global store
+            store_manager (BaseStoreBuilder): Store manager class, used for build & maintain local & global store
 
         Returns:
             None
         """
         super().__init__()
-        self._store_builder = store_builder
+        self._store_manager = store_manager
 
     @classmethod
     def handler_name(cls) -> str:
@@ -68,14 +68,14 @@ class StoreRecordHandler(BaseStoreRecordHandler):
 
         # Set or delete from local store
         if store_record.operation_type == StoreRecordType('set'):
-            await self._store_builder.set_from_local_store_rebuild(store_record.key, store_record.value)
+            await self._store_manager.set_from_local_store_rebuild(store_record.key, store_record.value)
         elif store_record.operation_type == StoreRecordType('del'):
-            await self._store_builder.delete_from_local_store_rebuild(store_record.key)
+            await self._store_manager.delete_from_local_store_rebuild(store_record.key)
         else:
             raise UnknownStoreRecordType
         # Update metadata from local store
         positioning.set_current_offset(positioning.get_current_offset() + 1)
-        await self._store_builder.update_metadata_from_local_store(positioning)
+        await self._store_manager.update_metadata_from_local_store(positioning)
 
     async def global_store_handler(self, store_record: StoreRecord, positioning: BasePositioning) -> None:
         """ This function is automatically call by Tonga when an BaseStore with same name was receive by consumer.
@@ -94,11 +94,11 @@ class StoreRecordHandler(BaseStoreRecordHandler):
 
         # Set or delete from global store
         if store_record.operation_type == StoreRecordType('set'):
-            await self._store_builder.set_from_global_store(store_record.key, store_record.value)
+            await self._store_manager.set_from_global_store(store_record.key, store_record.value)
         elif store_record.operation_type == StoreRecordType('del'):
-            await self._store_builder.delete_from_global_store(store_record.key)
+            await self._store_manager.delete_from_global_store(store_record.key)
         else:
             raise UnknownStoreRecordType
         # Update metadata from global store
         positioning.set_current_offset(positioning.get_current_offset() + 1)
-        await self._store_builder.update_metadata_from_global_store(positioning)
+        await self._store_manager.update_metadata_from_global_store(positioning)
