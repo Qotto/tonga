@@ -65,7 +65,7 @@ class KafkaConsumer(BaseConsumer):
     _retry_backoff_coeff: int
     _isolation_level: str
     _assignors_data: Dict[str, Any]
-    _store_builder: BaseStoreManager
+    _store_manager: BaseStoreManager
     _running: bool
     _kafka_consumer: AIOKafkaConsumer
     _transactional_manager: KafkaTransactionalManager
@@ -81,7 +81,7 @@ class KafkaConsumer(BaseConsumer):
                  loop: asyncio.AbstractEventLoop, client_id: str = None, group_id: str = None,
                  auto_offset_reset: str = 'earliest', max_retries: int = 10, retry_interval: int = 1000,
                  retry_backoff_coeff: int = 2, assignors_data: Dict[str, Any] = None,
-                 store_builder: BaseStoreManager = None, isolation_level: str = 'read_uncommitted',
+                 store_manager: BaseStoreManager = None, isolation_level: str = 'read_uncommitted',
                  transactional_manager: KafkaTransactionalManager = None) -> None:
         """
         KafkaConsumer constructor
@@ -102,7 +102,8 @@ class KafkaConsumer(BaseConsumer):
             retry_backoff_coeff (int): Backoff coeff for next retries
             assignors_data (Dict[str, Any]): Dict with assignors information, more details in
                                              StatefulsetPartitionAssignor
-            store_builder (bool): If this flag is step consumer run build_stores() otherwise listen_event was started
+            store_manager (BaseStoreManager): If this store_manager is set, consumer call initialize_store_manager()
+                                                otherwise listen_event was started
             isolation_level (str): Controls how to read messages written transactionally. If set to read_committed,
                                    will only return transactional messages which have been committed.
                                    If set to read_uncommitted, will return all messages, even transactional messages
@@ -142,7 +143,7 @@ class KafkaConsumer(BaseConsumer):
         self._retry_backoff_coeff = retry_backoff_coeff
         self._isolation_level = isolation_level
         self._assignors_data = assignors_data
-        self._store_builder = store_builder
+        self._store_manager = store_manager
         self._running = False
         self._loop = loop
 
@@ -468,6 +469,23 @@ class KafkaConsumer(BaseConsumer):
                         self.logger.error('Max retries, close consumer and exit')
                         exit(1)
 
+    async def _refresh_offsets(self) -> None:
+        """
+        This method refresh __current_offsets / __last_offsets / __last_committed_offsets
+
+        Returns:
+            None
+        """
+        self.logger.debug('Call refresh offsets')
+
+        self.__current_offsets = await self.get_current_offsets()
+        self.__last_offsets = await self.get_last_offsets()
+
+        if self._group_id is not None:
+            self.__last_committed_offsets = await self.get_last_committed_offsets()
+        else:
+            raise IllegalOperation
+
     async def check_if_store_is_ready(self) -> None:
         """ If store is ready consumer set store initialize flag to true
 
@@ -477,31 +495,28 @@ class KafkaConsumer(BaseConsumer):
 
         # Check if local store is initialize
         self.logger.info('Started check_if_store_is_ready')
-        if not self._store_builder.get_local_store().is_initialized():
-            local_store_metadata = await self._store_builder.get_local_store().get_metadata()
-            local_store_positioning = local_store_metadata.assigned_partitions[0]
-            if self.__last_offsets[local_store_positioning.make_assignment_key()].get_current_offset() == 0:
-                self._store_builder.get_local_store().set_initialized(True)
+        if not self._store_manager.get_local_store().get_persistency().is_initialize():
+            key = KafkaPositioning.make_class_assignment_key(self._store_manager.get_topic_store(),
+                                                             self._client.cur_instance)
+            if self.__last_offsets[key].get_current_offset() == 0:
+                self._store_manager.__getattribute__('_initialize_local_store').__call__()
                 self.logger.info('Local store was initialized')
-            elif local_store_metadata.last_offsets[local_store_positioning.make_assignment_key()].get_current_offset() \
-                    == (self.__last_offsets[local_store_positioning.make_assignment_key()].get_current_offset()):
-                self._store_builder.get_local_store().set_initialized(True)
+            elif self.__current_offsets[key].get_current_offset() == self.__last_offsets[key].get_current_offset():
+                self._store_manager.__getattribute__('_initialize_local_store').__call__()
                 self.logger.info('Local store was initialized')
 
         # Check if global store is initialize
-        if not self._store_builder.get_global_store().is_initialized():
-            global_store_metadata = await self._store_builder.get_global_store().get_metadata()
+        if not self._store_manager.get_global_store().get_persistency().is_initialize():
             for key, positioning in self.__last_offsets.items():
                 if self._client.cur_instance != positioning.get_partition():
                     if positioning.get_current_offset() == 0:
                         continue
-                    elif (positioning.get_current_offset()) == \
-                            global_store_metadata.last_offsets[positioning.make_assignment_key()].get_current_offset():
+                    elif positioning.get_current_offset() == self.__current_offsets[key].get_current_offset():
                         continue
                     else:
                         break
             else:
-                self._store_builder.get_global_store().set_initialized(True)
+                self._store_manager.__getattribute__('_initialize_global_store').__call__()
                 self.logger.info('Global store was initialized')
 
     async def listen_store_records(self, rebuild: bool = False) -> None:
@@ -514,18 +529,21 @@ class KafkaConsumer(BaseConsumer):
         Returns:
             None
         """
-        if self._store_builder is None:
+        if self._store_manager is None:
             raise KeyError
 
         self.logger.info('Start listen store records')
 
         await self.start_consumer()
-        await self._store_builder.initialize_store_manager()
+
+        await self._store_manager.__getattribute__('_initialize_stores').__call__()
 
         if not self._running:
             raise KafkaConsumerError('Fail to start tongaConsumer', 500)
 
         # Check if store is ready
+        await self._refresh_offsets()
+
         await self.check_if_store_is_ready()
         self.pprint_consumer_offsets()
 
@@ -554,26 +572,23 @@ class KafkaConsumer(BaseConsumer):
                                       record_class.event_name(), record_class.__dict__)
 
                     positioning = self.__current_offsets[positioning_key]
-                    if self._store_builder.get_current_instance() == msg.partition:
+                    if self._client.cur_instance == msg.partition:
                         # Calls local_state_handler if event is instance BaseStorageBuilder
-                        if rebuild and not self._store_builder.get_local_store().is_initialized():
+                        if rebuild and not self._store_manager.get_local_store().get_persistency().is_initialize():
                             if isinstance(record_class, StoreRecord):
                                 self.logger.debug('Call local_store_handler')
                                 await handler_class.local_store_handler(store_record=record_class,
                                                                         positioning=positioning)
                             else:
                                 raise UnknownStoreRecordHandler
-                    elif self._store_builder.get_current_instance() != msg.partition:
+                    elif self._client.cur_instance != msg.partition:
                         if isinstance(record_class, StoreRecord):
                             self.logger.debug('Call global_store_handler')
                             await handler_class.global_store_handler(store_record=record_class, positioning=positioning)
                         else:
                             raise UnknownStoreRecordHandler
 
-                    self.logger.info('Before next check store !')
-
                     # Check if store is ready
-
                     await self.check_if_store_is_ready()
 
                     # Break if everything was successfully processed
@@ -734,6 +749,13 @@ class KafkaConsumer(BaseConsumer):
                               positioning.get_topics(), positioning.get_partition(), positioning.get_current_offset())
         else:
             raise KafkaConsumerError
+
+    async def _make_manual_commit(self, to_commit: List[BasePositioning]):
+        commits = {}
+        for positioning in to_commit:
+            commits[positioning.to_topics_partition()] = positioning.get_current_offset()
+
+        await self._kafka_consumer.commit(commits)
 
     async def subscriptions(self) -> frozenset:
         """
