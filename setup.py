@@ -26,6 +26,7 @@ setup(
         'aiokafka>=0.5.2',
         'kafka-python>=1.4.6'
     ],
+    dependency_links=['git+git@github.com:twmht/python-rocksdb.git@48dd3b661b63abfdfc5a2ce262ded9a3215ecf5d#egg=python_rocksdb'],
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
