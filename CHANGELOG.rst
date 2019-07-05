@@ -16,11 +16,15 @@ Changelog
             + Transaction
                 - New concept BaseTransactionManager & BaseTransactionContext
                 - New class KafkaTransactionManager & KafkaTransactionContext
+            + Async Coordinator
+                - New async coordinator, used by stores for make some asynchronous task
     + Stores
         - New concept BaseStoreManager (Manage local & global store)
-        + Metadata
-            - New concept BaseStoreMetaData (Used by stores for message bus positioning)
-            - New class KafkaStoreMetaData (Used for save positioning values for kafka)
+        + Persistency
+            - Created BasePersistency
+            - Added MemoryPersistency
+            - Added ShelvePersistency
+            - Added RockDBPersistency
     + Models
         + Record
             - In BaseRecord two serialization abstract method (to_dict / from_dict) | new method base_dict (return base class in dict)
@@ -68,15 +72,13 @@ Changelog
             - BaseStoreManager inherit form ABCMeta
             - Renamed StoreBuilder to KafkaStoreManager
             - StoreManager constructor params (removed current_instance, nb_replica, bootstrap_server, cluster_metadata, cluster_admin)
-            - 'set_from_local_store' method from KafkaStoreManager await local store initialization
-            - 'get_from_local_store' method from KafkaStoreManager await local store initialization
-            - 'delete_from_local_store' method from KafkaStoreManager await local store initialization
+            - Full refactored LocalStore (Now is abstract class using Persistency layer)
+            - Full refactored GlobalStore (Now is abstract class using Persistency layer)
+            - Local & Global store sends StoreRecords in event bus, after received ack, stores create new asynchronous task for save records
         + Local & global
             - BaseStore inherit form ABCMeta
             - Renamed global store package (globall -> global_store)
             - Renamed local store package (local -> local_store)
-            - LocalStoreMemory is now compatible with all consumer (Abstract positioning)
-            - GlobalStoreMemory is now compatible with all consumer (Abstract positioning)
     + General
         - Update aiokafka version 0.5.1 -> 0.5.2
 
@@ -84,6 +86,9 @@ Changelog
     + Models
         - Removed store_record folder (moved in records / handlers)
         - Removed StoreRecordBase
+    + Store
+        - Removed old Memory LocalStore & GlobalStore
+        - Removed Store Metadata
     + General
         - Removed all privates variables from documentation
         - Removed all privates methods from documentation
