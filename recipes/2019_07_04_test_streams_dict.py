@@ -58,7 +58,7 @@ class BaseConsumer:
                 return coffee_machine_result[self.offset[topic] - 1]
 
 
-class StreamProcessor:
+class Stream:
     _topic: str
     _producer: BaseProducer
     _consumer: BaseConsumer
@@ -93,8 +93,8 @@ class StreamProcessor:
     #     asyncio.wait_for(self.stop(), loop=self._loop, timeout=5)
 
 
-class Streams:
-    _streams_list: Dict[str, StreamProcessor]
+class StreamsManager:
+    _streams_list: Dict[str, Stream]
 
     def __init__(self, topics: List[str], loop: AbstractEventLoop):
         self._producer = BaseProducer()
@@ -104,10 +104,16 @@ class Streams:
         self._streams_list = dict()
 
         for topic in topics:
-            self._streams_list[topic] = StreamProcessor(topic, self._producer, self._consumer, self._loop)
+            self._streams_list[topic] = Stream(topic, self._producer, self._consumer, self._loop)
 
     def __getitem__(self, topic):
         return self._streams_list[topic]
+
+    def get_stream(self, topic):
+        return self._streams_list[topic]
+
+    def get_streams_list(self, topic):
+        return self._streams_list
 
     async def start(self) -> None:
         await self._producer.start()
@@ -123,32 +129,33 @@ class Streams:
 
 
 class Bartender:
-    streams: Streams
+    streams_manager: StreamsManager
 
-    def __init__(self, streams: Streams) -> None:
-        self.streams = streams
+    def __init__(self, streams_manager: StreamsManager) -> None:
+        self.streams_manager = streams_manager
+
+    async def consume_bills(self) -> None:
+        async for bill in self.streams_manager['cash-register-events']:
+            await self.handle_coffee_asked(bill)
+            await self.streams_manager['cash-register-events'].commit()
+
+    async def consume_coffee_machine_result(self) -> None:
+        streams = self.streams_manager.get_streams_list()
+        async for coffee_machine_res in streams['coffee-machine-results']:
+            await self.handle_coffee_machine_result(coffee_machine_res)
+            await self.streams_manager['coffee-machine-results'].commit()
 
     async def handle_coffee_asked(self, record: BaseRecord) -> None:
         # Do stuff
         print('Call handler handle_coffee_asked')
         coffee_cmd = BaseRecord('coffee-machine-commands', record.i)
-        await self.streams['coffee-machine-commands'].publish(coffee_cmd)
+        await self.streams_manager['coffee-machine-commands'].publish(coffee_cmd)
 
     async def handle_coffee_machine_result(self, result: BaseRecord) -> None:
         # Do stuff
         print('Call handler handle_coffee_machine_result')
         coffee_finished = BaseRecord('bartender-coffee-finished', result.i)
-        await self.streams['bartender-events'].publish(coffee_finished)
-
-    async def consume_bills(self) -> None:
-        async for bills in self.streams['cash-register-events']:
-            await self.handle_coffee_asked(bills)
-            await self.streams['cash-register-events'].commit()
-
-    async def consume_coffee_machine_result(self) -> None:
-        async for coffee_machine_res in self.streams['coffee-machine-results']:
-            await self.handle_coffee_machine_result(coffee_machine_res)
-            await self.streams['coffee-machine-results'].commit()
+        await self.streams_manager['bartender-events'].publish(coffee_finished)
 
 
 if __name__ == '__main__':
@@ -161,7 +168,7 @@ if __name__ == '__main__':
     coffee_machine_result: List[BaseRecord] = list()
     bartender_event_records: List[BaseRecord] = list()
 
-    m_streams = Streams(['cash-register-events', 'bartender-events', 'coffee-machine-commands', 'coffee-machine-results'], rloop)
+    m_streams = StreamsManager(['cash-register-events', 'bartender-events', 'coffee-machine-commands', 'coffee-machine-results'], rloop)
 
     bartender = Bartender(m_streams)
 
