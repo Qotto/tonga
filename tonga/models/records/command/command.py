@@ -49,7 +49,7 @@ class BaseCommand(BaseRecord):
     """
     processing_guarantee: str
 
-    def __init__(self, processing_guarantee: str = None, **kwargs):
+    def __init__(self, processing_guarantee: str = None, **kwargs) -> None:
         """BaseCommand constructor
 
         Args:
