@@ -61,12 +61,41 @@ class BaseResult(BaseRecord):
         """
         raise NotImplementedError
 
+    def base_dict(self) -> Dict[str, Any]:
+        """ Return base dict.
+
+        Returns:
+            Dict[str, Any]: Base dict contains (record_id, schema_version, partition_key, datetime,
+                                                timestamp, correlation_id, context, error)
+        """
+        return {
+            'record_id': self.record_id,
+            'schema_version': self.schema_version,
+            'partition_key': self.partition_key,
+            'datetime': self.date.isoformat(),
+            'timestamp': self.date.timestamp() * 1000,
+            'correlation_id': self.correlation_id,
+            'context': self.context,
+            'error': self.error
+        }
+
+    def to_dict(self) -> Dict[str, Any]:
+        """ Serialize BaseRecord to dict
+
+        Raises:
+            NotImplementedError: Abstract def
+
+        Returns:
+            Dict[str, Any]: class in dict format
+        """
+        raise NotImplementedError
+
     @classmethod
-    def from_data(cls, event_data: Dict[str, Any]):
-        """ Serialize dict to result Class
+    def from_dict(cls, dict_data: Dict[str, Any]):
+        """ Deserialize dict to BaseRecord
 
         Args:
-            event_data (Dict|str, Any]): Contains all Event class attribute for return an instanced class
+            dict_data (Dict|str, Any]): Contains all BaseRecord Class attribute for return an instanced class
 
         Raises:
             NotImplementedError: Abstract def

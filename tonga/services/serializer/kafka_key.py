@@ -2,6 +2,11 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" KafkaKeySerializer
+
+Serialize string key to bytes & deserialize key in string
+"""
+
 from tonga.services.serializer.base import BaseSerializer
 from tonga.services.serializer.errors import KeySerializerDecodeError, KeySerializerEncodeError
 

@@ -8,3 +8,4 @@ Subpackages
 
     tonga.models.records
     tonga.models.handlers
+    tonga.models.store

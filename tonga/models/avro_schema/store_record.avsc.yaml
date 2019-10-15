@@ -10,7 +10,7 @@ fields:
   - name: timestamp
     doc: UNIX timestamp in milliseconds, when this record was generated
     type:
-      type: long
+      type: double
       logicalType: timestamp-millis
 
   - name: datetime
@@ -18,8 +18,8 @@ fields:
     type: string
 
   # specific fields
-  - name: ctype
-    doc: Record Type
+  - name: operation_type
+    doc: Record operation Type
     type: string
 
   - name: key

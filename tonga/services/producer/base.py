@@ -7,26 +7,23 @@
 All producer must be inherit form this class
 """
 
-from typing import Dict
-
-from aiokafka import TopicPartition
-from aiokafka.producer.message_accumulator import BatchBuilder
-from aiokafka.producer.producer import TransactionContext
+from abc import ABCMeta, abstractmethod
+from typing import Union, Awaitable, List, Dict
 
 from tonga.models.records.base import BaseRecord
+from tonga.models.store.store_record import StoreRecord
+from tonga.models.structs.positioning import BasePositioning
 
 __all__ = [
     'BaseProducer',
 ]
 
 
-class BaseProducer:
+class BaseProducer(metaclass=ABCMeta):
     """ BaseProducer all producer must be inherit form this class
     """
-    def __init__(self) -> None:
-        """ BaseProducer constructor
-        """
 
+    @abstractmethod
     async def start_producer(self) -> None:
         """
         Start producer
@@ -39,6 +36,7 @@ class BaseProducer:
         """
         raise NotImplementedError
 
+    @abstractmethod
     async def stop_producer(self) -> None:
         """
         Stop producer
@@ -51,6 +49,7 @@ class BaseProducer:
         """
         raise NotImplementedError
 
+    @abstractmethod
     def is_running(self) -> bool:
         """
         Get is running
@@ -63,12 +62,13 @@ class BaseProducer:
         """
         raise NotImplementedError
 
-    async def send_and_await(self, event: BaseRecord, topic: str) -> None:
+    @abstractmethod
+    async def send_and_wait(self, msg: Union[BaseRecord, StoreRecord], topic: str) -> BasePositioning:
         """
         Send a message and await an acknowledgments
 
         Args:
-            event (BaseModel): Event
+            msg (Union[BaseRecord, StoreRecord]): Event
             topic (str): topics name
 
         Raises:
@@ -79,57 +79,51 @@ class BaseProducer:
         """
         raise NotImplementedError
 
-    def create_batch(self) -> BatchBuilder:
+    @abstractmethod
+    async def send(self, msg: Union[BaseRecord, StoreRecord], topic: str) -> Awaitable:
         """
-        Creates an empty batch
-
-        Raises:
-            NotImplementedError: Abstract def
-
-        Returns:
-            BatchBuilder
-        """
-        raise NotImplementedError
-
-    async def send_batch(self, batch: BatchBuilder, topic: str, partition: int = 0) -> None:
-        """
-        Sends batch
+        Send a message and await an acknowledgments
 
         Args:
-            batch (BatchBuilder): Batch
-            topic (str): topic name
-            partition (int): partition number
-
-        Raises:
-            NotImplementedError: Abstract def
+            msg (Union[BaseRecord, StoreRecord]: Event to send in Kafka, inherit form BaseRecord
+            topic (str): Topic name to send massage
 
         Returns:
             None
         """
         raise NotImplementedError
 
-    def init_transaction(self) -> TransactionContext:
+    @abstractmethod
+    async def partitions_by_topic(self, topic: str) -> List[int]:
+        """
+        Get partitions by topic name
+
+        Args:
+            topic (str): topic name
+
+        Returns:
+            List[int]: list of partitions
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def init_transaction(self):
         """
         Sugar function, inits transaction
 
         Raises:
             NotImplementedError: Abstract def
-
-        Returns:
-            TransactionContext
         """
         raise NotImplementedError
 
-    async def end_transaction(self, committed_offsets: Dict[TopicPartition, int], group_id: str) -> None:
+    @abstractmethod
+    async def end_transaction(self, committed_offsets: Dict[str, BasePositioning], group_id: str) -> None:
         """
-        Sugar function, ends transaction
+        Ends transaction
 
         Args:
-            committed_offsets (Dict[TopicPartition, int]): Committed offsets during transaction
+            committed_offsets (Dict[str, BasePositioning]): Committed offsets during transaction
             group_id (str): Group_id to commit
-
-        Raises:
-            NotImplementedError: Abstract def
 
         Returns:
             None

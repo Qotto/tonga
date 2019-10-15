@@ -40,24 +40,16 @@ kafka-topics.sh --zookeeper localhost:2181 --delete --topic remove-me
 ````
 
 #### Topics for tox testing
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic test-store --partitions 4 --replication-factor 3
-
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic test-store --partitions 4 --replication-factor 3;
 kafka-topics --zookeeper 192.168.2.145:2181 --create --topic test-assignor --partitions 4 --replication-factor 3
 
 
 #### Topics for coffee bar example
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic waiter-events --partitions 2 --replication-factor 3
-
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic waiter-stores --partitions 2 --replication-factor 3
-
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic cash-register-events --partitions 2 --replication-factor 3
-
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic cash-register-stores --partitions 2 --replication-factor 3
-
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic bartender-events --partitions 2 --replication-factor 3
-
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic coffee-maker-events --partitions 2 --replication-factor 3
-
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic coffee-maker-commands --partitions 2 --replication-factor 3
-
-kafka-topics --zookeeper 192.168.2.145:2181 --create --topic coffee-maker-results --partitions 2 --replication-factor 3
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic waiter-events --partitions 2 --replication-factor 3;
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic waiter-stores --partitions 2 --replication-factor 3;
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic cash-register-events --partitions 2 --replication-factor 3;
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic cash-register-stores --partitions 2 --replication-factor 3;
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic bartender-events --partitions 2 --replication-factor 3;
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic coffee-maker-events --partitions 2 --replication-factor 3;
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic coffee-maker-commands --partitions 2 --replication-factor 3;
+kafka-topics --zookeeper 192.168.2.145:2181 --create --topic coffee-maker-results --partitions 2 --replication-factor 3;

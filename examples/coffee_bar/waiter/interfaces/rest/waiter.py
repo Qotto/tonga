@@ -23,7 +23,7 @@ async def coffee_new_order(request: Request) -> HTTPResponse:
         try:
             while True:
                 coffee = Coffee(**request.json)
-                if key_partitioner(coffee.uuid, [0, 1], [0, 1]) == request['waiter']['instance']:
+                if key_partitioner(coffee.uuid, [0, 1], [0, 1]) == request['waiter']['kafka_client'].cur_instance:
                     break
         except (KeyError, ValueError) as err:
             return response.json({'error': err, 'error_code': 500}, status=500)
@@ -32,7 +32,7 @@ async def coffee_new_order(request: Request) -> HTTPResponse:
         coffee_order = CoffeeOrdered(partition_key=coffee.uuid, **coffee.__to_dict__())
 
         # Send & await CoffeeOrdered
-        event_record_metadata = await request['waiter']['producer'].send_and_await(coffee_order, 'waiter-events')
+        event_record_metadata = await request['waiter']['producer'].send_and_wait(coffee_order, 'waiter-events')
 
         # Save coffee in own local store
         store_record_metedata = await request['waiter']['store_builder'].\
@@ -53,7 +53,7 @@ async def coffee_get_order(request: Request, uuid: str) -> HTTPResponse:
         coffee_served = CoffeeServed(partition_key=coffee.uuid, uuid=coffee.uuid, served_to=coffee.coffee_for,
                                      is_payed=True, amount=coffee.amount, context=coffee.context)
 
-        event_record_metadata = await request['waiter']['producer'].send_and_await(coffee_served, 'waiter-events')
+        event_record_metadata = await request['waiter']['producer'].send_and_wait(coffee_served, 'waiter-events')
 
         coffee.set_state('served')
 

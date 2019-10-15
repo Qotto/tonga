@@ -21,11 +21,12 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     install_requires=[
-        'avro-python3==1.9.0',
-        'pyyaml==5.1',
-        'aiokafka==0.5.1',
-        'kafka-python==1.4.6'
+        'avro-python3>=1.9.0',
+        'pyyaml>=5.1',
+        'aiokafka>=0.5.2',
+        'kafka-python>=1.4.6'
     ],
+    dependency_links=['git+git@github.com:twmht/python-rocksdb.git@48dd3b661b63abfdfc5a2ce262ded9a3215ecf5d#egg=python_rocksdb'],
     classifiers=[
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',

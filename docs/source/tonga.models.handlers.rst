@@ -8,4 +8,3 @@ Subpackages
     tonga.models.handlers.event.event_handler
     tonga.models.handlers.command.command_handler
     tonga.models.handlers.result.result_handler
-    tonga.models.handlers.store.store_record_handler

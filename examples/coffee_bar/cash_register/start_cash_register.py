@@ -2,48 +2,46 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
-import os
-import logging
-from colorlog import ColoredFormatter
 import argparse
-import uvloop
 import asyncio
+import logging
+import os
+from signal import signal, SIGINT
+
+import uvloop
+from colorlog import ColoredFormatter
 from sanic import Sanic
 from sanic.request import Request
-from signal import signal, SIGINT
-from kafka import KafkaAdminClient
-from kafka.cluster import ClusterMetadata
 
-# Import KafkaProducer / KafkaConsumer
-from tonga.services.consumer.kafka_consumer import KafkaConsumer
-from tonga.services.producer.kafka_producer import KafkaProducer
-# Import serializer
-from tonga.services.serializer.avro import AvroSerializer
-# Import local & global store memory
-from tonga.stores.local.memory import LocalStoreMemory
-from tonga.stores.globall.memory import GlobalStoreMemory
-# Import store builder
-from tonga.stores.store_builder.store_builder import StoreBuilder
-# Import StoreRecord & StoreRecordHandler
-from tonga.models.records.store.store_record import StoreRecord
-from tonga.models.handlers.store.store_record_handler import StoreRecordHandler
-# Import key partitioner
-from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
-
-
+from examples.coffee_bar.cash_register import transactional_manager
+from examples.coffee_bar.cash_register.interfaces.rest.cash_register import cash_register_bp
 # Import cash register blueprint
 from examples.coffee_bar.cash_register.interfaces.rest.health import health_bp
-from examples.coffee_bar.cash_register.interfaces.rest.cash_register import cash_register_bp
+from examples.coffee_bar.cash_register.models.events.bill_created import BillCreated
 # Import cash register events
 from examples.coffee_bar.cash_register.models.events.bill_paid import BillPaid
-from examples.coffee_bar.cash_register.models.events.bill_created import BillCreated
 from examples.coffee_bar.cash_register.models.events.coffee_ordered import CoffeeOrdered
 from examples.coffee_bar.cash_register.models.events.coffee_served import CoffeeServed
 # Import cash register handlers
-from examples.coffee_bar.cash_register.models.handlers.bill_paid_handler import BillPaidHandler
-from examples.coffee_bar.cash_register.models.handlers.bill_created_handler import BillCreatedHandler
 from examples.coffee_bar.cash_register.models.handlers.coffee_ordered_handler import CoffeeOrderedHandler
 from examples.coffee_bar.cash_register.models.handlers.coffee_served_handler import CoffeeServedHandler
+# Import StoreRecord & StoreRecordHandler
+from tonga.models.store.store_record import StoreRecord
+from tonga.models.store.store_record_handler import StoreRecordHandler
+# Import KafkaProducer / KafkaConsumer
+from tonga.services.consumer.kafka_consumer import KafkaConsumer
+# Import KafkaClient
+from tonga.services.coordinator.client.kafka_client import KafkaClient
+# Import key partitioner
+from tonga.services.coordinator.partitioner.key_partitioner import KeyPartitioner
+from tonga.services.producer.kafka_producer import KafkaProducer
+# Import serializer
+from tonga.services.serializer.avro import AvroSerializer
+from tonga.stores.global_store.memory import GlobalStoreMemory
+# Import local & global store memory
+from tonga.stores.local_store.memory import LocalStoreMemory
+# Import store builder
+from tonga.stores.manager.kafka_store_manager import KafkaStoreManager
 
 
 def setup_logger():
@@ -110,6 +108,10 @@ if __name__ == '__main__':
     cash_register_app['loop'] = uvloop.new_event_loop()
     asyncio.set_event_loop(cash_register_app['loop'])
 
+    # Creates & register Tonga KafkaClient
+    cash_register_app['kafka_client'] = KafkaClient(client_id='cash-register', cur_instance=cur_instance,
+                                                    nb_replica=nb_replica, bootstrap_servers='localhost:9092')
+
     cash_register_app['serializer'] = AvroSerializer(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                                                   'examples/coffee_bar/avro_schemas'))
 
@@ -117,34 +119,31 @@ if __name__ == '__main__':
     cash_register_app['local_store'] = LocalStoreMemory(name=f'cash-register-{cur_instance}-local-memory')
     cash_register_app['global_store'] = GlobalStoreMemory(name=f'cash-register-{cur_instance}-global-memory')
 
-    cluster_admin = KafkaAdminClient(bootstrap_servers='localhost:9092', client_id=f'cash-register-{cur_instance}')
-    cluster_metadata = ClusterMetadata(bootstrap_servers='localhost:9092')
-
     # Creates & registers store builder
-    cash_register_app['store_builder'] = StoreBuilder(name=f'cash-register-{cur_instance}-store-builder',
-                                                      current_instance=cur_instance, nb_replica=nb_replica,
-                                                      topic_store='cash-register-stores',
-                                                      serializer=cash_register_app['serializer'],
-                                                      local_store=cash_register_app['local_store'],
-                                                      global_store=cash_register_app['global_store'],
-                                                      bootstrap_server='localhost:9092',
-                                                      cluster_metadata=cluster_metadata,
-                                                      cluster_admin=cluster_admin, loop=cash_register_app['loop'],
-                                                      rebuild=True, event_sourcing=False)
+    cash_register_app['store_builder'] = KafkaStoreManager(name=f'cash-register-{cur_instance}-store-builder',
+                                                           client=cash_register_app['kafka_client'],
+                                                           topic_store='cash-register-stores',
+                                                           serializer=cash_register_app['serializer'],
+                                                           local_store=cash_register_app['local_store'],
+                                                           global_store=cash_register_app['global_store'],
+                                                           loop=cash_register_app['loop'],
+                                                           rebuild=True, event_sourcing=False)
 
     # Creates & register KafkaProducer
-    cash_register_app['transactional_producer'] = KafkaProducer(name=f'cash-register-{cur_instance}',
-                                                                bootstrap_servers='localhost:9092',
-                                                                client_id=f'cash-register-{cur_instance}',
+    transactional_id = f'cash-register-{cash_register_app["kafka_client"].cur_instance}'
+    cash_register_app['transactional_producer'] = KafkaProducer(client=cash_register_app['kafka_client'],
                                                                 serializer=cash_register_app['serializer'],
                                                                 loop=cash_register_app['loop'],
                                                                 partitioner=KeyPartitioner(),
-                                                                acks='all', transactional_id=f'cash-register')
+                                                                acks='all',
+                                                                transactional_id=transactional_id)
+
+    cash_register_app['transactional_manager'] = transactional_manager
+    cash_register_app['transactional_manager'].set_transactional_producer(cash_register_app['transactional_producer'])
 
     # Initializes cash register handlers
     store_record_handler = StoreRecordHandler(cash_register_app['store_builder'])
-    bill_created_handler = BillCreatedHandler()
-    bill_paid_handler = BillPaidHandler()
+
     coffee_ordered_handler = CoffeeOrderedHandler(cash_register_app['store_builder'],
                                                   cash_register_app['transactional_producer'])
     coffee_served_handler = CoffeeServedHandler(cash_register_app['store_builder'],
@@ -156,25 +155,22 @@ if __name__ == '__main__':
                                                    coffee_ordered_handler)
     cash_register_app['serializer'].register_class('tonga.waiter.event.CoffeeServed', CoffeeServed,
                                                    coffee_served_handler)
-    cash_register_app['serializer'].register_class('tonga.cashregister.event.BillCreated', BillCreated,
-                                                   bill_created_handler)
-    cash_register_app['serializer'].register_class('tonga.cashregister.event.BillPaid', BillPaid,
-                                                   bill_paid_handler)
+    cash_register_app['serializer'].register_class('tonga.cashregister.event.BillCreated', BillCreated)
+    cash_register_app['serializer'].register_class('tonga.cashregister.event.BillPaid', BillPaid)
 
     # Creates & registers KafkaConsumer
-    cash_register_app['consumer'] = KafkaConsumer(name=f'cash-register-{cur_instance}',
+    cash_register_app['consumer'] = KafkaConsumer(client=cash_register_app['kafka_client'],
                                                   serializer=cash_register_app['serializer'],
-                                                  bootstrap_servers='localhost:9092',
-                                                  client_id=f'cash-register-{cur_instance}',
                                                   topics=['waiter-events'],
                                                   loop=cash_register_app['loop'], group_id='cash-register',
                                                   assignors_data={'instance': cur_instance,
                                                                   'nb_replica': nb_replica,
                                                                   'assignor_policy': 'only_own'},
-                                                  isolation_level='read_committed')
+                                                  isolation_level='read_committed',
+                                                  transactional_manager=cash_register_app['transactional_manager'])
 
     # Ensures future of KafkaConsumer
-    asyncio.ensure_future(cash_register_app['consumer'].listen_event('committed'), loop=cash_register_app['loop'])
+    asyncio.ensure_future(cash_register_app['consumer'].listen_records('committed'), loop=cash_register_app['loop'])
 
     # Ensures future of KafkaConsumer store builder
     cash_register_app['store_builder'].return_consumer_task()

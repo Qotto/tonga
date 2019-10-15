@@ -7,7 +7,7 @@
 
 from functools import wraps
 from typing import Any, Callable
-from tonga.stores.store_builder.errors import UninitializedStore
+from tonga.stores.manager.errors import UninitializedStore
 
 __all__ = [
     'check_initialized'

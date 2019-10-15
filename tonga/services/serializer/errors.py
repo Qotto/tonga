@@ -2,6 +2,9 @@
 # coding: utf-8
 # Copyright (c) Qotto, 2019
 
+""" Contains all Serializer errors
+"""
+
 __all__ = [
     'AvroAlreadyRegister',
     'AvroEncodeError',

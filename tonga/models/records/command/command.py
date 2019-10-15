@@ -49,7 +49,7 @@ class BaseCommand(BaseRecord):
     """
     processing_guarantee: str
 
-    def __init__(self, processing_guarantee: str = None, **kwargs):
+    def __init__(self, processing_guarantee: str = None, **kwargs) -> None:
         """BaseCommand constructor
 
         Args:
@@ -62,12 +62,27 @@ class BaseCommand(BaseRecord):
         else:
             raise CommandEventMissingProcessGuarantee
 
-    @classmethod
-    def from_data(cls, event_data: Dict[str, Any]):
-        """ Serialize dict to Command Class
+    def base_dict(self) -> Dict[str, Any]:
+        """ Return base dict.
 
-        Args:
-            event_data (Dict|str, Any]): Contains all Command Class attribute for return an instanced class
+        Returns:
+            Dict[str, Any]: Base dict contains (record_id, schema_version, partition_key, datetime,
+                                                timestamp, correlation_id, context, processing_guarantee)
+        """
+        return {
+            'record_id': self.record_id,
+            'schema_version': self.schema_version,
+            'partition_key': self.partition_key,
+            'datetime': self.date.isoformat(),
+            'timestamp': self.date.timestamp() * 1000,
+            'correlation_id': self.correlation_id,
+            'context': self.context,
+            'processing_guarantee': self.processing_guarantee
+        }
+
+    @classmethod
+    def event_name(cls) -> str:
+        """ Return Command Class name, used in serializer
 
         Raises:
             NotImplementedError: Abstract def
@@ -77,9 +92,23 @@ class BaseCommand(BaseRecord):
         """
         raise NotImplementedError
 
+    def to_dict(self) -> Dict[str, Any]:
+        """ Serialize BaseRecord to dict
+
+        Raises:
+            NotImplementedError: Abstract def
+
+        Returns:
+            Dict[str, Any]: class in dict format
+        """
+        raise NotImplementedError
+
     @classmethod
-    def event_name(cls) -> str:
-        """ Return Command Class name, used in serializer
+    def from_dict(cls, dict_data: Dict[str, Any]):
+        """ Deserialize dict to BaseRecord
+
+        Args:
+            dict_data (Dict|str, Any]): Contains all BaseRecord Class attribute for return an instanced class
 
         Raises:
             NotImplementedError: Abstract def

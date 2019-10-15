@@ -8,7 +8,7 @@ Import all tonga exceptions
 """
 
 # Import StoreRecord exceptions
-from tonga.models.handlers.store.errors import UnknownStoreRecordType
+from tonga.models.store.errors import UnknownStoreRecordType
 
 # Import BaseCommand exceptions
 from tonga.models.records.command.errors import CommandEventMissingProcessGuarantee
@@ -38,12 +38,14 @@ from tonga.services.serializer.errors import (AvroAlreadyRegister, AvroEncodeErr
                                               KeySerializerEncodeError)
 
 # Import LocalStore & GlobalStore exceptions
-from tonga.stores.errors import (StoreKeyNotFound, StoreMetadataCantNotUpdated,
-                                 StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
+from tonga.stores.errors import (StoreKeyNotFound, StorePartitionAlreadyAssigned, StorePartitionNotAssigned)
 
 # Import StoreBuilder exceptions
-from tonga.stores.store_builder.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
+from tonga.stores.manager.errors import (UninitializedStore, CanNotInitializeStore, FailToSendStoreRecord)
 
+# Import KafkaClient exceptions
+from tonga.services.coordinator.client.errors import (BadArgumentKafkaClient, KafkaClientConnectionErrors,
+                                                      KafkaAdminConfigurationError, CurrentInstanceOutOfRange)
 
 __all__ = [
     # StoreRecord exceptions
@@ -94,11 +96,15 @@ __all__ = [
     'KeySerializerEncodeError',
     # LocalStore & GlobalStore exceptions
     'StoreKeyNotFound',
-    'StoreMetadataCantNotUpdated',
     'StorePartitionAlreadyAssigned',
     'StorePartitionNotAssigned',
     # StoreBuilder exceptions
     'UninitializedStore',
     'CanNotInitializeStore',
-    'FailToSendStoreRecord'
+    'FailToSendStoreRecord',
+    # KafkaClient exceptions
+    'BadArgumentKafkaClient',
+    'CurrentInstanceOutOfRange',
+    'KafkaAdminConfigurationError',
+    'KafkaClientConnectionErrors'
 ]
