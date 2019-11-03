@@ -5,6 +5,8 @@
 [![Documentation Status](https://readthedocs.org/projects/tonga/badge/?version=latest&style=for-the-badge)](https://tonga.readthedocs.io/en/latest/)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-v1.4%20adopted-ff69b4.svg?style=for-the-badge)](code-of-conduct.md)
 
+PLEASE BE AWARE THIS IS A WORK IN PROGRESS - DO NOT USE IN PRODUCTION
+
 Asyncio client for event driven app
 
 Documentation: https://tonga.readthedocs.io
