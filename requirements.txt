@@ -1,6 +1,6 @@
 aiokafka==0.5.2
 avro-python3==1.9.0
 kafka-python==1.4.6
-pyyaml==5.1.1
+pyyaml==5.4
 uvloop==0.12.2
 -e git+git@github.com:twmht/python-rocksdb.git@48dd3b661b63abfdfc5a2ce262ded9a3215ecf5d#egg=python_rocksdb

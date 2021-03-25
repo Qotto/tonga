@@ -3,5 +3,5 @@ alabaster==0.7.12
 aiokafka==0.5.1
 kafka-python==1.4.6
 avro-python3==1.9.0
-pyyaml==5.1
+pyyaml==5.4
 uvloop==0.12.2
